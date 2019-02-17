@@ -247,6 +247,15 @@ void AndroidAutoEntity::triggerQuit()
     }
 }
 
+/*
+ * As of Google Play Services 15.0.90 (Jan 29 2019), this function causes
+ * the Android Auto interface to crash without the ability to cover seconds
+ * after connection. 
+ * 
+ * Simply commenting this function out is a temporary fix to allow Crankshaft
+ * users to use Android Auto with the most Google Play Services >= 15.0.90
+ * but should be properly addressed in the future.
+ *
 void AndroidAutoEntity::schedulePing()
 {
     auto promise = IPinger::Promise::defer(strand_);
@@ -265,6 +274,8 @@ void AndroidAutoEntity::schedulePing()
 
     pinger_->ping(std::move(promise));
 }
+
+*/
 
 void AndroidAutoEntity::sendPing()
 {
