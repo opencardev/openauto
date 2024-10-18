@@ -68,7 +68,7 @@ ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messeng
     serviceList.emplace_back(this->createVideoService(messenger));
     serviceList.emplace_back(this->createBluetoothService(messenger));
     serviceList.emplace_back(this->createInputService(messenger));
-    serviceList.emplace_back(std::make_shared<WifiService>(configuration_));
+    // serviceList.emplace_back(std::make_shared<WifiService>(configuration_)); Wifi service causes no video with AA > 12.6
 
     return serviceList;
 }
