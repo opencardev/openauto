@@ -135,13 +135,13 @@ namespace f1x {
             }
 
             void AndroidBluetoothServer::handleWifiSecurityRequest(QByteArray &buffer, uint16_t length) {
-                ::aasdk::proto::messages::WifiSecurityReponse response;
+                ::aasdk::proto::messages::WifiSecurityResponse response;
 
                 response.set_ssid(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","ssid").toStdString());
-                response.set_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
+                // response.set_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
                 response.set_key(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","wpa_passphrase").toStdString());
-                response.set_security_mode(::aasdk::proto::messages::WifiSecurityReponse_SecurityMode_WPA2_PERSONAL);
-                response.set_access_point_type(::aasdk::proto::messages::WifiSecurityReponse_AccessPointType_STATIC);
+                response.set_security_mode(::aasdk::proto::messages::WifiSecurityResponse_SecurityMode_WPA2_PERSONAL);
+                response.set_access_point_type(::aasdk::proto::messages::WifiSecurityResponse_AccessPointType_STATIC);
 
                 sendMessage(response, 3);
             }

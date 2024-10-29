@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.5.1)
+if(CROSS_COMPILE_ARMHF)
+    message("Cross compiling for armhf")
+    set(CMAKE_C_COMPILER /usr/bin/arm-linux-gnueabihf-gcc-8)
+    set(CMAKE_CXX_COMPILER /usr/bin/arm-linux-gnueabihf-g++-8)
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "armhf")
+endif(CROSS_COMPILE)
 project(openauto CXX)
 
 set(CMAKE_AUTOMOC ON)
@@ -27,7 +33,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-g -O3")
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
-find_package(Boost REQUIRED COMPONENTS system log OPTIONAL_COMPONENTS unit_test_framework)
+find_package(Boost REQUIRED COMPONENTS system log_setup log OPTIONAL_COMPONENTS unit_test_framework)
 find_package(libusb-1.0 REQUIRED)
 find_package(Qt5 COMPONENTS Multimedia MultimediaWidgets Bluetooth Network)
 find_package(Protobuf REQUIRED)
