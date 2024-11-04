@@ -19,8 +19,8 @@
 #pragma once
 
 #include <memory>
-#include <f1x/aasdk/Messenger/Timestamp.hpp>
-#include <f1x/aasdk/Common/Data.hpp>
+#include <aasdk/Messenger/Timestamp.hpp>
+#include <aasdk/Common/Data.hpp>
 
 namespace f1x
 {

@@ -33,12 +33,12 @@ VideoOutput::VideoOutput(configuration::IConfiguration::Pointer configuration)
 
 }
 
-aasdk::proto::enums::VideoFPS::Enum VideoOutput::getVideoFPS() const
+aap_protobuf::service::media::shared::message::VideoFrameRateType VideoOutput::getVideoFPS() const
 {
     return configuration_->getVideoFPS();
 }
 
-aasdk::proto::enums::VideoResolution::Enum VideoOutput::getVideoResolution() const
+aap_protobuf::service::media::shared::message::VideoCodecResolutionType VideoOutput::getVideoResolution() const
 {
     return configuration_->getVideoResolution();
 }

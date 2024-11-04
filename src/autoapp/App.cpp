@@ -17,8 +17,8 @@
 */
 
 #include <thread>
-#include <f1x/aasdk/USB/AOAPDevice.hpp>
-#include <f1x/aasdk/TCP/TCPEndpoint.hpp>
+#include <aasdk/USB/AOAPDevice.hpp>
+#include <aasdk/TCP/TCPEndpoint.hpp>
 #include <f1x/openauto/autoapp/App.hpp>
 #include <f1x/openauto/Common/Log.hpp>
 

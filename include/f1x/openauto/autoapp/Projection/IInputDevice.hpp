@@ -19,7 +19,7 @@
 #pragma once
 
 #include <QRect>
-#include <f1x/aasdk/IO/Promise.hpp>
+#include <aasdk/IO/Promise.hpp>
 #include <f1x/openauto/autoapp/Projection/InputEvent.hpp>
 
 namespace f1x
@@ -37,7 +37,7 @@ class IInputDevice
 {
 public:
     typedef std::shared_ptr<IInputDevice> Pointer;
-    typedef std::vector<aasdk::proto::enums::ButtonCode::Enum> ButtonCodes;
+    typedef std::vector<aap_protobuf::service::media::sink::KeyCode> ButtonCodes;
 
     virtual ~IInputDevice() = default;
     virtual void start(IInputDeviceEventHandler& eventHandler) = 0;

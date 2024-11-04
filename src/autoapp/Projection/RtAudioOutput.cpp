@@ -33,9 +33,15 @@ RtAudioOutput::RtAudioOutput(uint32_t channelCount, uint32_t sampleSize, uint32_
     , sampleSize_(sampleSize)
     , sampleRate_(sampleRate)
 {
-    std::vector<RtAudio::Api> apis;
-    RtAudio::getCompiledApi(apis);
-    dac_ = std::find(apis.begin(), apis.end(), RtAudio::LINUX_PULSE) == apis.end() ? std::make_unique<RtAudio>() : std::make_unique<RtAudio>(RtAudio::LINUX_PULSE);
+
+  std::vector<RtAudio::Api> apis;
+  RtAudio::getCompiledApi(apis);
+  dac_ = std::find(apis.begin(), apis.end(), RtAudio::LINUX_PULSE) == apis.end() ? std::make_unique<RtAudio>() : std::make_unique<RtAudio>(RtAudio::LINUX_PULSE);
+
+  // Set the error callback
+  dac_->setErrorCallback([](RtAudioErrorType type, const std::string& errorText) {
+    OPENAUTO_LOG(error) << "[RtAudioOutput] " << errorText;
+  });
 }
 
 bool RtAudioOutput::open()
@@ -54,13 +60,19 @@ bool RtAudioOutput::open()
             RtAudio::StreamOptions streamOptions;
             streamOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_SCHEDULE_REALTIME;
             uint32_t bufferFrames = sampleRate_ == 16000 ? 1024 : 2048; //according to the observation of audio packets
+            auto result = dac_->openStream(&parameters, nullptr, RTAUDIO_SINT16, sampleRate_, &bufferFrames, &RtAudioOutput::audioBufferReadHandler, static_cast<void*>(this), &streamOptions);
             dac_->openStream(&parameters, nullptr, RTAUDIO_SINT16, sampleRate_, &bufferFrames, &RtAudioOutput::audioBufferReadHandler, static_cast<void*>(this), &streamOptions);
-            OPENAUTO_LOG(info) << "[RtAudioOutput] Sample Rate: " << sampleRate_;
-            return audioBuffer_.open(QIODevice::ReadWrite);
+            if (result == RtAudioErrorType::RTAUDIO_NO_ERROR) {
+              OPENAUTO_LOG(info) << "[RtAudioOutput] Sample Rate: " << sampleRate_;
+              return audioBuffer_.open(QIODevice::ReadWrite);
+            } else {
+              // Log the error using the callback or handle it here directly
+              OPENAUTO_LOG(error) << "[RtAudioOutput] Error opening stream: ";
+            }
         }
-        catch(const RtAudioError& e)
+        catch(const std::exception& e)
         {
-            OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to open audio output, what: " << e.what();
+          OPENAUTO_LOG(error) << "[RtAudioOutput] Exception: " << e.what();
         }
     }
     else
@@ -86,9 +98,10 @@ void RtAudioOutput::start()
         {
             dac_->startStream();
         }
-        catch(const RtAudioError& e)
+        catch(const RtAudioErrorType& e)
         {
-            OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to start audio output, what: " << e.what();
+          // TODO: What's the new RtAudio Error?
+            //OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to start audio output, what: " << e.what();
         }
     }
 }
@@ -133,9 +146,10 @@ void RtAudioOutput::doSuspend()
         {
             dac_->stopStream();
         }
-        catch(const RtAudioError& e)
+        catch(const RtAudioErrorType& e)
         {
-            OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to suspend audio output, what: " << e.what();
+          // TODO: What's the new RtAudio Error?
+          //OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to suspend audio output, what: " << e.what();
         }
     }
 }

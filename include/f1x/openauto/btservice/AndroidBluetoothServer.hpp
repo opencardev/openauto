@@ -23,7 +23,7 @@
 #include <QBluetoothServer>
 #include <f1x/openauto/btservice/IAndroidBluetoothServer.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
-#include <f1x/aasdk/Messenger/Message.hpp>
+#include <aasdk/Messenger/Message.hpp>
 
 namespace f1x
 {

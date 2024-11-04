@@ -20,9 +20,9 @@
 
 #include <string>
 #include <QRect>
-#include <aasdk_proto/VideoFPSEnum.pb.h>
-#include <aasdk_proto/VideoResolutionEnum.pb.h>
-#include <aasdk_proto/ButtonCodeEnum.pb.h>
+#include <aap_protobuf/service/media/shared/message/VideoFrameRateType.pb.h>
+#include <aap_protobuf/service/media/shared/message/VideoCodecResolutionType.pb.h>
+#include <aap_protobuf/service/media/sink/KeyCode.pb.h>
 #include <f1x/openauto/autoapp/Configuration/BluetootAdapterType.hpp>
 #include <f1x/openauto/autoapp/Configuration/HandednessOfTrafficType.hpp>
 #include <f1x/openauto/autoapp/Configuration/AudioOutputBackendType.hpp>
@@ -40,7 +40,7 @@ class IConfiguration
 {
 public:
     typedef std::shared_ptr<IConfiguration> Pointer;
-    typedef std::vector<aasdk::proto::enums::ButtonCode::Enum> ButtonCodes;
+    typedef std::vector<aap_protobuf::service::media::sink::KeyCode> ButtonCodes;
 
     virtual ~IConfiguration() = default;
 
@@ -92,10 +92,10 @@ public:
     virtual QString readFileContent(QString fileName) const = 0;
     virtual QString getParamFromFile(QString fileName, QString searchString) const = 0;
 
-    virtual aasdk::proto::enums::VideoFPS::Enum getVideoFPS() const = 0;
-    virtual void setVideoFPS(aasdk::proto::enums::VideoFPS::Enum value) = 0;
-    virtual aasdk::proto::enums::VideoResolution::Enum getVideoResolution() const = 0;
-    virtual void setVideoResolution(aasdk::proto::enums::VideoResolution::Enum value) = 0;
+    virtual aap_protobuf::service::media::shared::message::VideoFrameRateType getVideoFPS() const = 0;
+    virtual void setVideoFPS(aap_protobuf::service::media::shared::message::VideoFrameRateType value) = 0;
+    virtual aap_protobuf::service::media::shared::message::VideoCodecResolutionType getVideoResolution() const = 0;
+    virtual void setVideoResolution(aap_protobuf::service::media::shared::message::VideoCodecResolutionType value) = 0;
     virtual size_t getScreenDPI() const = 0;
     virtual void setScreenDPI(size_t value) = 0;
     virtual void setOMXLayerIndex(int32_t value) = 0;
@@ -117,8 +117,12 @@ public:
 
     virtual bool musicAudioChannelEnabled() const = 0;
     virtual void setMusicAudioChannelEnabled(bool value) = 0;
-    virtual bool speechAudioChannelEnabled() const = 0;
-    virtual void setSpeechAudioChannelEnabled(bool value) = 0;
+    virtual bool guidanceAudioChannelEnabled() const = 0;
+    virtual void setGuidanceAudioChannelEnabled(bool value) = 0;
+    virtual bool systemAudioChannelEnabled() const = 0;
+    virtual void setSystemAudioChannelEnabled(bool value) = 0;
+    virtual bool telephonyAudioChannelEnabled() const = 0;
+    virtual void setTelephonyAudioChannelEnabled(bool value) = 0;
     virtual AudioOutputBackendType getAudioOutputBackendType() const = 0;
     virtual void setAudioOutputBackendType(AudioOutputBackendType value) = 0;
 };

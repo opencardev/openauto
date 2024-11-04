@@ -16,9 +16,63 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/aasdk/Channel/Control/ControlServiceChannel.hpp>
+#include <aap_protobuf/connection/WirelessTcpConfiguration.pb.h>
+#include <aap_protobuf/connection/PingConfiguration.pb.h>
+#include <aap_protobuf/connection/ConnectionConfiguration.pb.h>
+#include <aap_protobuf/channel/control/focus/audio/event/AudioFocusRequestType.pb.h>
+#include <aap_protobuf/channel/control/focus/audio/notification/AudioFocusStateType.pb.h>
+#include <aap_protobuf/channel/control/focus/navigation/shared/NavFocusType.pb.h>
+#include <aasdk/Channel/Control/ControlServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/AndroidAutoEntity.hpp>
 #include <f1x/openauto/Common/Log.hpp>
+
+/*
+ * HU > MD Version Request
+ * HU < MD ServiceDiscoveryRequest
+ * HU > MD Car MetaData (Make, Model, year etc)
+ * HU < MD when Video Projection starts, it MUST be shown without User Ineraction
+ * HU < MD Prompt Use to Enable and Pair with Car
+ * HU < MD Request Video Focus for Projection (HU Grant)
+ *
+ * AAP neds Bluetooth HFP for Telephone
+ *
+ * HU > MD Bluetooth Announcement (HU MAC Address, Supported Pairing Methods)
+ * HU < MD Bluetooth Pairing Request
+ * HU > MD Bluetoth Pairing Response
+ *
+ * AfterPairing, HU can request the Bluetooth PhoneBookAccessProtocol. Sensible UI.
+ *
+ * HU < MD connect to Bluetooth HFP
+ * HU Suppress BAP or MAP while AAP connected.
+ * A2DP should be treated by OEM as another such such as a USB stick or radio. If the user plays music via AA, HU should grant request from AA to change focus to AA. HU manages connectivity.
+ * MD connects to HU and routes call over Bluetooth (non Bluetooth call)
+ * MD connects Blueooth call and display projection mode
+ * MD on call to HFP device - MD continues call, disconnects from other HFP and connects to HFP on Vehicle.
+ * AA only uses HFP, hhowever HU may use MAP, PBAP, PAN and RSAP
+ * MD will reconnect when required.
+ *
+ * Video
+ * HU < MD - During Service Discovery, MD requests Video Configs supported
+ * HU > MD sends Config Message with Prioritised indices for Video Conffigurations
+ * HU < MD MD selects config
+ * HU < MD sends start message
+ * HU < MD sends focus request
+ * HU > MD sends focus granted (unless unsafe - ie reverse camera etc)
+ * HU < MD Audio Focus Requests when MD wants to play.
+ * HU > MD Audio Focus Navigations (can be  unsolicited or responses to requests)
+ * HU < MD VoiceSessionRequestNotification with VOICE_SESSION_START, HU should stop all sounds. MD will request GAIN or GAIN_TRANS to play beeps/tones and ASR response.
+ * Nav Focus for onboard navigation.
+ * UI System Sounds does not require audio focus as sounds should be played ASAP. System Stream is optionals (not required to support).
+ * HU should wait to receive two frames of audio before starting playback to minimise buffer underruns.
+ * AA Latency types supported - Audio Setup - max 500ms, Audio Output max 50ms.
+ * HU > MD Navigation Focus Notification specified with NF is Phone or Car.
+ * HU < MD Navigation Focus Request
+ * "For vehicles that support next turn information in the instrument cluster, the HU can subscribe to next turn updates from the MD navigation engine." (NExt Turn etc)
+ * same for Media Playback Status
+ * Radio - Allows Control of Radio from Within AA.
+ * Vehicle IDs SHOULD have at least 64 bits
+ */
+
 
 namespace f1x
 {
@@ -113,13 +167,13 @@ void AndroidAutoEntity::resume()
     });
 }
 
-void AndroidAutoEntity::onVersionResponse(uint16_t majorCode, uint16_t minorCode, aasdk::proto::enums::VersionResponseStatus::Enum status)
+void AndroidAutoEntity::onVersionResponse(uint16_t majorCode, uint16_t minorCode, aap_protobuf::shared::MessageStatus status)
 {
     OPENAUTO_LOG(info) << "[AndroidAutoEntity] version response, version: " << majorCode
                        << "." << minorCode
                        << ", status: " << status;
 
-    if(status == aasdk::proto::enums::VersionResponseStatus::MISMATCH)
+    if(status == aap_protobuf::shared::MessageStatus::STATUS_NO_COMPATIBLE_VERSION)
     {
         OPENAUTO_LOG(error) << "[AndroidAutoEntity] version mismatch.";
         this->triggerQuit();
@@ -164,8 +218,8 @@ void AndroidAutoEntity::onHandshake(const aasdk::common::DataConstBuffer& payloa
         {
             OPENAUTO_LOG(info) << "[AndroidAutoEntity] Auth completed.";
 
-            aasdk::proto::messages::AuthCompleteIndication authCompleteIndication;
-            authCompleteIndication.set_status(aasdk::proto::enums::Status::OK);
+            aap_protobuf::channel::control::auth::AuthResponse authCompleteIndication;
+            authCompleteIndication.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
             auto authCompletePromise = aasdk::channel::SendPromise::defer(strand_);
             authCompletePromise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
@@ -180,24 +234,47 @@ void AndroidAutoEntity::onHandshake(const aasdk::common::DataConstBuffer& payloa
     }
 }
 
-void AndroidAutoEntity::onServiceDiscoveryRequest(const aasdk::proto::messages::ServiceDiscoveryRequest& request)
+void AndroidAutoEntity::onServiceDiscoveryRequest(const aap_protobuf::channel::control::servicediscovery::event::ServiceDiscoveryRequest& request)
 {
     OPENAUTO_LOG(info) << "[AndroidAutoEntity] Discovery request, device name: " << request.device_name()
-                       << ", brand: " << request.device_brand();
+                       << ", brand: " << request.label_text();
 
-    aasdk::proto::messages::ServiceDiscoveryResponse serviceDiscoveryResponse;
+    /*
+    aap_protobuf::connection::PingConfiguration pingConfiguration;
+    pingConfiguration.set_high_latency_threshold_ms();
+    pingConfiguration.set_interval_ms();
+    pingConfiguration.set_timeout_ms();
+    pingConfiguration.set_tracked_ping_count();
+
+    aap_protobuf::connection::WirelessTcpConfiguration wirelessTcpConfiguration;
+    wirelessTcpConfiguration.set_socket_read_timeout_ms();
+    wirelessTcpConfiguration.set_socket_receive_buffer_size_kb();
+    wirelessTcpConfiguration.set_socket_send_buffer_size_kb();
+
+    aap_protobuf::connection::ConnectionConfiguration connectionConfiguration;
+    connectionConfiguration.set_allocated_ping_configuration();
+    connectionConfiguration.set_allocated_wireless_tcp_configuration();*/
+
+    aap_protobuf::channel::control::servicediscovery::notification::HeadUnitInfo headUnitInfo;
+    headUnitInfo.set_make("CubeOne");
+    headUnitInfo.set_model("Journey");
+    headUnitInfo.set_year("2024");
+    headUnitInfo.set_vehicle_id("2009");
+    headUnitInfo.set_head_unit_make("CubeOne");
+    headUnitInfo.set_head_unit_model("Journey");
+    headUnitInfo.set_head_unit_software_build("2024.10.15");
+    headUnitInfo.set_head_unit_software_version("1");
+
+    aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse serviceDiscoveryResponse;
     serviceDiscoveryResponse.mutable_channels()->Reserve(256);
-    serviceDiscoveryResponse.set_head_unit_name("Crankshaft-NG");
-    serviceDiscoveryResponse.set_car_model("Universal");
-    serviceDiscoveryResponse.set_car_year("2018");
-    serviceDiscoveryResponse.set_car_serial("20180301");
-    serviceDiscoveryResponse.set_left_hand_drive_vehicle(configuration_->getHandednessOfTrafficType() == configuration::HandednessOfTrafficType::LEFT_HAND_DRIVE);
-    serviceDiscoveryResponse.set_headunit_manufacturer("f1x");
-    serviceDiscoveryResponse.set_headunit_model("Crankshaft-NG Autoapp");
-    serviceDiscoveryResponse.set_sw_build("1");
-    serviceDiscoveryResponse.set_sw_version("1.0");
-    serviceDiscoveryResponse.set_can_play_native_media_during_vr(false);
-    serviceDiscoveryResponse.set_hide_clock(!configuration_->showClock());
+
+    //serviceDiscoveryResponse.set_headunit_sw_build("2024.10.15");
+    //serviceDiscoveryResponse.set_headunit_sw_version("1");
+    serviceDiscoveryResponse.set_display_name("JourneyOS");
+
+    serviceDiscoveryResponse.set_allocated_headunit_info(&headUnitInfo);
+
+    //serviceDiscoveryResponse.set_can_play_native_media_during_vr(false);
 
     std::for_each(serviceList_.begin(), serviceList_.end(), std::bind(&IService::fillFeatures, std::placeholders::_1, std::ref(serviceDiscoveryResponse)));
 
@@ -207,17 +284,18 @@ void AndroidAutoEntity::onServiceDiscoveryRequest(const aasdk::proto::messages::
     controlServiceChannel_->receive(this->shared_from_this());
 }
 
-void AndroidAutoEntity::onAudioFocusRequest(const aasdk::proto::messages::AudioFocusRequest& request)
+void AndroidAutoEntity::onAudioFocusRequest(const aap_protobuf::channel::control::focus::audio::event::AudioFocusRequest& request)
 {
     OPENAUTO_LOG(info) << "[AndroidAutoEntity] requested audio focus, type: " << request.audio_focus_type();
 
-    aasdk::proto::enums::AudioFocusState::Enum audioFocusState =
-            request.audio_focus_type() == aasdk::proto::enums::AudioFocusType::RELEASE ? aasdk::proto::enums::AudioFocusState::LOSS
-                                                                                       : aasdk::proto::enums::AudioFocusState::GAIN;
+    aap_protobuf::channel::control::focus::audio::notification::AudioFocusStateType audioFocusState =
+            request.audio_focus_type() == aap_protobuf::channel::control::focus::audio::event::AudioFocusRequestType::AUDIO_FOCUS_RELEASE
+            ? aap_protobuf::channel::control::focus::audio::notification::AudioFocusStateType::AUDIO_FOCUS_STATE_LOSS
+            : aap_protobuf::channel::control::focus::audio::notification::AudioFocusStateType::AUDIO_FOCUS_STATE_GAIN;
 
     OPENAUTO_LOG(info) << "[AndroidAutoEntity] audio focus state: " << audioFocusState;
 
-    aasdk::proto::messages::AudioFocusResponse response;
+    aap_protobuf::channel::control::focus::audio::notification::AudioFocusNotification response;
     response.set_audio_focus_state(audioFocusState);
 
     auto promise = aasdk::channel::SendPromise::defer(strand_);
@@ -226,11 +304,11 @@ void AndroidAutoEntity::onAudioFocusRequest(const aasdk::proto::messages::AudioF
     controlServiceChannel_->receive(this->shared_from_this());
 }
 
-void AndroidAutoEntity::onShutdownRequest(const aasdk::proto::messages::ShutdownRequest& request)
+void AndroidAutoEntity::onByeByeRequest(const aap_protobuf::channel::control::byebye::event::ByeByeRequest& request)
 {
     OPENAUTO_LOG(info) << "[AndroidAutoEntity] Shutdown request, reason: " << request.reason();
 
-    aasdk::proto::messages::ShutdownResponse response;
+    aap_protobuf::channel::control::byebye::notification::ByeByeResponse response;
     auto promise = aasdk::channel::SendPromise::defer(strand_);
     promise->then(std::bind(&AndroidAutoEntity::triggerQuit, this->shared_from_this()),
                   std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
@@ -238,18 +316,18 @@ void AndroidAutoEntity::onShutdownRequest(const aasdk::proto::messages::Shutdown
     controlServiceChannel_->sendShutdownResponse(response, std::move(promise));
 }
 
-void AndroidAutoEntity::onShutdownResponse(const aasdk::proto::messages::ShutdownResponse&)
+void AndroidAutoEntity::onByeByeResponse(const aap_protobuf::channel::control::byebye::notification::ByeByeResponse& response)
 {
     OPENAUTO_LOG(info) << "[AndroidAutoEntity] Shutdown response ";
     this->triggerQuit();
 }
 
-void AndroidAutoEntity::onNavigationFocusRequest(const aasdk::proto::messages::NavigationFocusRequest& request)
+void AndroidAutoEntity::onNavigationFocusRequest(const aap_protobuf::channel::control::focus::navigation::event::NavFocusRequestNotification& request)
 {
-    OPENAUTO_LOG(info) << "[AndroidAutoEntity] navigation focus request, type: " << request.type();
+    OPENAUTO_LOG(info) << "[AndroidAutoEntity] navigation focus request, type: " << request.focus_type();
 
-    aasdk::proto::messages::NavigationFocusResponse response;
-    response.set_type(2);
+    aap_protobuf::channel::control::focus::navigation::notification::NavFocusNotification response;
+    response.set_focus_type(aap_protobuf::channel::control::focus::navigation::shared::NavFocusType::NAV_FOCUS_PROJECTED);
 
     auto promise = aasdk::channel::SendPromise::defer(strand_);
     promise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
@@ -257,7 +335,17 @@ void AndroidAutoEntity::onNavigationFocusRequest(const aasdk::proto::messages::N
     controlServiceChannel_->receive(this->shared_from_this());
 }
 
-void AndroidAutoEntity::onPingResponse(const aasdk::proto::messages::PingResponse& response)
+  void onVoiceSessionRequest(const aap_protobuf::channel::control::voice::VoiceSessionNotification &request) {
+    // TODO: FIXME
+  }
+  void AndroidAutoEntity::onPingRequest(const aap_protobuf::channel::control::ping::PingRequest& request)
+  {
+    OPENAUTO_LOG(info) << "[AndroidAutoEntity] Ping request, timestamp: "  << request.timestamp();
+    //pinger_->ping();
+    //controlServiceChannel_->receive(this->shared_from_this());
+  }
+
+void AndroidAutoEntity::onPingResponse(const aap_protobuf::channel::control::ping::PingResponse& response)
 {
     OPENAUTO_LOG(info) << "[AndroidAutoEntity] Ping response, timestamp: "  << response.timestamp();
     pinger_->pong();
@@ -302,7 +390,7 @@ void AndroidAutoEntity::sendPing()
     auto promise = aasdk::channel::SendPromise::defer(strand_);
     promise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
 
-    aasdk::proto::messages::PingRequest request;
+    aap_protobuf::channel::control::ping::PingRequest request;
     auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
     request.set_timestamp(timestamp.count());
     controlServiceChannel_->sendPingRequest(request, std::move(promise));

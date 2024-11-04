@@ -211,19 +211,19 @@ void SettingsWindow::onSave()
     configuration_->instantPlay(ui_->checkBoxInstantPlay->isChecked());
     configuration_->hideWarning(ui_->checkBoxDontShowAgain->isChecked());
 
-    configuration_->setVideoFPS(ui_->radioButton30FPS->isChecked() ? aasdk::proto::enums::VideoFPS::_30 : aasdk::proto::enums::VideoFPS::_60);
+    configuration_->setVideoFPS(ui_->radioButton30FPS->isChecked() ? aap_protobuf::service::media::shared::message::VideoFrameRateType::_30 : aap_protobuf::service::media::shared::message::VideoFrameRateType::_60);
 
     if(ui_->radioButton480p->isChecked())
     {
-        configuration_->setVideoResolution(aasdk::proto::enums::VideoResolution::_480p);
+        configuration_->setVideoResolution(aap_protobuf::service::media::shared::message::VideoCodecResolutionType_480p);
     }
     else if(ui_->radioButton720p->isChecked())
     {
-        configuration_->setVideoResolution(aasdk::proto::enums::VideoResolution::_720p);
+        configuration_->setVideoResolution(aap_protobuf::service::media::shared::message::VideoCodecResolutionType_720p);
     }
     else if(ui_->radioButton1080p->isChecked())
     {
-        configuration_->setVideoResolution(aasdk::proto::enums::VideoResolution::_1080p);
+        configuration_->setVideoResolution(aap_protobuf::service::media::shared::message::VideoCodecResolutionType_1080p);
     }
 
     configuration_->setScreenDPI(static_cast<size_t>(ui_->horizontalSliderScreenDPI->value()));
@@ -502,12 +502,12 @@ void SettingsWindow::load()
     ui_->checkBoxInstantPlay->setChecked(configuration_->instantPlay());
     ui_->checkBoxDontShowAgain->setChecked(configuration_->hideWarning());
 
-    ui_->radioButton30FPS->setChecked(configuration_->getVideoFPS() == aasdk::proto::enums::VideoFPS::_30);
-    ui_->radioButton60FPS->setChecked(configuration_->getVideoFPS() == aasdk::proto::enums::VideoFPS::_60);
+    ui_->radioButton30FPS->setChecked(configuration_->getVideoFPS() == aap_protobuf::service::media::shared::message::VideoFrameRateType::_30);
+    ui_->radioButton60FPS->setChecked(configuration_->getVideoFPS() == aap_protobuf::service::media::shared::message::VideoFrameRateType::_60);
 
-    ui_->radioButton480p->setChecked(configuration_->getVideoResolution() == aasdk::proto::enums::VideoResolution::_480p);
-    ui_->radioButton720p->setChecked(configuration_->getVideoResolution() == aasdk::proto::enums::VideoResolution::_720p);
-    ui_->radioButton1080p->setChecked(configuration_->getVideoResolution() == aasdk::proto::enums::VideoResolution::_1080p);
+    ui_->radioButton480p->setChecked(configuration_->getVideoResolution() == aap_protobuf::service::media::shared::message::VideoCodecResolutionType_480p);
+    ui_->radioButton720p->setChecked(configuration_->getVideoResolution() == aap_protobuf::service::media::shared::message::VideoCodecResolutionType_720p);
+    ui_->radioButton1080p->setChecked(configuration_->getVideoResolution() == aap_protobuf::service::media::shared::message::VideoCodecResolutionType_1080p);
     ui_->horizontalSliderScreenDPI->setValue(static_cast<int>(configuration_->getScreenDPI()));
     ui_->spinBoxOmxLayerIndex->setValue(configuration_->getOMXLayerIndex());
 
@@ -549,23 +549,23 @@ void SettingsWindow::load()
 void SettingsWindow::loadButtonCheckBoxes()
 {
     const auto& buttonCodes = configuration_->getButtonCodes();
-    ui_->checkBoxPlayButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::PLAY) != buttonCodes.end());
-    ui_->checkBoxPauseButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::PAUSE) != buttonCodes.end());
-    ui_->checkBoxTogglePlayButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::TOGGLE_PLAY) != buttonCodes.end());
-    ui_->checkBoxNextTrackButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::NEXT) != buttonCodes.end());
-    ui_->checkBoxPreviousTrackButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::PREV) != buttonCodes.end());
-    ui_->checkBoxHomeButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::HOME) != buttonCodes.end());
-    ui_->checkBoxPhoneButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::PHONE) != buttonCodes.end());
-    ui_->checkBoxCallEndButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::CALL_END) != buttonCodes.end());
-    ui_->checkBoxVoiceCommandButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::MICROPHONE_1) != buttonCodes.end());
-    ui_->checkBoxLeftButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::LEFT) != buttonCodes.end());
-    ui_->checkBoxRightButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::RIGHT) != buttonCodes.end());
-    ui_->checkBoxUpButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::UP) != buttonCodes.end());
-    ui_->checkBoxDownButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::DOWN) != buttonCodes.end());
-    ui_->checkBoxScrollWheelButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::SCROLL_WHEEL) != buttonCodes.end());
-    ui_->checkBoxBackButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::BACK) != buttonCodes.end());
-    ui_->checkBoxEnterButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::ENTER) != buttonCodes.end());
-    ui_->checkBoxNavButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aasdk::proto::enums::ButtonCode::NAVIGATION) != buttonCodes.end());
+    ui_->checkBoxPlayButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PLAY) != buttonCodes.end());
+    ui_->checkBoxPauseButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PAUSE) != buttonCodes.end());
+    ui_->checkBoxTogglePlayButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PLAY_PAUSE) != buttonCodes.end());
+    ui_->checkBoxNextTrackButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_NEXT) != buttonCodes.end());
+    ui_->checkBoxPreviousTrackButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PREVIOUS) != buttonCodes.end());
+    ui_->checkBoxHomeButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_HOME) != buttonCodes.end());
+    ui_->checkBoxPhoneButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_CALL) != buttonCodes.end());
+    ui_->checkBoxCallEndButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_ENDCALL) != buttonCodes.end());
+    ui_->checkBoxVoiceCommandButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_SEARCH) != buttonCodes.end());
+    ui_->checkBoxLeftButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_LEFT) != buttonCodes.end());
+    ui_->checkBoxRightButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_RIGHT) != buttonCodes.end());
+    ui_->checkBoxUpButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_UP) != buttonCodes.end());
+    ui_->checkBoxDownButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_DOWN) != buttonCodes.end());
+    ui_->checkBoxScrollWheelButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_ROTARY_CONTROLLER) != buttonCodes.end());
+    ui_->checkBoxBackButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_BACK) != buttonCodes.end());
+    ui_->checkBoxEnterButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_CENTER) != buttonCodes.end());
+    ui_->checkBoxNavButton->setChecked(std::find(buttonCodes.begin(), buttonCodes.end(), aap_protobuf::service::media::sink::KeyCode::KEYCODE_NAVIGATION) != buttonCodes.end());
 }
 
 void SettingsWindow::setButtonCheckBoxes(bool value)
@@ -592,27 +592,27 @@ void SettingsWindow::setButtonCheckBoxes(bool value)
 void SettingsWindow::saveButtonCheckBoxes()
 {
     configuration::IConfiguration::ButtonCodes buttonCodes;
-    this->saveButtonCheckBox(ui_->checkBoxPlayButton, buttonCodes, aasdk::proto::enums::ButtonCode::PLAY);
-    this->saveButtonCheckBox(ui_->checkBoxPauseButton, buttonCodes, aasdk::proto::enums::ButtonCode::PAUSE);
-    this->saveButtonCheckBox(ui_->checkBoxTogglePlayButton, buttonCodes, aasdk::proto::enums::ButtonCode::TOGGLE_PLAY);
-    this->saveButtonCheckBox(ui_->checkBoxNextTrackButton, buttonCodes, aasdk::proto::enums::ButtonCode::NEXT);
-    this->saveButtonCheckBox(ui_->checkBoxPreviousTrackButton, buttonCodes, aasdk::proto::enums::ButtonCode::PREV);
-    this->saveButtonCheckBox(ui_->checkBoxHomeButton, buttonCodes, aasdk::proto::enums::ButtonCode::HOME);
-    this->saveButtonCheckBox(ui_->checkBoxPhoneButton, buttonCodes, aasdk::proto::enums::ButtonCode::PHONE);
-    this->saveButtonCheckBox(ui_->checkBoxCallEndButton, buttonCodes, aasdk::proto::enums::ButtonCode::CALL_END);
-    this->saveButtonCheckBox(ui_->checkBoxVoiceCommandButton, buttonCodes, aasdk::proto::enums::ButtonCode::MICROPHONE_1);
-    this->saveButtonCheckBox(ui_->checkBoxLeftButton, buttonCodes, aasdk::proto::enums::ButtonCode::LEFT);
-    this->saveButtonCheckBox(ui_->checkBoxRightButton, buttonCodes, aasdk::proto::enums::ButtonCode::RIGHT);
-    this->saveButtonCheckBox(ui_->checkBoxUpButton, buttonCodes, aasdk::proto::enums::ButtonCode::UP);
-    this->saveButtonCheckBox(ui_->checkBoxDownButton, buttonCodes, aasdk::proto::enums::ButtonCode::DOWN);
-    this->saveButtonCheckBox(ui_->checkBoxScrollWheelButton, buttonCodes, aasdk::proto::enums::ButtonCode::SCROLL_WHEEL);
-    this->saveButtonCheckBox(ui_->checkBoxBackButton, buttonCodes, aasdk::proto::enums::ButtonCode::BACK);
-    this->saveButtonCheckBox(ui_->checkBoxEnterButton, buttonCodes, aasdk::proto::enums::ButtonCode::ENTER);
-    this->saveButtonCheckBox(ui_->checkBoxNavButton, buttonCodes, aasdk::proto::enums::ButtonCode::NAVIGATION);
+    this->saveButtonCheckBox(ui_->checkBoxPlayButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PLAY);
+    this->saveButtonCheckBox(ui_->checkBoxPauseButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PAUSE);
+    this->saveButtonCheckBox(ui_->checkBoxTogglePlayButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PLAY_PAUSE);
+    this->saveButtonCheckBox(ui_->checkBoxNextTrackButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_NEXT);
+    this->saveButtonCheckBox(ui_->checkBoxPreviousTrackButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PREVIOUS);
+    this->saveButtonCheckBox(ui_->checkBoxHomeButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_HOME);
+    this->saveButtonCheckBox(ui_->checkBoxPhoneButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_CALL);
+    this->saveButtonCheckBox(ui_->checkBoxCallEndButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_ENDCALL);
+    this->saveButtonCheckBox(ui_->checkBoxVoiceCommandButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_SEARCH);
+    this->saveButtonCheckBox(ui_->checkBoxLeftButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_LEFT);
+    this->saveButtonCheckBox(ui_->checkBoxRightButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_RIGHT);
+    this->saveButtonCheckBox(ui_->checkBoxUpButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_UP);
+    this->saveButtonCheckBox(ui_->checkBoxDownButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_DOWN);
+    this->saveButtonCheckBox(ui_->checkBoxScrollWheelButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_ROTARY_CONTROLLER);
+    this->saveButtonCheckBox(ui_->checkBoxBackButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_BACK);
+    this->saveButtonCheckBox(ui_->checkBoxEnterButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_CENTER);
+    this->saveButtonCheckBox(ui_->checkBoxNavButton, buttonCodes, aap_protobuf::service::media::sink::KeyCode::KEYCODE_NAVIGATION);
     configuration_->setButtonCodes(buttonCodes);
 }
 
-void SettingsWindow::saveButtonCheckBox(const QCheckBox* checkBox, configuration::IConfiguration::ButtonCodes& buttonCodes, aasdk::proto::enums::ButtonCode::Enum buttonCode)
+void SettingsWindow::saveButtonCheckBox(const QCheckBox* checkBox, configuration::IConfiguration::ButtonCodes& buttonCodes, aap_protobuf::service::media::sink::KeyCode buttonCode)
 {
     if(checkBox->isChecked())
     {

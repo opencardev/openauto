@@ -23,7 +23,6 @@
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <QFileDialog>
 #include <QKeyEvent>
-#include <sys/sysinfo.h>
 
 class QCheckBox;
 class QTimer;
@@ -100,7 +99,7 @@ private:
     void load();
     void loadButtonCheckBoxes();
     void saveButtonCheckBoxes();
-    void saveButtonCheckBox(const QCheckBox* checkBox, configuration::IConfiguration::ButtonCodes& buttonCodes, aasdk::proto::enums::ButtonCode::Enum buttonCode);
+    void saveButtonCheckBox(const QCheckBox* checkBox, configuration::IConfiguration::ButtonCodes& buttonCodes, aap_protobuf::service::media::sink::KeyCode buttonCode);
     void setButtonCheckBoxes(bool value);
 
     Ui::SettingsWindow* ui_;

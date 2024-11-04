@@ -19,10 +19,10 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <f1x/aasdk/Transport/ITransport.hpp>
-#include <f1x/aasdk/Channel/Control/IControlServiceChannel.hpp>
-#include <f1x/aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
-#include <f1x/aasdk/Channel/AV/VideoServiceChannel.hpp>
+#include <aasdk/Transport/ITransport.hpp>
+#include <aasdk/Channel/Control/IControlServiceChannel.hpp>
+#include <aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
+#include <aasdk/Channel/MediaSink/Video/VideoChannel.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntity.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
@@ -53,14 +53,17 @@ public:
     void stop() override;
     void pause() override;
     void resume() override;
-    void onVersionResponse(uint16_t majorCode, uint16_t minorCode, aasdk::proto::enums::VersionResponseStatus::Enum status) override;
+    // TODO: on channel open request... on channel close...  on navigation focus, on voice session notification, on user switch, on call availability, on service disc update, on battery status, on car connected devices
+    void onVersionResponse(uint16_t majorCode, uint16_t minorCode, aap_protobuf::shared::MessageStatus status) override;
     void onHandshake(const aasdk::common::DataConstBuffer& payload) override;
-    void onServiceDiscoveryRequest(const aasdk::proto::messages::ServiceDiscoveryRequest& request) override;
-    void onAudioFocusRequest(const aasdk::proto::messages::AudioFocusRequest& request) override;
-    void onShutdownRequest(const aasdk::proto::messages::ShutdownRequest& request) override;
-    void onShutdownResponse(const aasdk::proto::messages::ShutdownResponse& response) override;
-    void onNavigationFocusRequest(const aasdk::proto::messages::NavigationFocusRequest& request) override;
-    void onPingResponse(const aasdk::proto::messages::PingResponse& response) override;
+    void onServiceDiscoveryRequest(const aap_protobuf::channel::control::servicediscovery::event::ServiceDiscoveryRequest& request) override;
+    void onAudioFocusRequest(const aap_protobuf::channel::control::focus::audio::event::AudioFocusRequest& request) override;
+    void onByeByeRequest(const aap_protobuf::channel::control::byebye::event::ByeByeRequest& request) override;
+    void onByeByeResponse(const aap_protobuf::channel::control::byebye::notification::ByeByeResponse& response) override;
+    void onNavigationFocusRequest(const aap_protobuf::channel::control::focus::navigation::event::NavFocusRequestNotification& request) override;
+    void onVoiceSessionRequest(const aap_protobuf::channel::control::voice::VoiceSessionNotification &request) override;
+    void onPingResponse(const aap_protobuf::channel::control::ping::PingResponse& response) override;
+    void onPingRequest(const aap_protobuf::channel::control::ping::PingRequest& request) override;
     void onChannelError(const aasdk::error::Error& e) override;
 
 private:
