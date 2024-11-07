@@ -37,40 +37,57 @@ namespace f1x {
 
           void MediaPlaybackStatusService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] start.";
+              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] start()";
             });
           }
 
           void MediaPlaybackStatusService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] stop.";
+              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] stop()";
             });
           }
 
           void MediaPlaybackStatusService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] pause.";
+              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] pause()";
             });
           }
 
           void MediaPlaybackStatusService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] resume.";
+              OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] resume()";
             });
           }
 
           void MediaPlaybackStatusService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] fill features.";
+            OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *vendorExtension = channelDescriptor->mutable_wifi_projection_service();
+            auto *mediaPlaybackStatus = service->mutable_media_playback_service();
           }
 
+          void MediaPlaybackStatusService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+            OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
+            aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+            response.set_status(status);
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&MediaPlaybackStatusService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendChannelOpenResponse(response, std::move(promise));
+
+            channel_->receive(this->shared_from_this());
+          }
+
+
           void MediaPlaybackStatusService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[MediaPlaybackStatusService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[MediaPlaybackStatusService] onChannelError(): " << e.what();
           }
         }
       }

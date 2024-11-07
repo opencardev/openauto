@@ -37,40 +37,56 @@ namespace f1x {
 
           void NavigationStatusService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[NavigationStatusService] start.";
+              OPENAUTO_LOG(info) << "[NavigationStatusService] start()";
             });
           }
 
           void NavigationStatusService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[NavigationStatusService] stop.";
+              OPENAUTO_LOG(info) << "[NavigationStatusService] stop()";
             });
           }
 
           void NavigationStatusService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[NavigationStatusService] pause.";
+              OPENAUTO_LOG(info) << "[NavigationStatusService] pause()";
             });
           }
 
           void NavigationStatusService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[NavigationStatusService] resume.";
+              OPENAUTO_LOG(info) << "[NavigationStatusService] resume()";
             });
           }
 
           void NavigationStatusService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[NavigationStatusService] fill features.";
+            OPENAUTO_LOG(info) << "[NavigationStatusService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *vendorExtension = channelDescriptor->mutable_wifi_projection_service();
+            auto *navigationStatus = service->mutable_navigation_status_service();
+          }
+
+          void NavigationStatusService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+            OPENAUTO_LOG(info) << "[NavigationStatusService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[NavigationStatusService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
+            aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+            response.set_status(status);
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&NavigationStatusService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendChannelOpenResponse(response, std::move(promise));
+
+            channel_->receive(this->shared_from_this());
           }
 
           void NavigationStatusService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[NavigationStatusService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[NavigationStatusService] onChannelError(): " << e.what();
           }
         }
       }

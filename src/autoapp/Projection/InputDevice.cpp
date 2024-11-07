@@ -193,18 +193,18 @@ bool InputDevice::handleTouchEvent(QEvent* event)
         return true;
     }
 
-    aap_protobuf::service::input::message::TouchAction type;
+    aap_protobuf::service::input::message::PointerAction type;
 
     switch(event->type())
     {
     case QEvent::MouseButtonPress:
-        type = aap_protobuf::service::input::message::TouchAction::ACTION_DOWN;
+        type = aap_protobuf::service::input::message::PointerAction::ACTION_DOWN;
         break;
     case QEvent::MouseButtonRelease:
-        type = aap_protobuf::service::input::message::TouchAction::ACTION_UP;
+        type = aap_protobuf::service::input::message::PointerAction::ACTION_UP;
         break;
     case QEvent::MouseMove:
-        type = aap_protobuf::service::input::message::TouchAction::ACTION_MOVED;
+        type = aap_protobuf::service::input::message::PointerAction::ACTION_MOVED;
         break;
     default:
         return true;

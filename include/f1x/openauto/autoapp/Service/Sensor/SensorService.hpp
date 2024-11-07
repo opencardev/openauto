@@ -19,7 +19,7 @@
 #pragma once
 
 #include <gps.h>
-#include <aasdk/Channel/Sensor/SensorService.hpp>
+#include <aasdk/Channel/SensorSource/SensorSourceService.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <boost/asio/io_service.hpp>
 #include <aasdk/Messenger/IMessenger.hpp>
@@ -30,7 +30,7 @@ namespace f1x {
       namespace service {
         namespace sensor {
           class SensorService :
-              public aasdk::channel::sensor::ISensorServiceEventHandler,
+              public aasdk::channel::sensorsource::ISensorSourceServiceEventHandler,
               public IService,
               public std::enable_shared_from_this<SensorService> {
           public:
@@ -71,7 +71,7 @@ namespace f1x {
 
             boost::asio::deadline_timer timer_;
             boost::asio::io_service::strand strand_;
-            aasdk::channel::sensor::SensorService::Pointer channel_;
+            aasdk::channel::sensorsource::SensorSourceService::Pointer channel_;
             struct gps_data_t gpsData_;
             bool gpsEnabled_ = false;
           };

@@ -37,43 +37,56 @@ namespace f1x {
 
           void VendorExtensionService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[VendorExtensionService] start.";
+              OPENAUTO_LOG(info) << "[VendorExtensionService] start()";
             });
           }
 
           void VendorExtensionService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[VendorExtensionService] stop.";
+              OPENAUTO_LOG(info) << "[VendorExtensionService] stop()";
             });
           }
 
           void VendorExtensionService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[VendorExtensionService] pause.";
+              OPENAUTO_LOG(info) << "[VendorExtensionService] pause()";
             });
           }
 
           void VendorExtensionService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[VendorExtensionService] resume.";
+              OPENAUTO_LOG(info) << "[VendorExtensionService] resume()";
             });
           }
 
           void VendorExtensionService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[VendorExtensionService] fill features.";
+            OPENAUTO_LOG(info) << "[VendorExtensionService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *vendorExtension = channelDescriptor->mutable_wifi_projection_service();
+            auto *vendorExtension = service->mutable_vendor_extension_service();
           }
 
           void VendorExtensionService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[VendorExtensionService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[VendorExtensionService] onChannelError(): " << e.what();
           }
 
+          void VendorExtensionService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+            OPENAUTO_LOG(info) << "[VendorExtensionService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[VendorExtensionService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
+            aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+            response.set_status(status);
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&VendorExtensionService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendChannelOpenResponse(response, std::move(promise));
+            channel_->receive(this->shared_from_this());
+          }
         }
       }
     }

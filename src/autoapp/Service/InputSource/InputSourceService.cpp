@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <aap_protobuf/service/input/message/InputEventIndication.pb.h>
+#include <aap_protobuf/service/input/message/InputReport.pb.h>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/InputSource/InputSourceService.hpp>
 
@@ -36,38 +36,38 @@ namespace f1x {
 
           void InputSourceService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputService] start.";
+              OPENAUTO_LOG(info) << "[InputSourceService] start()";
               channel_->receive(this->shared_from_this());
             });
           }
 
           void InputSourceService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputService] stop.";
+              OPENAUTO_LOG(info) << "[InputSourceService] stop()";
               inputDevice_->stop();
             });
           }
 
           void InputSourceService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputService] pause.";
+              OPENAUTO_LOG(info) << "[InputSourceService] pause()";
             });
           }
 
           void InputSourceService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputService] resume.";
+              OPENAUTO_LOG(info) << "[InputSourceService] resume()";
             });
           }
 
           void InputSourceService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[InputService] fill features.";
+            OPENAUTO_LOG(info) << "[InputSourceService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *inputChannel = channelDescriptor->mutable_input_service();
+            auto *inputChannel = service->mutable_input_source_service();
 
             const auto &supportedButtonCodes = inputDevice_->getSupportedButtonCodes();
 
@@ -77,7 +77,7 @@ namespace f1x {
 
             if (inputDevice_->hasTouchscreen()) {
               const auto &touchscreenSurface = inputDevice_->getTouchscreenGeometry();
-              auto touchscreenConfig = inputChannel->add_touch_screen_config();
+              auto touchscreenConfig = inputChannel->add_touchscreen();
 
               touchscreenConfig->set_width(touchscreenSurface.width());
               touchscreenConfig->set_height(touchscreenSurface.height());
@@ -85,22 +85,24 @@ namespace f1x {
           }
 
           void InputSourceService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[InputService] open request, priority: " << request.priority();
-            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
-            OPENAUTO_LOG(info) << "[InputService] open status: " << status;
+            OPENAUTO_LOG(info) << "[InputSourceService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[InputSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
 
             aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
             promise->then([]() {},
                           std::bind(&InputSourceService::onChannelError, this->shared_from_this(), std::placeholders::_1));
             channel_->sendChannelOpenResponse(response, std::move(promise));
-
             channel_->receive(this->shared_from_this());
           }
-          void InputSourceService::onBindingRequest(const aap_protobuf::channel::input::event::BindingRequest &request) {
-            OPENAUTO_LOG(info) << "[InputService] binding request, scan codes count: " << request.keycodes_size();
+
+          void InputSourceService::onKeyBindingRequest(const aap_protobuf::channel::input::event::KeyBindingRequest &request) {
+            OPENAUTO_LOG(info) << "[InputSourceService] onKeyBindingRequest()";
+            OPENAUTO_LOG(info) << "[InputSourceService] KeyCodes Count: " << request.keycodes_size();
 
             aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             const auto &supportedButtonCodes = inputDevice_->getSupportedButtonCodes();
@@ -108,49 +110,48 @@ namespace f1x {
             for (int i = 0; i < request.keycodes_size(); ++i) {
               if (std::find(supportedButtonCodes.begin(), supportedButtonCodes.end(), request.keycodes(i)) ==
                   supportedButtonCodes.end()) {
-                OPENAUTO_LOG(error) << "[InputService] binding request, scan code: " << request.keycodes(i)
-                                    << " is not supported.";
-
-                status = aap_protobuf::shared::MessageStatus::STATUS_UNSOLICITED_MESSAGE;
+                OPENAUTO_LOG(error) << "[InputSourceService] onKeyBindingRequest is not supported for KeyCode: " << request.keycodes(i);
+                status = aap_protobuf::shared::MessageStatus::STATUS_KEYCODE_NOT_BOUND;
                 break;
               }
             }
 
-            aap_protobuf::service::media::sink::message::BindingResponse response;
+            aap_protobuf::service::media::sink::message::KeyBindingResponse response;
             response.set_status(status);
 
             if (status == aap_protobuf::shared::MessageStatus::STATUS_SUCCESS) {
               inputDevice_->start(*this);
             }
 
-            OPENAUTO_LOG(info) << "[InputService] binding request, status: " << status;
+            OPENAUTO_LOG(info) << "[InputSourceService] Sending KeyBindingResponse with Status: " << status;
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
             promise->then([]() {},
                           std::bind(&InputSourceService::onChannelError, this->shared_from_this(), std::placeholders::_1));
-            channel_->sendBindingResponse(response, std::move(promise));
+            channel_->sendKeyBindingResponse(response, std::move(promise));
             channel_->receive(this->shared_from_this());
           }
 
           void InputSourceService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[InputSourceService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[InputSourceService] onChannelError(): " << e.what();
           }
 
           void InputSourceService::onButtonEvent(const projection::ButtonEvent &event) {
+            OPENAUTO_LOG(error) << "[InputSourceService] onButtonEvent()";
             auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now().time_since_epoch());
 
             strand_.dispatch(
                 [this, self = this->shared_from_this(), event = std::move(event), timestamp = std::move(timestamp)]() {
-                  aap_protobuf::service::input::message::InputEventIndication inputEventIndication;
-                  inputEventIndication.set_timestamp(timestamp.count());
+                  aap_protobuf::service::input::message::InputReport inputReport;
+                  inputReport.set_timestamp(timestamp.count());
 
                   if (event.code == aap_protobuf::service::media::sink::KeyCode::KEYCODE_ROTARY_CONTROLLER) {
-                    auto relativeEvent = inputEventIndication.mutable_relative_input_event()->add_relative_input_events();
+                    auto relativeEvent = inputReport.mutable_relative_event()->add_data();
                     relativeEvent->set_delta(event.wheelDirection == projection::WheelDirection::LEFT ? -1 : 1);
-                    relativeEvent->set_scan_code(event.code);
+                    relativeEvent->set_keycode(event.code);
                   } else {
-                    auto buttonEvent = inputEventIndication.mutable_button_event()->add_keys();
+                    auto buttonEvent = inputReport.mutable_key_event()->add_keys();
                     buttonEvent->set_metastate(0);
                     buttonEvent->set_down(event.type == projection::ButtonEventType::PRESS);
                     buttonEvent->set_longpress(false);
@@ -160,22 +161,23 @@ namespace f1x {
                   auto promise = aasdk::channel::SendPromise::defer(strand_);
                   promise->then([]() {}, std::bind(&InputSourceService::onChannelError, this->shared_from_this(),
                                                    std::placeholders::_1));
-                  channel_->sendInputEventIndication(inputEventIndication, std::move(promise));
+                  channel_->sendInputReport(inputReport, std::move(promise));
                 });
           }
 
           void InputSourceService::onTouchEvent(const projection::TouchEvent &event) {
+            OPENAUTO_LOG(error) << "[InputSourceService] onTouchEvent()";
             auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now().time_since_epoch());
 
             strand_.dispatch(
                 [this, self = this->shared_from_this(), event = std::move(event), timestamp = std::move(timestamp)]() {
-                  aap_protobuf::service::input::message::InputEventIndication inputEventIndication;
-                  inputEventIndication.set_timestamp(timestamp.count());
+                  aap_protobuf::service::input::message::InputReport inputReport;
+                  inputReport.set_timestamp(timestamp.count());
 
-                  auto touchEvent = inputEventIndication.mutable_touch_event();
-                  touchEvent->set_touch_action(event.type);
-                  auto touchLocation = touchEvent->add_touch_location();
+                  auto touchEvent = inputReport.mutable_touch_event();
+                  touchEvent->set_action(event.type);
+                  auto touchLocation = touchEvent->add_pointer_data();
                   touchLocation->set_x(event.x);
                   touchLocation->set_y(event.y);
                   touchLocation->set_pointer_id(0);
@@ -183,12 +185,9 @@ namespace f1x {
                   auto promise = aasdk::channel::SendPromise::defer(strand_);
                   promise->then([]() {}, std::bind(&InputSourceService::onChannelError, this->shared_from_this(),
                                                    std::placeholders::_1));
-                  channel_->sendInputEventIndication(inputEventIndication, std::move(promise));
+                  channel_->sendInputReport(inputReport, std::move(promise));
                 });
           }
-
-
-
         }
       }
     }

@@ -36,27 +36,27 @@ namespace f1x {
 
           void MediaSourceService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[AudioInputService] start.";
+              OPENAUTO_LOG(info) << "[MediaSourceService] start()";
               channel_->receive(this->shared_from_this());
             });
           }
 
           void MediaSourceService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[AudioInputService] stop.";
+              OPENAUTO_LOG(info) << "[MediaSourceService] stop()";
               audioInput_->stop();
             });
           }
 
           void MediaSourceService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[AudioInputService] pause.";
+              OPENAUTO_LOG(info) << "[MediaSourceService] pause()";
             });
           }
 
           void MediaSourceService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[AudioInputService] resume.";
+              OPENAUTO_LOG(info) << "[MediaSourceService] resume()";
             });
           }
 
@@ -70,12 +70,12 @@ namespace f1x {
            */
           void MediaSourceService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[AudioInputService] fill features.";
+            OPENAUTO_LOG(info) << "[MediaSourceService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *avInputChannel = channelDescriptor->mutable_media_source_service();
+            auto *avInputChannel = service->mutable_media_source_service();
             avInputChannel->set_stream_type(
                 aap_protobuf::service::media::shared::message::MediaCodecType::MEDIA_CODEC_AUDIO_PCM);
 
@@ -94,11 +94,14 @@ namespace f1x {
            * @param request
            */
           void MediaSourceService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[AudioInputService] open request, priority: " << request.priority();
+            OPENAUTO_LOG(info) << "[MediaSourceService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
             const aap_protobuf::shared::MessageStatus status = audioInput_->open()
                                                                ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
-                                                               : aap_protobuf::shared::MessageStatus::STATUS_UNSOLICITED_MESSAGE;
-            OPENAUTO_LOG(info) << "[AudioInputService] open status: " << status;
+                                                               : aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR;
+
+            OPENAUTO_LOG(info) << "[MediaSourceService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
 
             aap_protobuf::channel::ChannelOpenResponse response;
             response.set_status(status);
@@ -107,8 +110,8 @@ namespace f1x {
             promise->then([]() {},
                           std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
                                     std::placeholders::_1));
-            channel_->sendChannelOpenResponse(response, std::move(promise));
 
+            channel_->sendChannelOpenResponse(response, std::move(promise));
             channel_->receive(this->shared_from_this());
           }
 
@@ -117,7 +120,7 @@ namespace f1x {
            * @param e
            */
           void MediaSourceService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[AudioInputService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[MediaSourceService] onChannelError(): " << e.what();
           }
 
           /*
@@ -131,15 +134,11 @@ namespace f1x {
           void
           MediaSourceService::onMediaChannelSetupRequest(const aap_protobuf::channel::media::event::Setup &request) {
 
-            OPENAUTO_LOG(info) << "[MediaSinkService] setup request"
-                               << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId())
-                               << ", codec type: " << MediaCodecType_Name(request.type());
-
-            auto status = aap_protobuf::service::media::sink::MediaSinkChannelSetupStatus::STATUS_READY;
-
-            OPENAUTO_LOG(info) << "[MediaSinkService] setup status: " << status;
+            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelSetupRequest()";
+            OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", Codec: " << MediaCodecType_Name(request.type());
 
             aap_protobuf::service::media::sink::message::MediaSinkChannelSetupResponse response;
+            auto status = aap_protobuf::service::media::sink::MediaSinkChannelSetupStatus::STATUS_READY;
             response.set_media_status(status);
             response.set_max_unacked(1);
             response.add_configuration_indices(0);
@@ -157,6 +156,7 @@ namespace f1x {
            */
           void MediaSourceService::onMediaChannelAckIndication(
               const aap_protobuf::service::media::source::message::MediaSourceMediaAckIndication &) {
+            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelAckIndication()";
             channel_->receive(this->shared_from_this());
           }
 
@@ -167,25 +167,24 @@ namespace f1x {
           // TODO: These are Source Channel Handlers - should be moved to their own handlers in case any more are implemented in the future.
 
           /**
-           * Handle request to open Microphone Channel
+           * Handle request to Open or Close Microphone Source Channel
            * @param request
            */
           void MediaSourceService::onMediaSourceOpenRequest(
               const aap_protobuf::service::media::source::message::MicrophoneRequest &request) {
-            OPENAUTO_LOG(info) << "[AudioInputService] input open request, open: " << request.open()
-                               << ", anc: " << request.anc_enabled()
-                               << ", ec: " << request.ec_enabled()
-                               << ", max unacked: " << request.max_unacked();
+            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelAckIndication()";
+            OPENAUTO_LOG(info) << "[MediaSourceService] Request to Open?: " << request.open() << ", anc: " << request.anc_enabled() << ", ec: " << request.ec_enabled() << ", max unacked: " << request.max_unacked();
 
             if (request.open()) {
+              // Request for Channel Open
               auto startPromise = projection::IAudioInput::StartPromise::defer(strand_);
               startPromise->then(std::bind(&MediaSourceService::onMediaSourceOpenSuccess, this->shared_from_this()),
                                  [this, self = this->shared_from_this()]() {
-                                   OPENAUTO_LOG(error) << "[AudioInputService] audio input open failed.";
+                                   OPENAUTO_LOG(error) << "[MediaSourceService] Media Source Open Failed";
 
                                    aap_protobuf::service::media::source::message::MicrophoneResponse response;
                                    response.set_session_id(session_);
-                                   // TODO: Matches previous number, but doesn't seem like the right status.
+
                                    response.set_status(aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR);
 
                                    auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
@@ -198,11 +197,12 @@ namespace f1x {
 
               audioInput_->start(std::move(startPromise));
             } else {
+              // Request for Channel Close
               audioInput_->stop();
 
               aap_protobuf::service::media::source::message::MicrophoneResponse response;
               response.set_session_id(session_);
-              // TODO: Matches previous number, but doesn't seem like the right status.
+
               response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
               auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
@@ -219,7 +219,7 @@ namespace f1x {
            * Sends response to advise Microphone is Open
            */
           void MediaSourceService::onMediaSourceOpenSuccess() {
-            OPENAUTO_LOG(info) << "[AudioInputService] audio input open succeed.";
+            OPENAUTO_LOG(error) << "[MediaSourceService] onMediaSourceOpenSuccess()";
 
             aap_protobuf::service::media::source::message::MicrophoneResponse response;
             response.set_session_id(session_);
@@ -239,6 +239,7 @@ namespace f1x {
            * @param data
            */
           void MediaSourceService::onMediaSourceDataReady(aasdk::common::Data data) {
+            OPENAUTO_LOG(error) << "[MediaSourceService] onMediaSourceDataReady()";
             auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
             sendPromise->then(std::bind(&MediaSourceService::readMediaSource, this->shared_from_this()),
                               std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
@@ -253,13 +254,14 @@ namespace f1x {
            * Reads audio from a MediaSource (eg Microphone). Promise resolves to onMediaSourceDataReady.
            */
           void MediaSourceService::readMediaSource() {
+            OPENAUTO_LOG(error) << "[MediaSourceService] readMediaSource()";
             if (audioInput_->isActive()) {
               auto readPromise = projection::IAudioInput::ReadPromise::defer(strand_);
               readPromise->then(
                   std::bind(&MediaSourceService::onMediaSourceDataReady, this->shared_from_this(),
                             std::placeholders::_1),
                   [this, self = this->shared_from_this()]() {
-                    OPENAUTO_LOG(info) << "[AudioInputService] audio input read rejected.";
+                    OPENAUTO_LOG(info) << "[MediaSourceService] audio input read rejected.";
                   });
 
               audioInput_->read(std::move(readPromise));

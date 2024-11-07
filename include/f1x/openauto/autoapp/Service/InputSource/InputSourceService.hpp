@@ -48,7 +48,7 @@ namespace f1x {
 
             void onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) override;
 
-            void onBindingRequest(const aap_protobuf::channel::input::event::BindingRequest &request) override;
+            void onKeyBindingRequest(const aap_protobuf::channel::input::event::KeyBindingRequest &request) override;
 
             void onChannelError(const aasdk::error::Error &e) override;
 

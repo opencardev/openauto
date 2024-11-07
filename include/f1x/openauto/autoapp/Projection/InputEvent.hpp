@@ -19,7 +19,7 @@
 #pragma once
 
 #include <aap_protobuf/service/media/sink/KeyCode.pb.h>
-#include <aap_protobuf/service/input/message/TouchAction.pb.h>
+#include <aap_protobuf/service/input/message/PointerAction.pb.h>
 #include <aasdk/IO/Promise.hpp>
 
 namespace f1x
@@ -54,7 +54,7 @@ struct ButtonEvent
 
 struct TouchEvent
 {
-    aap_protobuf::service::input::message::TouchAction type;
+    aap_protobuf::service::input::message::PointerAction type;
     uint32_t x;
     uint32_t y;
     uint32_t pointerId;

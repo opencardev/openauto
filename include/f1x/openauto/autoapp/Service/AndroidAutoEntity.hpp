@@ -22,7 +22,7 @@
 #include <aasdk/Transport/ITransport.hpp>
 #include <aasdk/Channel/Control/IControlServiceChannel.hpp>
 #include <aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
-#include <aasdk/Channel/MediaSink/Video/VideoChannel.hpp>
+#include <aasdk/Channel/MediaSink/Video/Channel/VideoChannel.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntity.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>

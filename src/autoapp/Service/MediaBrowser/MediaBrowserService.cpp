@@ -37,40 +37,56 @@ namespace f1x {
 
           void MediaBrowserService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] start.";
+              OPENAUTO_LOG(info) << "[MediaBrowserService] start()";
             });
           }
 
           void MediaBrowserService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] stop.";
+              OPENAUTO_LOG(info) << "[MediaBrowserService] stop()";
             });
           }
 
           void MediaBrowserService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] pause.";
+              OPENAUTO_LOG(info) << "[MediaBrowserService] pause()";
             });
           }
 
           void MediaBrowserService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] resume.";
+              OPENAUTO_LOG(info) << "[MediaBrowserService] resume()";
             });
           }
 
           void MediaBrowserService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[MediaBrowserService] fill features.";
+            OPENAUTO_LOG(info) << "[MediaBrowserService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *vendorExtension = channelDescriptor->mutable_wifi_projection_service();
+            auto *mediaBrowser = service->mutable_media_browser_service();
+          }
+
+          void MediaBrowserService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+            OPENAUTO_LOG(info) << "[MediaBrowserService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[MediaBrowserService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
+            aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+            response.set_status(status);
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&MediaBrowserService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendChannelOpenResponse(response, std::move(promise));
+
+            channel_->receive(this->shared_from_this());
           }
 
           void MediaBrowserService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[MediaBrowserService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[MediaBrowserService] onChannelError(): " << e.what();
           }
         }
       }

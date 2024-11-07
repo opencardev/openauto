@@ -16,6 +16,7 @@ SET(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -Wall -pedantic -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-g -O3")
+set(CMAKE_BUILD_TYPE Debug)
 
 # Paths
 set(resources_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets)
@@ -50,10 +51,12 @@ endif (RPI3_BUILD)
 
 # Building on a Mac requires Abseil
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")  # macOS
+    add_definitions(-DMAC_OS)
     find_package(protobuf REQUIRED CONFIG)
     find_package(absl REQUIRED)
     set(CMAKE_PREFIX_PATH "/usr/local/opt/qt@5" ${CMAKE_PREFIX_PATH})
     list(APPEND CMAKE_PREFIX_PATH /usr/local/opt/util-linux)
+    list(APPEND CMAKE_PREFIX_PATH /usr/local/opt/taglib)
     include(FindProtobuf)
 else ()
     find_package(Protobuf REQUIRED)
@@ -77,15 +80,16 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
         ${Qt5Bluetooth_INCLUDE_DIRS}
         ${Qt5Network_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
-        ${PROTOBUF_INCLUDE_DIR}
-        ${AAP_PROTOBUF_INCLUDE_DIR}
         ${OPENSSL_INCLUDE_DIR}
         ${RTAUDIO_INCLUDE_DIRS}
         ${TAGLIB_INCLUDE_DIRS}
         ${BLKID_INCLUDE_DIRS}
         ${BCM_HOST_INCLUDE_DIRS}
         ${ILCLIENT_INCLUDE_DIRS}
-        ${include_directory})
+        ${include_directory}
+        ${PROTOBUF_INCLUDE_DIR}
+        ${AAP_PROTOBUF_INCLUDE_DIR}
+        ${AASDK_INCLUDE_DIR})
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
@@ -98,22 +102,25 @@ file(GLOB_RECURSE autoapp_source_files ${autoapp_sources_directory}/*.ui ${autoa
 
 add_executable(autoapp ${autoapp_source_files})
 
-target_link_libraries(autoapp libusb
-        aap_protobuf
-        aasdk
+target_include_directories(autoapp PUBLIC ${AAP_PROTOBUF_INCLUDE_DIR} ${AASDK_INCLUDE_DIR})
+
+target_link_libraries(autoapp PUBLIC
+        libusb
         ${Boost_LIBRARIES}
         ${Qt5Multimedia_LIBRARIES}
         ${Qt5MultimediaWidgets_LIBRARIES}
         ${Qt5Bluetooth_LIBRARIES}
         ${Qt5Network_LIBRARIES}
-        ${PROTOBUF_LIBRARIES}
         ${BCM_HOST_LIBRARIES}
         ${ILCLIENT_LIBRARIES}
         ${WINSOCK2_LIBRARIES}
         ${RTAUDIO_LIBRARIES}
         ${TAGLIB_LIBRARIES}
         ${BLKID_LIBRARIES}
-        ${GPS_LIBRARIES})
+        ${GPS_LIBRARIES}
+        ${PROTOBUF_LIBRARIES}
+        ${AAP_PROTOBUF_LIB_DIR}
+        ${AASDK_LIB_DIR})
 
 set(btservice_sources_directory ${sources_directory}/btservice)
 set(btservice_include_directory ${include_directory}/f1x/openauto/btservice)
@@ -121,11 +128,10 @@ file(GLOB_RECURSE btservice_source_files ${btservice_sources_directory}/*.cpp ${
 
 add_executable(btservice ${btservice_source_files})
 
-target_link_libraries(
-        btservice
-        aap_protobuf
+target_link_libraries(btservice PUBLIC
         ${Boost_LIBRARIES}
         ${Qt5Bluetooth_LIBRARIES}
         ${Qt5Network_LIBRARIES}
         ${Qt5MultimediaWidgets_LIBRARIES}
-        ${PROTOBUF_LIBRARIES})
+        ${PROTOBUF_LIBRARIES}
+        ${AAP_PROTOBUF_LIB_DIR})

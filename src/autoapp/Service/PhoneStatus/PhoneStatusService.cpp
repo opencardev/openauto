@@ -37,43 +37,58 @@ namespace f1x {
 
           void PhoneStatusService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[PhoneStatusService] start.";
+              OPENAUTO_LOG(info) << "[PhoneStatusService] start()";
             });
           }
 
           void PhoneStatusService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[PhoneStatusService] stop.";
+              OPENAUTO_LOG(info) << "[PhoneStatusService] stop()";
             });
           }
 
           void PhoneStatusService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[PhoneStatusService] pause.";
+              OPENAUTO_LOG(info) << "[PhoneStatusService] pause()";
             });
           }
 
           void PhoneStatusService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[PhoneStatusService] resume.";
+              OPENAUTO_LOG(info) << "[PhoneStatusService] resume()";
             });
           }
 
           void PhoneStatusService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[PhoneStatusService] fill features.";
+            OPENAUTO_LOG(info) << "[PhoneStatusService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *vendorExtension = channelDescriptor->mutable_wifi_projection_service();
+            auto *phoneStatus = service->mutable_phone_status_service();
           }
+
+          void PhoneStatusService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+            OPENAUTO_LOG(info) << "[PhoneStatusService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[PhoneStatusService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
+            aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+            response.set_status(status);
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&PhoneStatusService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendChannelOpenResponse(response, std::move(promise));
+
+            channel_->receive(this->shared_from_this());
+          }
+
 
           void PhoneStatusService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[PhoneStatusService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[PhoneStatusService] onChannelError(): " << e.what();
           }
-
-
         }
       }
     }

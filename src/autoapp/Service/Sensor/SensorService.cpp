@@ -33,7 +33,7 @@ namespace f1x {
                                        aasdk::messenger::IMessenger::Pointer messenger)
               : strand_(ioService),
                 timer_(ioService),
-                channel_(std::make_shared<aasdk::channel::sensor::SensorService>(strand_, std::move(messenger))) {
+                channel_(std::make_shared<aasdk::channel::sensorsource::SensorSourceService>(strand_, std::move(messenger))) {
 
           }
 
@@ -52,7 +52,7 @@ namespace f1x {
               }
               this->sensorPolling();
 
-              OPENAUTO_LOG(info) << "[SensorService] start.";
+              OPENAUTO_LOG(info) << "[SensorService] start()";
               channel_->receive(this->shared_from_this());
             });
 
@@ -68,41 +68,42 @@ namespace f1x {
                 this->gpsEnabled_ = false;
               }
 
-              OPENAUTO_LOG(info) << "[SensorService] stop.";
+              OPENAUTO_LOG(info) << "[SensorService] stop()";
             });
           }
 
           void SensorService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[SensorService] pause.";
+              OPENAUTO_LOG(info) << "[SensorService] pause()";
             });
           }
 
           void SensorService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[SensorService] resume.";
+              OPENAUTO_LOG(info) << "[SensorService] resume()";
             });
           }
 
           void SensorService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[SensorService] fill features.";
+            OPENAUTO_LOG(info) << "[SensorService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *sensorChannel = channelDescriptor->mutable_sensor_service();
+            // TODO: Add and Link other Sensors Here
+            auto *sensorChannel = service->mutable_sensor_source_service();
             sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensor::message::SensorType::SENSOR_DRIVING_STATUS_DATA);
             sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensor::message::SensorType::SENSOR_LOCATION);
             sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensor::message::SensorType::SENSOR_NIGHT_MODE);
           }
 
           void SensorService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[SensorService] open request, priority: " << request.priority();
-            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
-            OPENAUTO_LOG(info) << "[SensorService] open status: " << status;
+            OPENAUTO_LOG(info) << "[SensorService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[SensorService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
             aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
@@ -115,19 +116,21 @@ namespace f1x {
 
           void SensorService::onSensorStartRequest(
               const aap_protobuf::channel::sensor::event::SensorRequest &request) {
-            OPENAUTO_LOG(info) << "[SensorService] sensor start request, type: " << request.sensor_type();
+            OPENAUTO_LOG(info) << "[SensorService] onSensorStartRequest()";
+            OPENAUTO_LOG(info) << "[SensorService] Request Type: "<< request.type();
 
             aap_protobuf::service::sensor::message::SensorStartResponseMessage response;
             response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
 
-            if (request.sensor_type() == aap_protobuf::service::sensor::message::SENSOR_DRIVING_STATUS_DATA)
+            // TODO: Convert to Switch?
+            if (request.type() == aap_protobuf::service::sensor::message::SENSOR_DRIVING_STATUS_DATA)
             {
               promise->then(std::bind(&SensorService::sendDrivingStatusUnrestricted, this->shared_from_this()),
                             std::bind(&SensorService::onChannelError, this->shared_from_this(), std::placeholders::_1));
             }
-            else if (request.sensor_type() == aap_protobuf::service::sensor::message::SensorType::SENSOR_NIGHT_MODE)
+            else if (request.type() == aap_protobuf::service::sensor::message::SensorType::SENSOR_NIGHT_MODE)
             {
               promise->then(std::bind(&SensorService::sendNightData, this->shared_from_this()),
                             std::bind(&SensorService::onChannelError, this->shared_from_this(), std::placeholders::_1));
@@ -143,6 +146,7 @@ namespace f1x {
           }
 
           void SensorService::sendDrivingStatusUnrestricted() {
+            OPENAUTO_LOG(info) << "[SensorService] sendDrivingStatusUnrestricted()";
             aap_protobuf::service::sensor::message::SensorBatch indication;
             indication.add_driving_status_data()->set_status(aap_protobuf::service::sensor::message::DrivingStatus::DRIVE_STATUS_UNRESTRICTED);
 
@@ -153,13 +157,14 @@ namespace f1x {
           }
 
           void SensorService::sendNightData() {
+            OPENAUTO_LOG(info) << "[SensorService] sendNightData()";
             aap_protobuf::service::sensor::message::SensorBatch indication;
 
             if (SensorService::isNight) {
-              OPENAUTO_LOG(info) << "[SensorService] Mode night triggered";
+              OPENAUTO_LOG(info) << "[SensorService] Night Mode Triggered";
               indication.add_night_mode_data()->set_night_mode(true);
             } else {
-              OPENAUTO_LOG(info) << "[SensorService] Mode day triggered";
+              OPENAUTO_LOG(info) << "[SensorService] Day Mode Triggered";
               indication.add_night_mode_data()->set_night_mode(false);
             }
 
@@ -174,6 +179,7 @@ namespace f1x {
           }
 
           void SensorService::sendGPSLocationData() {
+            OPENAUTO_LOG(info) << "[SensorService] sendGPSLocationData()";
             aap_protobuf::service::sensor::message::SensorBatch indication;
             auto *locInd = indication.add_location_data();
 
@@ -206,6 +212,7 @@ namespace f1x {
           }
 
           void SensorService::sensorPolling() {
+            OPENAUTO_LOG(info) << "[SensorService] sensorPolling()";
             if (!this->stopPolling) {
               strand_.dispatch([this, self = this->shared_from_this()]() {
                 this->isNight = is_file_exist("/tmp/night_mode_enabled");
@@ -216,12 +223,12 @@ namespace f1x {
 
                 if ((this->gpsEnabled_) &&
                     (gps_waiting(&this->gpsData_, 0)) &&
-                  //extern int gps_read(struct gps_data_t *, char *message, int message_len);
-                    //(gps_read(&this->gpsData_) > 0) &&
-                    (this->gpsData_.fix.status != MODE_NO_FIX) &&
+                    (gps_read(&this->gpsData_) > 0) &&
+                    (this->gpsData_.status != STATUS_NO_FIX) &&
                     (this->gpsData_.fix.mode == MODE_2D || this->gpsData_.fix.mode == MODE_3D) &&
                     (this->gpsData_.set & TIME_SET) &&
-                    (this->gpsData_.set & LATLON_SET)) {
+                    (this->gpsData_.set & LATLON_SET))
+                {
                   this->sendGPSLocationData();
                 }
 
@@ -232,12 +239,13 @@ namespace f1x {
           }
 
           bool SensorService::is_file_exist(const char *fileName) {
+            OPENAUTO_LOG(info) << "[SensorService] is_file_exist()";
             std::ifstream ifile(fileName, std::ios::in);
             return ifile.good();
           }
 
           void SensorService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[SensorService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[SensorService] onChannelError(): " << e.what();
           }
         }
       }

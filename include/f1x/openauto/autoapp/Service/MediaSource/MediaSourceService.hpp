@@ -44,7 +44,7 @@ namespace service
 
       // General Constructor
       MediaSourceService(boost::asio::io_service& ioService,
-      aasdk::channel::mediasource::IMediaSourceService::Pointer channel, projection::IAudioInput::Pointer audioOutput);
+      aasdk::channel::mediasource::IMediaSourceService::Pointer channel, projection::IAudioInput::Pointer audioInput);
 
       void start() override;
 
@@ -70,7 +70,7 @@ namespace service
 
       void onChannelError(const aasdk::error::Error &e) override;
 
-    private:
+    protected:
       using std::enable_shared_from_this<MediaSourceService>::shared_from_this;
 
       void onMediaSourceOpenSuccess();

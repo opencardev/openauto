@@ -18,11 +18,14 @@
 
 #pragma once
 
-#include <memory>
 #include <QWidget>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <QFileDialog>
 #include <QKeyEvent>
+#ifdef MAC_OS
+#else
+  #include <sys/sysinfo.h>
+#endif
 
 class QCheckBox;
 class QTimer;
@@ -50,7 +53,7 @@ public:
     void loadSystemValues();
 
 protected:
-    void keyPressEvent(QKeyEvent *event);
+    void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
     void unpairAll();
@@ -95,7 +98,7 @@ public slots:
     void show_tab9();
 
 private:
-    void showEvent(QShowEvent* event);
+    void showEvent(QShowEvent* event) override;
     void load();
     void loadButtonCheckBoxes();
     void saveButtonCheckBoxes();
@@ -104,6 +107,8 @@ private:
 
     Ui::SettingsWindow* ui_;
     configuration::IConfiguration::Pointer configuration_;
+
+  void getMacMemoryInfo(QString &freeMemory);
 };
 
 }

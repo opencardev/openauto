@@ -37,40 +37,56 @@ namespace f1x {
 
           void GenericNotificationService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] start.";
+              OPENAUTO_LOG(info) << "[GenericNotificationService] start()";
             });
           }
 
           void GenericNotificationService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] stop.";
+              OPENAUTO_LOG(info) << "[GenericNotificationService] stop()";
             });
           }
 
           void GenericNotificationService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] pause.";
+              OPENAUTO_LOG(info) << "[GenericNotificationService] pause()";
             });
           }
 
           void GenericNotificationService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] resume.";
+              OPENAUTO_LOG(info) << "[GenericNotificationService] resume()";
             });
           }
 
           void GenericNotificationService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[GenericNotificationService] fill features.";
+            OPENAUTO_LOG(info) << "[GenericNotificationService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *vendorExtension = channelDescriptor->mutable_wifi_projection_service();
+            auto *genericNotification = service->mutable_wifi_projection_service();
+          }
+
+          void GenericNotificationService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+            OPENAUTO_LOG(info) << "[GenericNotificationService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
+            aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+            response.set_status(status);
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&GenericNotificationService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendChannelOpenResponse(response, std::move(promise));
+
+            channel_->receive(this->shared_from_this());
           }
 
           void GenericNotificationService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[GenericNotificationService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[GenericNotificationService] onChannelError(): " << e.what();
           }
         }
       }

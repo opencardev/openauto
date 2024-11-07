@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <aasdk/Channel/WifiProjection/WifiProjectionservice.hpp>
+#include <aasdk/Channel/WifiProjection/WifiProjectionService.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <boost/asio/io_service.hpp>
 #include <aasdk/Messenger/IMessenger.hpp>

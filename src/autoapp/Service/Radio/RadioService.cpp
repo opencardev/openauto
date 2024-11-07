@@ -37,40 +37,57 @@ namespace f1x {
 
           void RadioService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] start.";
+              OPENAUTO_LOG(info) << "[RadioService] start()";
             });
           }
 
           void RadioService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] stop.";
+              OPENAUTO_LOG(info) << "[RadioService] stop()";
             });
           }
 
           void RadioService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] pause.";
+              OPENAUTO_LOG(info) << "[RadioService] pause()";
             });
           }
 
           void RadioService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] resume.";
+              OPENAUTO_LOG(info) << "[RadioService] resume()";
             });
           }
 
           void RadioService::fillFeatures(
               aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[RadioService] fill features.";
+            OPENAUTO_LOG(info) << "[RadioService] fillFeatures()";
 
-            auto *channelDescriptor = response.add_channels();
-            channelDescriptor->set_channel_id(static_cast<uint32_t>(channel_->getId()));
+            auto *service = response.add_channels();
+            service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *vendorExtension = channelDescriptor->mutable_wifi_projection_service();
+            auto *radio = service->mutable_radio_service();
+          }
+
+          void RadioService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+            OPENAUTO_LOG(info) << "[RadioService] onChannelOpenRequest()";
+            OPENAUTO_LOG(info) << "[RadioService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+
+
+            aap_protobuf::channel::ChannelOpenResponse response;
+            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+            response.set_status(status);
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&RadioService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendChannelOpenResponse(response, std::move(promise));
+
+            channel_->receive(this->shared_from_this());
           }
 
           void RadioService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[RadioService] channel error: " << e.what();
+            OPENAUTO_LOG(error) << "[RadioService] onChannelError(): " << e.what();
           }
 
 
