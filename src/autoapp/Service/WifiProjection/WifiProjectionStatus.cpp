@@ -71,8 +71,21 @@ namespace f1x {
 
           void WifiProjectionService::onWifiCredentialsRequest(
               const aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest &request) {
+
+            aap_protobuf::service::wifiprojection::message::WifiCredentialsResponse response;
+
+            response.set_access_point_type(aap_protobuf::service::wifiprojection::message::AccessPointType::DYNAMIC);
+            response.set_car_wifi_password("1234567890");
+            response.set_car_wifi_ssid("CRANKSHAFT-NG");
+            response.set_car_wifi_security_mode(aap_protobuf::service::wifiprojection::message::WifiSecurityMode::WPA2_PERSONAL);
+
             OPENAUTO_LOG(info) << "[WifiProjectionService] onWifiCredentialsRequest()";
-          //  channel_->sendWifiCredentialsResponse(response, std::move(promise));
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&WifiProjectionService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendWifiCredentialsResponse(response, std::move(promise));
+            channel_->receive(this->shared_from_this());
 
           }
 

@@ -46,6 +46,9 @@ namespace f1x {
 
             void onChannelError(const aasdk::error::Error &e) override;
 
+            void NavigationStatusService::onStatusUpdate(const aap_protobuf::channel::navigation::event::NavigationStatus &navStatus) override;
+            void NavigationStatusService::onTurnEvent(const aap_protobuf::channel::navigation::event::NavigationNextTurnEvent &turnEvent) override;
+            void NavigationStatusService::onDistanceEvent(const aap_protobuf::service::navigation::message::NavigationNextTurnDistanceEvent &distanceEvent) override;
 
           private:
             using std::enable_shared_from_this<NavigationStatusService>::shared_from_this;
@@ -53,7 +56,6 @@ namespace f1x {
             boost::asio::io_service::strand strand_;
             aasdk::channel::navigationstatus::NavigationStatusService::Pointer channel_;
           };
-
         }
       }
     }

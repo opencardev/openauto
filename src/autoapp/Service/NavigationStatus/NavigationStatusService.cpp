@@ -85,6 +85,20 @@ namespace f1x {
             channel_->receive(this->shared_from_this());
           }
 
+          void NavigationStatusService::onStatusUpdate(const aap_protobuf::channel::navigation::event::NavigationStatus &navStatus) {
+            channel_->receive(this->shared_from_this());
+          }
+
+
+          void NavigationStatusService::onTurnEvent(const aap_protobuf::channel::navigation::event::NavigationNextTurnEvent &turnEvent) {
+            channel_->receive(this->shared_from_this());
+          }
+
+          void NavigationStatusService::onDistanceEvent(const aap_protobuf::service::navigation::message::NavigationNextTurnDistanceEvent &distanceEvent) {
+            channel_->receive(this->shared_from_this());
+          }
+
+
           void NavigationStatusService::onChannelError(const aasdk::error::Error &e) {
             OPENAUTO_LOG(error) << "[NavigationStatusService] onChannelError(): " << e.what();
           }

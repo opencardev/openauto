@@ -28,28 +28,28 @@
 
 /*
  * HU > MD Version Request
- * HU < MD ServiceDiscoveryRequest
- * HU > MD Car MetaData (Make, Model, year etc)
- * HU < MD when Video Projection starts, it MUST be shown without User Ineraction
- * HU < MD Prompt Use to Enable and Pair with Car
- * HU < MD Request Video Focus for Projection (HU Grant)
+ * HU < MD ServiceDiscoveryRequest                                                                    **
+ * HU > MD Car MetaData (Make, Model, year etc)                                                       **
+ * HU < MD when Video Projection starts, it MUST be shown without User Ineraction                     ***********
+ * HU < MD Prompt Use to Enable and Pair with Car                                                     ***********
+ * HU < MD Request Video Focus for Projection (HU Grant)                                              ***********
  *
- * AAP neds Bluetooth HFP for Telephone
+ * AAP needs Bluetooth HFP for Telephone
  *
- * HU > MD Bluetooth Announcement (HU MAC Address, Supported Pairing Methods)
- * HU < MD Bluetooth Pairing Request
- * HU > MD Bluetoth Pairing Response
+ * HU > MD Bluetooth Announcement (HU MAC Address, Supported Pairing Methods)                         ***********
+ * HU < MD Bluetooth Pairing Request                                                                  ***********
+ * HU > MD Bluetoth Pairing Response***********
  *
  * AfterPairing, HU can request the Bluetooth PhoneBookAccessProtocol. Sensible UI.
  *
- * HU < MD connect to Bluetooth HFP
- * HU Suppress BAP or MAP while AAP connected.
- * A2DP should be treated by OEM as another such such as a USB stick or radio. If the user plays music via AA, HU should grant request from AA to change focus to AA. HU manages connectivity.
- * MD connects to HU and routes call over Bluetooth (non Bluetooth call)
- * MD connects Blueooth call and display projection mode
- * MD on call to HFP device - MD continues call, disconnects from other HFP and connects to HFP on Vehicle.
- * AA only uses HFP, hhowever HU may use MAP, PBAP, PAN and RSAP
- * MD will reconnect when required.
+ * HU < MD connect to Bluetooth HFP***********
+ * HU Suppress BAP or MAP while AAP connected.***********
+ * A2DP should be treated by OEM as another such such as a USB stick or radio. If the user plays music via AA, HU should grant request from AA to change focus to AA. HU manages connectivity., ***********
+ * MD connects to HU and routes call over Bluetooth (non Bluetooth call) ***********
+ * MD connects Blueooth call and display projection mode ***********
+ * MD on call to HFP device - MD continues call, disconnects from other HFP and connects to HFP on Vehicle. ***********
+ * AA only uses HFP, hhowever HU may use MAP, PBAP, PAN and RSAP ***********
+ * MD will reconnect when required. ***********
  *
  * Video
  * HU < MD - During Service Discovery, MD requests Video Configs supported
@@ -103,13 +103,13 @@ namespace f1x {
 
             eventHandler_ = eventHandler;
             std::for_each(serviceList_.begin(), serviceList_.end(), std::bind(&IService::start, std::placeholders::_1));
-
             OPENAUTO_LOG(info) << "[AndroidAutoEntity] Event handlers added.";
+
             auto versionRequestPromise = aasdk::channel::SendPromise::defer(strand_);
-            versionRequestPromise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(),
+            versionRequestPromise->then([]() { OPENAUTO_LOG(info) << "[AndroidAutoEntity] SUCCESS: Version request sent."; }, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(),
                                                            std::placeholders::_1));
 
-            OPENAUTO_LOG(info) << "[AndroidAutoEntity] Sending version request.";
+            OPENAUTO_LOG(info) << "[AndroidAutoEntity] Send Version Request.";
             controlServiceChannel_->sendVersionRequest(std::move(versionRequestPromise));
             controlServiceChannel_->receive(this->shared_from_this());
           });
@@ -123,7 +123,7 @@ namespace f1x {
               eventHandler_ = nullptr;
               std::for_each(serviceList_.begin(), serviceList_.end(),
                             std::bind(&IService::stop, std::placeholders::_1));
-              //pinger_->cancel();
+
               messenger_->stop();
               transport_->stop();
               cryptor_->deinit();
@@ -172,11 +172,11 @@ namespace f1x {
             OPENAUTO_LOG(info) << "[AndroidAutoEntity] Version matches.";
 
             try {
-              OPENAUTO_LOG(info) << "[AndroidAutoEntity] Beginning SSL handshake...";
+              OPENAUTO_LOG(info) << "[AndroidAutoEntity] Beginning SSL handshake.";
               cryptor_->doHandshake();
 
               auto handshakePromise = aasdk::channel::SendPromise::defer(strand_);
-              handshakePromise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(),
+              handshakePromise->then([]() { OPENAUTO_LOG(info) << "[AndroidAutoEntity] SUCCESS: Sent SSL handshake."; }, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(),
                                                         std::placeholders::_1));
               controlServiceChannel_->sendHandshake(cryptor_->readHandshakeBuffer(), std::move(handshakePromise));
               controlServiceChannel_->receive(this->shared_from_this());
@@ -246,7 +246,7 @@ namespace f1x {
                         std::bind(&IService::fillFeatures, std::placeholders::_1, std::ref(serviceDiscoveryResponse)));
 
           auto promise = aasdk::channel::SendPromise::defer(strand_);
-          promise->then([]() {},
+          promise->then([]() { OPENAUTO_LOG(info) << "[AndroidAutoEntity] SUCCESS: Send ServiceDiscoveryResponse."; },
                         std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
           controlServiceChannel_->sendServiceDiscoveryResponse(serviceDiscoveryResponse, std::move(promise));
           controlServiceChannel_->receive(this->shared_from_this());
@@ -271,8 +271,8 @@ namespace f1x {
           response.set_audio_focus_state(audioFocusStateType);
 
           auto promise = aasdk::channel::SendPromise::defer(strand_);
-          promise->then([]() {},
-                        std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
+          promise->then([]() { OPENAUTO_LOG(info) "[AndroidAutoEntity] Resolved Promise"; },
+                        [capture0 = this->shared_from_this()](auto && PH1) { OPENAUTO_LOG(info) "[AndroidAutoEntity] Failed to Resolve Promise"; capture0->onChannelError(std::forward<decltype(PH1)>(PH1)); });
           controlServiceChannel_->sendAudioFocusResponse(response, std::move(promise));
           controlServiceChannel_->receive(this->shared_from_this());
         }
@@ -312,16 +312,15 @@ namespace f1x {
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
+        void AndroidAutoEntity::onBatteryStatusNotification(const aap_protobuf::channel::control::BatteryStatusNotification &notification) {
+          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onBatteryStatusNotification()";
+          controlServiceChannel_->receive(this->shared_from_this());
+        }
+
         void AndroidAutoEntity::onVoiceSessionRequest(
             const aap_protobuf::channel::control::voice::VoiceSessionNotification &request) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onVoiceSessionRequest()";
-        }
-
-        void AndroidAutoEntity::onPingRequest(const aap_protobuf::channel::control::ping::PingRequest &request) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onPingRequest()";
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] Timestamp: " << request.timestamp();
-          //pinger_->ping();
-          //controlServiceChannel_->receive(this->shared_from_this());
+          controlServiceChannel_->receive(this->shared_from_this());
         }
 
         void AndroidAutoEntity::onPingResponse(const aap_protobuf::channel::control::ping::PingResponse &response) {
@@ -373,7 +372,6 @@ namespace f1x {
           request.set_timestamp(timestamp.count());
           controlServiceChannel_->sendPingRequest(request, std::move(promise));
         }
-
       }
     }
   }

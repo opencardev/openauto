@@ -60,8 +60,6 @@ namespace f1x {
 
         }
 
-        // TODO: MEDIA SERVICE
-
         ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messenger) {
           OPENAUTO_LOG(info) << "[ServiceFactory] create()";
           ServiceList serviceList;
