@@ -100,7 +100,7 @@ namespace f1x {
                                                                ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
                                                                : aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR;
 
-            OPENAUTO_LOG(info) << "[MediaSourceService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
+            OPENAUTO_LOG(debug) << "[MediaSourceService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             response.set_status(status);
@@ -155,7 +155,7 @@ namespace f1x {
            */
           void MediaSourceService::onMediaChannelAckIndication(
               const aap_protobuf::service::media::source::message::Ack &) {
-            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelAckIndication()";
+            OPENAUTO_LOG(debug) << "[MediaSourceService] onMediaChannelAckIndication()";
             channel_->receive(this->shared_from_this());
           }
 
@@ -163,15 +163,13 @@ namespace f1x {
            * Source Media Channel Handling
            */
 
-          // TODO: These are Source Channel Handlers - should be moved to their own handlers in case any more are implemented in the future.
-
           /**
            * Handle request to Open or Close Microphone Source Channel
            * @param request
            */
           void MediaSourceService::onMediaSourceOpenRequest(
               const aap_protobuf::service::media::source::message::MicrophoneRequest &request) {
-            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelAckIndication()";
+            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaSourceOpenRequest()";
             OPENAUTO_LOG(info) << "[MediaSourceService] Request to Open?: " << request.open() << ", anc: " << request.anc_enabled() << ", ec: " << request.ec_enabled() << ", max unacked: " << request.max_unacked();
 
             if (request.open()) {
@@ -260,7 +258,7 @@ namespace f1x {
                   std::bind(&MediaSourceService::onMediaSourceDataReady, this->shared_from_this(),
                             std::placeholders::_1),
                   [this, self = this->shared_from_this()]() {
-                    OPENAUTO_LOG(info) << "[MediaSourceService] audio input read rejected.";
+                    OPENAUTO_LOG(debug) << "[MediaSourceService] audio input read rejected.";
                   });
 
               audioInput_->read(std::move(readPromise));

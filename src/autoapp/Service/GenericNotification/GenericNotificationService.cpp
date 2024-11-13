@@ -71,7 +71,7 @@ namespace f1x {
 
           void GenericNotificationService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[GenericNotificationService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+            OPENAUTO_LOG(debug) << "[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;

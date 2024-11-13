@@ -43,7 +43,7 @@ void InputDevice::start(IInputDeviceEventHandler& eventHandler)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[InputDevice] start.";
+    OPENAUTO_LOG(info) << "[InputDevice] start()";
     eventHandler_ = &eventHandler;
     parent_.installEventFilter(this);
 }
@@ -52,7 +52,7 @@ void InputDevice::stop()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[InputDevice] stop.";
+    OPENAUTO_LOG(info) << "[InputDevice] stop()";
     parent_.removeEventFilter(this);
     eventHandler_ = nullptr;
 }

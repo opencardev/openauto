@@ -51,7 +51,7 @@ void Pinger::ping(Promise::Pointer promise)
         else
         {
             ++pingsCount_;
-            OPENAUTO_LOG(info) << "[Pinger] Ping counter: " << pingsCount_;
+            OPENAUTO_LOG(debug) << "[Pinger] Ping counter: " << pingsCount_;
 
             promise_ = std::move(promise);
             timer_.expires_from_now(boost::posix_time::milliseconds(duration_));
@@ -64,7 +64,7 @@ void Pinger::pong()
 {
     strand_.dispatch([this, self = this->shared_from_this()]() {
         ++pongsCount_;
-        OPENAUTO_LOG(info) << "[Pinger] Pong counter: " << pongsCount_;
+        OPENAUTO_LOG(debug) << "[Pinger] Pong counter: " << pongsCount_;
     });
 }
 

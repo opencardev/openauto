@@ -91,7 +91,6 @@ namespace f1x {
             auto *service = response.add_channels();
             service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            // TODO: Add and Link other Sensors Here
             auto *sensorChannel = service->mutable_sensor_source_service();
             sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensorsource::message::SensorType::SENSOR_DRIVING_STATUS_DATA);
             sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensorsource::message::SensorType::SENSOR_LOCATION);
@@ -100,7 +99,7 @@ namespace f1x {
 
           void SensorService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[SensorService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[SensorService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+            OPENAUTO_LOG(debug) << "[SensorService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -117,14 +116,13 @@ namespace f1x {
           void SensorService::onSensorStartRequest(
               const aap_protobuf::service::sensorsource::message::SensorRequest &request) {
             OPENAUTO_LOG(info) << "[SensorService] onSensorStartRequest()";
-            OPENAUTO_LOG(info) << "[SensorService] Request Type: "<< request.type();
+            OPENAUTO_LOG(debug) << "[SensorService] Request Type: "<< request.type();
 
             aap_protobuf::service::sensorsource::message::SensorStartResponseMessage response;
             response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
 
-            // TODO: Convert to Switch?
             if (request.type() == aap_protobuf::service::sensorsource::message::SENSOR_DRIVING_STATUS_DATA)
             {
               promise->then(std::bind(&SensorService::sendDrivingStatusUnrestricted, this->shared_from_this()),
@@ -151,7 +149,7 @@ namespace f1x {
             indication.add_driving_status_data()->set_status(aap_protobuf::service::sensorsource::message::DrivingStatus::DRIVE_STATUS_UNRESTRICTED);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() { OPENAUTO_LOG(info) << "[SensorService] SendPromise resolved successfully()"; },
+            promise->then([]() { },
                           std::bind(&SensorService::onChannelError, this->shared_from_this(), std::placeholders::_1));
             channel_->sendSensorEventIndication(indication, std::move(promise));
           }

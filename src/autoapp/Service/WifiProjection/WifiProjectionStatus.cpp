@@ -20,6 +20,7 @@
 #include <f1x/openauto/autoapp/Service/WifiProjection/WifiProjectionService.hpp>
 #include <fstream>
 #include <QString>
+#include <QNetworkInterface>
 
 namespace f1x {
   namespace openauto {
@@ -66,20 +67,20 @@ namespace f1x {
             service->set_id(static_cast<uint32_t>(channel_->getId()));
 
             auto *wifiChannel = service->mutable_wifi_projection_service();
-            wifiChannel->set_car_wifi_bssid("");  // TODO: Temporarily disabled and populating with empty string.
+            wifiChannel->set_car_wifi_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
           }
 
           void WifiProjectionService::onWifiCredentialsRequest(
               const aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest &request) {
 
+            OPENAUTO_LOG(info) << "[WifiProjectionService] onWifiCredentialsRequest()";
+
             aap_protobuf::service::wifiprojection::message::WifiCredentialsResponse response;
 
-            response.set_access_point_type(aap_protobuf::service::wifiprojection::message::AccessPointType::DYNAMIC);
-            response.set_car_wifi_password("1234567890");
+            response.set_access_point_type(aap_protobuf::service::wifiprojection::message::AccessPointType::STATIC);
             response.set_car_wifi_ssid("CRANKSHAFT-NG");
+            response.set_car_wifi_password("1234567890");
             response.set_car_wifi_security_mode(aap_protobuf::service::wifiprojection::message::WifiSecurityMode::WPA2_PERSONAL);
-
-            OPENAUTO_LOG(info) << "[WifiProjectionService] onWifiCredentialsRequest()";
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
             promise->then([]() {}, std::bind(&WifiProjectionService::onChannelError, this->shared_from_this(),
@@ -91,8 +92,7 @@ namespace f1x {
 
           void WifiProjectionService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[WifiProjectionService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[WifiProjectionService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
-
+            OPENAUTO_LOG(debug) << "[WifiProjectionService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;

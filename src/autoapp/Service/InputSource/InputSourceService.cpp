@@ -86,7 +86,7 @@ namespace f1x {
 
           void InputSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[InputSourceService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[InputSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+            OPENAUTO_LOG(debug) << "[InputSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
@@ -102,7 +102,7 @@ namespace f1x {
 
           void InputSourceService::onKeyBindingRequest(const aap_protobuf::service::media::sink::message::KeyBindingRequest &request) {
             OPENAUTO_LOG(info) << "[InputSourceService] onKeyBindingRequest()";
-            OPENAUTO_LOG(info) << "[InputSourceService] KeyCodes Count: " << request.keycodes_size();
+            OPENAUTO_LOG(debug) << "[InputSourceService] KeyCodes Count: " << request.keycodes_size();
 
             aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             const auto &supportedButtonCodes = inputDevice_->getSupportedButtonCodes();
@@ -123,7 +123,7 @@ namespace f1x {
               inputDevice_->start(*this);
             }
 
-            OPENAUTO_LOG(info) << "[InputSourceService] Sending KeyBindingResponse with Status: " << status;
+            OPENAUTO_LOG(debug) << "[InputSourceService] Sending KeyBindingResponse with Status: " << status;
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
             promise->then([]() {},

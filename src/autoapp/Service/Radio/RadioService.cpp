@@ -71,7 +71,7 @@ namespace f1x {
 
           void RadioService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[RadioService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[RadioService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+            OPENAUTO_LOG(debug) << "[RadioService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;

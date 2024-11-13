@@ -238,7 +238,7 @@ void App::resume()
 void App::onAndroidAutoQuit()
 {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-        OPENAUTO_LOG(info) << "[App] onAndroidAutoQuit.";
+        OPENAUTO_LOG(info) << "[App] onAndroidAutoQuit()";
 
         //acceptor_.close();
 
@@ -268,7 +268,7 @@ void App::onAndroidAutoQuit()
 
 void App::onUSBHubError(const aasdk::error::Error& error)
 {
-    OPENAUTO_LOG(error) << "[App] usb hub error: " << error.what();
+    OPENAUTO_LOG(error) << "[App] onUSBHubError(): " << error.what();
 
 //    if(error != aasdk::error::ErrorCode::OPERATION_ABORTED &&
 //       error != aasdk::error::ErrorCode::OPERATION_IN_PROGRESS)

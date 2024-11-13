@@ -136,7 +136,7 @@ namespace f1x {
                                                                ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
                                                                : aap_protobuf::shared::MessageStatus::STATUS_INVALID_CHANNEL;
 
-            OPENAUTO_LOG(info) << "[AudioMediaSinkService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
+            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             response.set_status(status);
@@ -185,8 +185,8 @@ namespace f1x {
           }
 
           void AudioMediaSinkService::onMediaChannelStopIndication(const aap_protobuf::service::media::shared::message::Stop &indication) {
-            OPENAUTO_LOG(info) << "[AudioMediaSinkService] onMediaChannelStopIndication()";
-            OPENAUTO_LOG(info) << "[AudioMediaSinkService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_;
+            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] onMediaChannelStopIndication()";
+            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_;
 
             session_ = -1;
             audioOutput_->suspend();
@@ -196,12 +196,11 @@ namespace f1x {
 
           void AudioMediaSinkService::onMediaWithTimestampIndication(aasdk::messenger::Timestamp::ValueType timestamp,
                                                                      const aasdk::common::DataConstBuffer &buffer) {
-            OPENAUTO_LOG(info) << "[AudioMediaSinkService] onMediaWithTimestampIndication()";
-            OPENAUTO_LOG(info) << "[AudioMediaSinkService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_;
+            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] onMediaWithTimestampIndication()";
+            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_;
 
             audioOutput_->write(timestamp, buffer);
 
-            // TODO: Move MediaSourceMediaAckIndication to Ack and move to Shared.
             aap_protobuf::service::media::source::message::Ack indication;
             indication.set_session_id(session_);
             indication.set_ack(1);

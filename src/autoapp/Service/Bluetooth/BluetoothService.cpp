@@ -65,7 +65,7 @@ namespace f1x {
             OPENAUTO_LOG(info) << "[BluetoothService] fillFeatures()";
 
             if (bluetoothDevice_->isAvailable()) {
-              OPENAUTO_LOG(info) << "[BluetoothService] Local Address: " << bluetoothDevice_->getLocalAddress();
+              OPENAUTO_LOG(debug) << "[BluetoothService] Local Address: " << bluetoothDevice_->getLocalAddress();
 
               auto *service = response.add_channels();
               service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -84,7 +84,7 @@ namespace f1x {
 
           void BluetoothService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[BluetoothService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[BluetoothService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+            OPENAUTO_LOG(debug) << "[BluetoothService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -101,7 +101,7 @@ namespace f1x {
           void BluetoothService::onBluetoothPairingRequest(
               const aap_protobuf::service::bluetooth::message::BluetoothPairingRequest &request) {
             OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothPairingRequest()";
-            OPENAUTO_LOG(info) << "[BluetoothService] Phone Address: " << request.phone_address();
+            OPENAUTO_LOG(debug) << "[BluetoothService] Phone Address: " << request.phone_address();
 
             aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
 
@@ -112,7 +112,6 @@ namespace f1x {
               OPENAUTO_LOG(info) << "[BluetoothService] Phone is Not Paired";
             }
 
-            // TODO: Response Status
             /*
              * The HU must always sent a STATUS_SUCCESS response,
              * or STATUS_BLUETOOTH_PAIRING_DELAYED if:

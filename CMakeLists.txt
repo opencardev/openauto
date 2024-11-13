@@ -41,7 +41,10 @@ if (WIN32)
     set(WINSOCK2_LIBRARIES "ws2_32")
 endif (WIN32)
 
+add_definitions(-DRPI3_BUILD)
+
 if (RPI3_BUILD)
+    message(INFO "Compiling for RaspberryPi")
     add_definitions(-DUSE_OMX -DOMX_SKIP64BIT -DRASPBERRYPI3)
     set(BCM_HOST_LIBRARIES "/opt/vc/lib/libbcm_host.so")
     set(BCM_HOST_INCLUDE_DIRS "/opt/vc/include")

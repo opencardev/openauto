@@ -57,7 +57,8 @@ namespace f1x::openauto::btservice {
       aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest request;
       // TODO: How do we ping back the Wireless Port and IP?
       //aap_protobuf::service::::WifiInfoRequest request;
-      //request.set_ip_address(getIP4_("wlan0"));
+      request.set_ip_address(getIP4_("wlan0"));
+      getIP4_()
       //request.set_port(5000);
 
       sendMessage(request, 1);

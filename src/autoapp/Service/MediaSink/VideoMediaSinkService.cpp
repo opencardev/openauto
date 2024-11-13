@@ -91,11 +91,11 @@ namespace f1x {
             videoConfig1->set_width_margin(videoMargins.width());
             videoConfig1->set_density(videoOutput_->getScreenDPI());
 
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] getVideoResolution " << VideoCodecResolutionType_Name(videoOutput_->getVideoResolution());
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] getVideoFPS " << VideoFrameRateType_Name(videoOutput_->getVideoFPS());
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] width " << videoMargins.width();
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] height " << videoMargins.height();
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] getScreenDPI " << videoOutput_->getScreenDPI();
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] getVideoResolution " << VideoCodecResolutionType_Name(videoOutput_->getVideoResolution());
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] getVideoFPS " << VideoFrameRateType_Name(videoOutput_->getVideoFPS());
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] width " << videoMargins.width();
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] height " << videoMargins.height();
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] getScreenDPI " << videoOutput_->getScreenDPI();
           }
 
           void
@@ -170,8 +170,8 @@ namespace f1x {
 
           void VideoMediaSinkService::onMediaWithTimestampIndication(aasdk::messenger::Timestamp::ValueType timestamp,
                                                                      const aasdk::common::DataConstBuffer &buffer) {
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] onMediaWithTimestampIndication()";
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] Channel Id: "
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] onMediaWithTimestampIndication()";
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] Channel Id: "
                                << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_;
 
             videoOutput_->write(timestamp, buffer);
@@ -188,7 +188,7 @@ namespace f1x {
           }
 
           void VideoMediaSinkService::onMediaIndication(const aasdk::common::DataConstBuffer &buffer) {
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] onMediaIndication()";
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] onMediaIndication()";
             this->onMediaWithTimestampIndication(0, buffer);
           }
 
@@ -199,7 +199,7 @@ namespace f1x {
 
           void VideoMediaSinkService::onVideoFocusRequest(
               const aap_protobuf::service::media::video::message::VideoFocusRequestNotification &request) {
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] onMediaIndication()";
+            OPENAUTO_LOG(info) << "[VideoMediaSinkService] onVideoFocusRequest()";
             OPENAUTO_LOG(info) << "[VideoMediaSinkService] Display index: " << request.disp_channel_id() << ", focus mode: " << VideoFocusMode_Name(request.mode()) << ", focus reason: " << VideoFocusReason_Name(request.reason());
 
             if (request.mode() ==
@@ -228,7 +228,7 @@ namespace f1x {
             videoFocusIndication.set_unsolicited(false);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {OPENAUTO_LOG(info) << "[VideoMediaSinkService] VideoFocus Request Sent";}, std::bind(&VideoMediaSinkService::onChannelError, this->shared_from_this(),
+            promise->then([]() { }, std::bind(&VideoMediaSinkService::onChannelError, this->shared_from_this(),
                                              std::placeholders::_1));
             channel_->sendVideoFocusIndication(videoFocusIndication, std::move(promise));
           }
