@@ -60,7 +60,7 @@ namespace f1x {
           }
 
           void RadioService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[RadioService] fillFeatures()";
 
             auto *service = response.add_channels();
@@ -69,12 +69,12 @@ namespace f1x {
             auto *radio = service->mutable_radio_service();
           }
 
-          void RadioService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void RadioService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[RadioService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[RadioService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 

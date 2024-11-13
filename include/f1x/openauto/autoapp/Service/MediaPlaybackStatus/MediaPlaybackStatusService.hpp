@@ -40,9 +40,9 @@ namespace f1x {
             void stop() override;
             void pause() override;
             void resume() override;
-            void fillFeatures(aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) override;
+            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-            void onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) override;
+            void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
             void onChannelError(const aasdk::error::Error &e) override;
 

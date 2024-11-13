@@ -46,18 +46,18 @@ namespace f1x {
             void stop() override;
             void pause() override;
             void resume() override;
-            void fillFeatures(aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) override;
+            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-            void onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) override;
+            void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
             void onMediaChannelSetupRequest(
-                const aap_protobuf::channel::media::event::Setup &request) override;
+                const aap_protobuf::service::media::shared::message::Setup &request) override;
 
             void onMediaChannelStartIndication(
-                const aap_protobuf::channel::media::event::Start &indication) override;
+                const aap_protobuf::service::media::shared::message::Start &indication) override;
 
             void onMediaChannelStopIndication(
-                const aap_protobuf::channel::media::event::Stop &indication) override;
+                const aap_protobuf::service::media::shared::message::Stop &indication) override;
 
             void onMediaWithTimestampIndication(aasdk::messenger::Timestamp::ValueType timestamp,
                                                 const aasdk::common::DataConstBuffer &buffer) override;
@@ -66,7 +66,7 @@ namespace f1x {
 
             void onChannelError(const aasdk::error::Error &e) override;
 
-            void onVideoFocusRequest(const aap_protobuf::channel::control::focus::video::event::VideoFocusRequestNotification &request) override;
+            void onVideoFocusRequest(const aap_protobuf::service::media::video::message::VideoFocusRequestNotification &request) override;
             void sendVideoFocusIndication();
           protected:
             using std::enable_shared_from_this<VideoMediaSinkService>::shared_from_this;

@@ -16,8 +16,8 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <aap_protobuf/service/sensor/message/DrivingStatus.pb.h>
-#include <aap_protobuf/service/sensor/message/SensorType.pb.h>
+#include <aap_protobuf/service/sensorsource/message/DrivingStatus.pb.h>
+#include <aap_protobuf/service/sensorsource/message/SensorType.pb.h>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/Sensor/SensorService.hpp>
 #include <fstream>
@@ -85,7 +85,7 @@ namespace f1x {
           }
 
           void SensorService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[SensorService] fillFeatures()";
 
             auto *service = response.add_channels();
@@ -93,16 +93,16 @@ namespace f1x {
 
             // TODO: Add and Link other Sensors Here
             auto *sensorChannel = service->mutable_sensor_source_service();
-            sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensor::message::SensorType::SENSOR_DRIVING_STATUS_DATA);
-            sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensor::message::SensorType::SENSOR_LOCATION);
-            sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensor::message::SensorType::SENSOR_NIGHT_MODE);
+            sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensorsource::message::SensorType::SENSOR_DRIVING_STATUS_DATA);
+            sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensorsource::message::SensorType::SENSOR_LOCATION);
+            sensorChannel->add_sensors()->set_sensor_type(aap_protobuf::service::sensorsource::message::SensorType::SENSOR_NIGHT_MODE);
           }
 
-          void SensorService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void SensorService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[SensorService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[SensorService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 
@@ -115,22 +115,22 @@ namespace f1x {
           }
 
           void SensorService::onSensorStartRequest(
-              const aap_protobuf::channel::sensor::event::SensorRequest &request) {
+              const aap_protobuf::service::sensorsource::message::SensorRequest &request) {
             OPENAUTO_LOG(info) << "[SensorService] onSensorStartRequest()";
             OPENAUTO_LOG(info) << "[SensorService] Request Type: "<< request.type();
 
-            aap_protobuf::service::sensor::message::SensorStartResponseMessage response;
+            aap_protobuf::service::sensorsource::message::SensorStartResponseMessage response;
             response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
 
             // TODO: Convert to Switch?
-            if (request.type() == aap_protobuf::service::sensor::message::SENSOR_DRIVING_STATUS_DATA)
+            if (request.type() == aap_protobuf::service::sensorsource::message::SENSOR_DRIVING_STATUS_DATA)
             {
               promise->then(std::bind(&SensorService::sendDrivingStatusUnrestricted, this->shared_from_this()),
                             std::bind(&SensorService::onChannelError, this->shared_from_this(), std::placeholders::_1));
             }
-            else if (request.type() == aap_protobuf::service::sensor::message::SensorType::SENSOR_NIGHT_MODE)
+            else if (request.type() == aap_protobuf::service::sensorsource::message::SensorType::SENSOR_NIGHT_MODE)
             {
               promise->then(std::bind(&SensorService::sendNightData, this->shared_from_this()),
                             std::bind(&SensorService::onChannelError, this->shared_from_this(), std::placeholders::_1));
@@ -147,18 +147,18 @@ namespace f1x {
 
           void SensorService::sendDrivingStatusUnrestricted() {
             OPENAUTO_LOG(info) << "[SensorService] sendDrivingStatusUnrestricted()";
-            aap_protobuf::service::sensor::message::SensorBatch indication;
-            indication.add_driving_status_data()->set_status(aap_protobuf::service::sensor::message::DrivingStatus::DRIVE_STATUS_UNRESTRICTED);
+            aap_protobuf::service::sensorsource::message::SensorBatch indication;
+            indication.add_driving_status_data()->set_status(aap_protobuf::service::sensorsource::message::DrivingStatus::DRIVE_STATUS_UNRESTRICTED);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {},
+            promise->then([]() { OPENAUTO_LOG(info) << "[SensorService] SendPromise resolved successfully()"; },
                           std::bind(&SensorService::onChannelError, this->shared_from_this(), std::placeholders::_1));
             channel_->sendSensorEventIndication(indication, std::move(promise));
           }
 
           void SensorService::sendNightData() {
             OPENAUTO_LOG(info) << "[SensorService] sendNightData()";
-            aap_protobuf::service::sensor::message::SensorBatch indication;
+            aap_protobuf::service::sensorsource::message::SensorBatch indication;
 
             if (SensorService::isNight) {
               OPENAUTO_LOG(info) << "[SensorService] Night Mode Triggered";
@@ -180,29 +180,30 @@ namespace f1x {
 
           void SensorService::sendGPSLocationData() {
             OPENAUTO_LOG(info) << "[SensorService] sendGPSLocationData()";
-            aap_protobuf::service::sensor::message::SensorBatch indication;
+            aap_protobuf::service::sensorsource::message::SensorBatch indication;
+
             auto *locInd = indication.add_location_data();
 
             // epoch seconds
             // locInd->set_timestamp(this->gpsData_.fix.time * 1e3);
             // degrees
-            locInd->set_latitude(this->gpsData_.fix.latitude * 1e7);
-            locInd->set_longitude(this->gpsData_.fix.longitude * 1e7);
+            locInd->set_latitude_e7(this->gpsData_.fix.latitude * 1e7);
+            locInd->set_longitude_e7(this->gpsData_.fix.longitude * 1e7);
             // meters
             auto accuracy = sqrt(pow(this->gpsData_.fix.epx, 2) + pow(this->gpsData_.fix.epy, 2));
-            locInd->set_accuracy(accuracy * 1e3);
+            locInd->set_accuracy_e3(accuracy * 1e3);
 
             if (this->gpsData_.set & ALTITUDE_SET) {
               // meters above ellipsoid
-              locInd->set_altitude(this->gpsData_.fix.altitude * 1e2);
+              locInd->set_altitude_e2(this->gpsData_.fix.altitude * 1e2);
             }
             if (this->gpsData_.set & SPEED_SET) {
               // meters per second to knots
-              locInd->set_speed(this->gpsData_.fix.speed * 1.94384 * 1e3);
+              locInd->set_speed_e3(this->gpsData_.fix.speed * 1.94384 * 1e3);
             }
             if (this->gpsData_.set & TRACK_SET) {
               // degrees
-              locInd->set_bearing(this->gpsData_.fix.track * 1e6);
+              locInd->set_bearing_e6(this->gpsData_.fix.track * 1e6);
             }
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);

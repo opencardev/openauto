@@ -18,17 +18,9 @@
 
 #include <f1x/openauto/btservice/AndroidBluetoothService.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace btservice
-{
+namespace f1x::openauto::btservice {
 
-AndroidBluetoothService::AndroidBluetoothService(uint16_t portNumber)
-{
-    //"4de17a00-52cb-11e6-bdf4-0800200c9a66";
-    //"669a0c20-0008-f4bd-e611-cb52007ae14d";
+  AndroidBluetoothService::AndroidBluetoothService(uint16_t portNumber) {
     const QBluetoothUuid serviceUuid(QLatin1String("4de17a00-52cb-11e6-bdf4-0800200c9a66"));
 
     QBluetoothServiceInfo::Sequence classId;
@@ -38,7 +30,7 @@ AndroidBluetoothService::AndroidBluetoothService(uint16_t portNumber)
     serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceClassIds, classId);
     serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceName, "OpenAuto Bluetooth Service");
     serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceDescription, "AndroidAuto WiFi projection automatic setup");
-    serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceProvider, "f1xstudio.com");
+    serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceProvider, "cubeone.co.uk");
     serviceInfo_.setServiceUuid(serviceUuid);
 
     QBluetoothServiceInfo::Sequence publicBrowse;
@@ -54,18 +46,16 @@ AndroidBluetoothService::AndroidBluetoothService(uint16_t portNumber)
              << QVariant::fromValue(quint16(portNumber));
     protocolDescriptorList.append(QVariant::fromValue(protocol));
     serviceInfo_.setAttribute(QBluetoothServiceInfo::ProtocolDescriptorList, protocolDescriptorList);
-}
+  }
 
-bool AndroidBluetoothService::registerService(const QBluetoothAddress& bluetoothAddress)
-{
+  bool AndroidBluetoothService::registerService(const QBluetoothAddress &bluetoothAddress) {
     return serviceInfo_.registerService(bluetoothAddress);
-}
+  }
 
-bool AndroidBluetoothService::unregisterService()
-{
+  bool AndroidBluetoothService::unregisterService() {
     return serviceInfo_.unregisterService();
-}
+  }
 
 }
-}
-}
+
+

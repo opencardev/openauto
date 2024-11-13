@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <aap_protobuf/service/media/sink/KeyCode.pb.h>
+#include <aap_protobuf/service/media/sink/message/KeyCode.pb.h>
 #include <aasdk/Channel/InputSource/InputSourceService.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <f1x/openauto/autoapp/Projection/IInputDevice.hpp>
@@ -43,12 +43,12 @@ namespace f1x {
             void stop() override;
             void pause() override;
             void resume() override;
-            void fillFeatures(aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) override;
+            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
 
-            void onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) override;
+            void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
-            void onKeyBindingRequest(const aap_protobuf::channel::input::event::KeyBindingRequest &request) override;
+            void onKeyBindingRequest(const aap_protobuf::service::media::sink::message::KeyBindingRequest &request) override;
 
             void onChannelError(const aasdk::error::Error &e) override;
 

@@ -40,7 +40,7 @@ namespace f1x {
 
             void resume() override;
 
-            void fillFeatures(aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) override;
+            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
           private:
 

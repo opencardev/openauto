@@ -21,7 +21,7 @@
 #include <vector>
 #include <memory>
 #include <f1x/openauto/Common/Log.hpp>
-#include <aap_protobuf/channel/control/servicediscovery/notification//ServiceDiscoveryResponse.pb.h>
+#include <aap_protobuf/service/control/message/ServiceDiscoveryResponse.pb.h>
 #include <aap_protobuf/shared/MessageStatus.pb.h>
 
 namespace f1x
@@ -44,7 +44,7 @@ public:
     virtual void stop() = 0;
     virtual void pause() = 0;
     virtual void resume() = 0;
-    virtual void fillFeatures(aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse& response) = 0;
+    virtual void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse& response) = 0;
 };
 
 typedef std::vector<IService::Pointer> ServiceList;

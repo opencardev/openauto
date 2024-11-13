@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <aap_protobuf/service/input/message/InputReport.pb.h>
+#include <aap_protobuf/service/inputsource/message/InputReport.pb.h>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/InputSource/InputSourceService.hpp>
 
@@ -61,7 +61,7 @@ namespace f1x {
           }
 
           void InputSourceService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[InputSourceService] fillFeatures()";
 
             auto *service = response.add_channels();
@@ -72,7 +72,7 @@ namespace f1x {
             const auto &supportedButtonCodes = inputDevice_->getSupportedButtonCodes();
 
             for (const auto &buttonCode: supportedButtonCodes) {
-              inputChannel->add_supported_keycodes(buttonCode);
+              inputChannel->add_keycodes_supported(buttonCode);
             }
 
             if (inputDevice_->hasTouchscreen()) {
@@ -84,12 +84,12 @@ namespace f1x {
             }
           }
 
-          void InputSourceService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void InputSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[InputSourceService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[InputSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 
@@ -100,7 +100,7 @@ namespace f1x {
             channel_->receive(this->shared_from_this());
           }
 
-          void InputSourceService::onKeyBindingRequest(const aap_protobuf::channel::input::event::KeyBindingRequest &request) {
+          void InputSourceService::onKeyBindingRequest(const aap_protobuf::service::media::sink::message::KeyBindingRequest &request) {
             OPENAUTO_LOG(info) << "[InputSourceService] onKeyBindingRequest()";
             OPENAUTO_LOG(info) << "[InputSourceService] KeyCodes Count: " << request.keycodes_size();
 
@@ -143,10 +143,10 @@ namespace f1x {
 
             strand_.dispatch(
                 [this, self = this->shared_from_this(), event = std::move(event), timestamp = std::move(timestamp)]() {
-                  aap_protobuf::service::input::message::InputReport inputReport;
+                  aap_protobuf::service::inputsource::message::InputReport inputReport;
                   inputReport.set_timestamp(timestamp.count());
 
-                  if (event.code == aap_protobuf::service::media::sink::KeyCode::KEYCODE_ROTARY_CONTROLLER) {
+                  if (event.code == aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ROTARY_CONTROLLER) {
                     auto relativeEvent = inputReport.mutable_relative_event()->add_data();
                     relativeEvent->set_delta(event.wheelDirection == projection::WheelDirection::LEFT ? -1 : 1);
                     relativeEvent->set_keycode(event.code);
@@ -172,7 +172,7 @@ namespace f1x {
 
             strand_.dispatch(
                 [this, self = this->shared_from_this(), event = std::move(event), timestamp = std::move(timestamp)]() {
-                  aap_protobuf::service::input::message::InputReport inputReport;
+                  aap_protobuf::service::inputsource::message::InputReport inputReport;
                   inputReport.set_timestamp(timestamp.count());
 
                   auto touchEvent = inputReport.mutable_touch_event();

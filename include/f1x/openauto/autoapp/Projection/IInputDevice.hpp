@@ -37,7 +37,7 @@ class IInputDevice
 {
 public:
     typedef std::shared_ptr<IInputDevice> Pointer;
-    typedef std::vector<aap_protobuf::service::media::sink::KeyCode> ButtonCodes;
+    typedef std::vector<aap_protobuf::service::media::sink::message::KeyCode> ButtonCodes;
 
     virtual ~IInputDevice() = default;
     virtual void start(IInputDeviceEventHandler& eventHandler) = 0;

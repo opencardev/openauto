@@ -19,7 +19,6 @@
 #include <time.h>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/MediaSource/MediaSourceService.hpp>
-#include <aap_protobuf/service/media/sink/message/MediaSinkChannelSetupResponse.pb.h>
 
 namespace f1x {
   namespace openauto {
@@ -69,14 +68,14 @@ namespace f1x {
            * @param response
            */
           void MediaSourceService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[MediaSourceService] fillFeatures()";
 
             auto *service = response.add_channels();
             service->set_id(static_cast<uint32_t>(channel_->getId()));
 
             auto *avInputChannel = service->mutable_media_source_service();
-            avInputChannel->set_stream_type(
+            avInputChannel->set_available_type(
                 aap_protobuf::service::media::shared::message::MediaCodecType::MEDIA_CODEC_AUDIO_PCM);
 
             auto audioConfig = avInputChannel->mutable_audio_config();
@@ -93,7 +92,7 @@ namespace f1x {
            * Open Service Channel Request
            * @param request
            */
-          void MediaSourceService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void MediaSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[MediaSourceService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
@@ -103,7 +102,7 @@ namespace f1x {
 
             OPENAUTO_LOG(info) << "[MediaSourceService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             response.set_status(status);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
@@ -132,14 +131,14 @@ namespace f1x {
            * @param request
            */
           void
-          MediaSourceService::onMediaChannelSetupRequest(const aap_protobuf::channel::media::event::Setup &request) {
+          MediaSourceService::onMediaChannelSetupRequest(const aap_protobuf::service::media::shared::message::Setup &request) {
 
             OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelSetupRequest()";
             OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", Codec: " << MediaCodecType_Name(request.type());
 
-            aap_protobuf::service::media::sink::message::MediaSinkChannelSetupResponse response;
-            auto status = aap_protobuf::service::media::sink::MediaSinkChannelSetupStatus::STATUS_READY;
-            response.set_media_status(status);
+            aap_protobuf::service::media::shared::message::Config response;
+            auto status = aap_protobuf::service::media::shared::message::Config::STATUS_READY;
+            response.set_status(status);
             response.set_max_unacked(1);
             response.add_configuration_indices(0);
 
@@ -155,7 +154,7 @@ namespace f1x {
            * Generic Media Ack
            */
           void MediaSourceService::onMediaChannelAckIndication(
-              const aap_protobuf::service::media::source::message::MediaSourceMediaAckIndication &) {
+              const aap_protobuf::service::media::source::message::Ack &) {
             OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelAckIndication()";
             channel_->receive(this->shared_from_this());
           }

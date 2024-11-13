@@ -89,10 +89,10 @@ public:
     QString readFileContent(QString fileName) const override;
     QString getParamFromFile(QString fileName, QString searchString) const override;
 
-    aap_protobuf::service::media::shared::message::VideoFrameRateType getVideoFPS() const override;
-    void setVideoFPS(aap_protobuf::service::media::shared::message::VideoFrameRateType value) override;
-    aap_protobuf::service::media::shared::message::VideoCodecResolutionType getVideoResolution() const override;
-    void setVideoResolution(aap_protobuf::service::media::shared::message::VideoCodecResolutionType value) override;
+    aap_protobuf::service::media::sink::message::VideoFrameRateType getVideoFPS() const override;
+    void setVideoFPS(aap_protobuf::service::media::sink::message::VideoFrameRateType value) override;
+    aap_protobuf::service::media::sink::message::VideoCodecResolutionType getVideoResolution() const override;
+    void setVideoResolution(aap_protobuf::service::media::sink::message::VideoCodecResolutionType value) override;
     size_t getScreenDPI() const override;
     void setScreenDPI(size_t value) override;
     void setOMXLayerIndex(int32_t value) override;
@@ -125,7 +125,7 @@ public:
     void setAudioOutputBackendType(AudioOutputBackendType value) override;
 private:
     void readButtonCodes(boost::property_tree::ptree& iniConfig);
-    void insertButtonCode(boost::property_tree::ptree& iniConfig, const std::string& buttonCodeKey, aap_protobuf::service::media::sink::KeyCode buttonCode);
+    void insertButtonCode(boost::property_tree::ptree& iniConfig, const std::string& buttonCodeKey, aap_protobuf::service::media::sink::message::KeyCode buttonCode);
     void writeButtonCodes(boost::property_tree::ptree& iniConfig);
 
     HandednessOfTrafficType handednessOfTrafficType_;
@@ -148,8 +148,8 @@ private:
     bool showAutoPlay_;
     bool instantPlay_;
 
-    aap_protobuf::service::media::shared::message::VideoFrameRateType videoFPS_;
-    aap_protobuf::service::media::shared::message::VideoCodecResolutionType videoResolution_;
+    aap_protobuf::service::media::sink::message::VideoFrameRateType videoFPS_;
+    aap_protobuf::service::media::sink::message::VideoCodecResolutionType videoResolution_;
     size_t screenDPI_;
     int32_t omxLayerIndex_;
     QRect videoMargins_;
@@ -196,14 +196,10 @@ private:
     static const std::string cVideoMarginWidth;
     static const std::string cVideoMarginHeight;
 
-    struct Audio {
-      struct Channel {
-        static const std::string cMediaEnabled;
-        static const std::string cGuidanceEnabled;
-        static const std::string cSystemEnabled;
-        static const std::string cTelephonyEnabled;
-      };
-    };
+    static const std::string cAudioChannelMediaEnabled;
+    static const std::string cAudioChannelGuidanceEnabled;
+    static const std::string cAudioChannelSystemEnabled;
+    static const std::string cAudioChannelTelephonyEnabled;
 
     static const std::string cAudioOutputBackendType;
 

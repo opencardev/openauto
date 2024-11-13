@@ -61,7 +61,7 @@ namespace f1x {
           }
 
           void BluetoothService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[BluetoothService] fillFeatures()";
 
             if (bluetoothDevice_->isAvailable()) {
@@ -69,18 +69,24 @@ namespace f1x {
 
               auto *service = response.add_channels();
               service->set_id(static_cast<uint32_t>(channel_->getId()));
+
               auto bluetooth = service->mutable_bluetooth_service();
+              // If the HU wants the MD to skip the Bluetooth Pairing and Connection process, the HU can declaire it's address as SKIP_THIS_BLUETOOTH
               bluetooth->set_car_address(bluetoothDevice_->getLocalAddress());
-              bluetooth->add_supported_pairing_methods(aap_protobuf::channel::bluetooth::event::BluetoothPairingMethod::BLUETOOTH_PAIRING_PIN);
-              bluetooth->add_supported_pairing_methods(aap_protobuf::channel::bluetooth::event::BluetoothPairingMethod::BLUETOOTH_PAIRING_NUMERIC_COMPARISON);
+
+              // AAP supports bth PIN and Numeric Comparison as pairing methods.
+              bluetooth->add_supported_pairing_methods(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_PIN);
+              bluetooth->add_supported_pairing_methods(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_NUMERIC_COMPARISON);
+            } else {
+              OPENAUTO_LOG(info) << "[BluetoothService] Bluetooth Not Available ";
             }
           }
 
-          void BluetoothService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void BluetoothService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[BluetoothService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[BluetoothService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 
@@ -93,7 +99,7 @@ namespace f1x {
           }
 
           void BluetoothService::onBluetoothPairingRequest(
-              const aap_protobuf::channel::bluetooth::event::BluetoothPairingRequest &request) {
+              const aap_protobuf::service::bluetooth::message::BluetoothPairingRequest &request) {
             OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothPairingRequest()";
             OPENAUTO_LOG(info) << "[BluetoothService] Phone Address: " << request.phone_address();
 
@@ -106,8 +112,15 @@ namespace f1x {
               OPENAUTO_LOG(info) << "[BluetoothService] Phone is Not Paired";
             }
 
-            response.set_already_paired(isPaired);
+            // TODO: Response Status
+            /*
+             * The HU must always sent a STATUS_SUCCESS response,
+             * or STATUS_BLUETOOTH_PAIRING_DELAYED if:
+             *    there's a delay in allowing bluetooth
+             *    the HU is already engaged in a bluetooth call
+             */
             response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
+            response.set_already_paired(isPaired);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
             promise->then([]() {}, std::bind(&BluetoothService::onChannelError, this->shared_from_this(),

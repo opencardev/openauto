@@ -60,7 +60,7 @@ namespace f1x {
           }
 
           void GenericNotificationService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[GenericNotificationService] fillFeatures()";
 
             auto *service = response.add_channels();
@@ -69,11 +69,11 @@ namespace f1x {
             auto *genericNotification = service->mutable_wifi_projection_service();
           }
 
-          void GenericNotificationService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void GenericNotificationService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[GenericNotificationService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 

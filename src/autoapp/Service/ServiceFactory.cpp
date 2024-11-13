@@ -104,11 +104,11 @@ namespace f1x {
           OPENAUTO_LOG(info) << "[ServiceFactory] createInputService()";
           QRect videoGeometry;
           switch (configuration_->getVideoResolution()) {
-            case aap_protobuf::service::media::shared::message::VideoCodecResolutionType::VIDEO_1280x720:
+            case aap_protobuf::service::media::sink::message::VideoCodecResolutionType::VIDEO_1280x720:
               OPENAUTO_LOG(info) << "[ServiceFactory] Resolution 1280x720";
               videoGeometry = QRect(0, 0, 1280, 720);
               break;
-            case aap_protobuf::service::media::shared::message::VideoCodecResolutionType::VIDEO_1920x1080:
+            case aap_protobuf::service::media::sink::message::VideoCodecResolutionType::VIDEO_1920x1080:
               OPENAUTO_LOG(info) << "[ServiceFactory] Resolution 1920x1080";
               videoGeometry = QRect(0, 0, 1920, 1080);
               break;
@@ -162,8 +162,8 @@ namespace f1x {
                 projection::IAudioOutput::Pointer(new projection::QtAudioOutput(1, 16, 16000),
                                                   std::bind(&QObject::deleteLater, std::placeholders::_1));
 
-            serviceList.emplace_back(
-                std::make_shared<mediasink::TelephonyAudioService>(ioService_, messenger, std::move(telephonyAudioOutput)));
+           // serviceList.emplace_back(
+           //     std::make_shared<mediasink::TelephonyAudioService>(ioService_, messenger, std::move(telephonyAudioOutput)));
           }
 
           /*

@@ -1,11 +1,11 @@
 if (AAP_PROTOBUF_LIB_DIRS AND AAP_PROTOBUF_INCLUDE_DIRS)
     # in cache already
-    message(STATUS "aap_protobuf cached")
+    message(STATUS "aap_protobuf is cached")
     set(AAP_PROTOBUF_FOUND TRUE)
 else (AAP_PROTOBUF_LIB_DIRS AND AAP_PROTOBUF_INCLUDE_DIRS)
     find_path(AAP_PROTOBUF_INCLUDE_DIR
             NAMES
-            channel/ChannelCloseNotification.pb.h
+            channel/control/GalConstants.pb.h
             PATHS
             /usr/include
             /usr/local/include
@@ -37,7 +37,7 @@ else (AAP_PROTOBUF_LIB_DIRS AND AAP_PROTOBUF_INCLUDE_DIRS)
     endif (AAP_PROTOBUF_INCLUDE_DIRS AND AAP_PROTOBUF_LIB_DIRS)
 
     if (AAP_PROTOBUF_FOUND)
-        message(STATUS "Found aap_protobuf:")
+        message(STATUS "SUCCESS. Found: aap_protobuf:")
         message(STATUS " - Includes: ${AAP_PROTOBUF_INCLUDE_DIRS}")
         message(STATUS " - Libraries: ${AAP_PROTOBUF_LIB_DIRS}")
         add_library(aap_protobuf INTERFACE)
@@ -46,7 +46,7 @@ else (AAP_PROTOBUF_LIB_DIRS AND AAP_PROTOBUF_INCLUDE_DIRS)
     else (AAP_PROTOBUF_FOUND)
         message(STATUS " - Includes: ${AAP_PROTOBUF_INCLUDE_DIRS}")
         message(STATUS " - Libraries: ${AAP_PROTOBUF_LIB_DIRS}")
-        message(FATAL_ERROR "Could not find aap_protobuf")
+        message(FATAL_ERROR "Could not locate aap_protobuf")
     endif (AAP_PROTOBUF_FOUND)
 
     # show the AAP_PROTOBUF_INCLUDE_DIRS and AAP_PROTOBUF_LIB_DIRS variables only in the advanced view

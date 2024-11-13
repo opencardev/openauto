@@ -83,91 +83,91 @@ bool InputDevice::eventFilter(QObject* obj, QEvent* event)
 bool InputDevice::handleKeyEvent(QEvent* event, QKeyEvent* key)
 {
     auto eventType = event->type() == QEvent::KeyPress ? ButtonEventType::PRESS : ButtonEventType::RELEASE;
-    aap_protobuf::service::media::sink::KeyCode buttonCode;
+    aap_protobuf::service::media::sink::message::KeyCode buttonCode;
     WheelDirection wheelDirection = WheelDirection::NONE;
 
     switch(key->key())
     {
     case Qt::Key_Return:
     case Qt::Key_Enter:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_CENTER;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_CENTER;
         break;
 
     case Qt::Key_Left:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_LEFT;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_LEFT;
         break;
 
     case Qt::Key_Right:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_RIGHT;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_RIGHT;
         break;
 
     case Qt::Key_Up:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_UP;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_UP;
         break;
 
     case Qt::Key_Down:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_DPAD_DOWN;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_DOWN;
         break;
 
     case Qt::Key_Escape:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_BACK;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_BACK;
         break;
 
     case Qt::Key_H:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_HOME;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_HOME;
         break;
 
     case Qt::Key_P:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_CALL;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_CALL;
         break;
 
     case Qt::Key_O:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_ENDCALL;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ENDCALL;
         break;
 
     case Qt::Key_MediaPlay:
     case Qt::Key_X:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PLAY;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PLAY;
         break;
 
     case Qt::Key_MediaPause:
     case Qt::Key_C:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PAUSE;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PAUSE;
         break;
 
     case Qt::Key_MediaPrevious:
     case Qt::Key_V:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PREVIOUS;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PREVIOUS;
         break;
 
     case Qt::Key_MediaTogglePlayPause:
     case Qt::Key_B:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_PLAY_PAUSE;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PLAY_PAUSE;
         break;
 
     case Qt::Key_MediaNext:
     case Qt::Key_N:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_MEDIA_NEXT;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_NEXT;
         break;
 
     case Qt::Key_M:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_SEARCH;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_SEARCH;
         break;
 
     case Qt::Key_1:
         wheelDirection = WheelDirection::LEFT;
         eventType = ButtonEventType::NONE;
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_ROTARY_CONTROLLER;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ROTARY_CONTROLLER;
         break;
 
     case Qt::Key_2:
         wheelDirection = WheelDirection::RIGHT;
         eventType = ButtonEventType::NONE;
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_ROTARY_CONTROLLER;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ROTARY_CONTROLLER;
         break;
 
     case Qt::Key_F:
-        buttonCode = aap_protobuf::service::media::sink::KeyCode::KEYCODE_NAVIGATION;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_NAVIGATION;
         break;
 
     default:
@@ -177,7 +177,7 @@ bool InputDevice::handleKeyEvent(QEvent* event, QKeyEvent* key)
     const auto& buttonCodes = this->getSupportedButtonCodes();
     if(std::find(buttonCodes.begin(), buttonCodes.end(), buttonCode) != buttonCodes.end())
     {
-        if(buttonCode != aap_protobuf::service::media::sink::KeyCode::KEYCODE_ROTARY_CONTROLLER || event->type() == QEvent::KeyRelease)
+        if(buttonCode != aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ROTARY_CONTROLLER || event->type() == QEvent::KeyRelease)
         {
             eventHandler_->onButtonEvent({eventType, wheelDirection, buttonCode});
         }
@@ -193,18 +193,18 @@ bool InputDevice::handleTouchEvent(QEvent* event)
         return true;
     }
 
-    aap_protobuf::service::input::message::PointerAction type;
+    aap_protobuf::service::inputsource::message::PointerAction type;
 
     switch(event->type())
     {
     case QEvent::MouseButtonPress:
-        type = aap_protobuf::service::input::message::PointerAction::ACTION_DOWN;
+        type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_DOWN;
         break;
     case QEvent::MouseButtonRelease:
-        type = aap_protobuf::service::input::message::PointerAction::ACTION_UP;
+        type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_UP;
         break;
     case QEvent::MouseMove:
-        type = aap_protobuf::service::input::message::PointerAction::ACTION_MOVED;
+        type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_MOVED;
         break;
     default:
         return true;

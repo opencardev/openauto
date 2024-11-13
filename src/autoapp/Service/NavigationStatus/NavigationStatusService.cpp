@@ -60,7 +60,7 @@ namespace f1x {
           }
 
           void NavigationStatusService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[NavigationStatusService] fillFeatures()";
 
             auto *service = response.add_channels();
@@ -69,11 +69,11 @@ namespace f1x {
             auto *navigationStatus = service->mutable_navigation_status_service();
           }
 
-          void NavigationStatusService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void NavigationStatusService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[NavigationStatusService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[NavigationStatusService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 
@@ -85,16 +85,16 @@ namespace f1x {
             channel_->receive(this->shared_from_this());
           }
 
-          void NavigationStatusService::onStatusUpdate(const aap_protobuf::channel::navigation::event::NavigationStatus &navStatus) {
+          void NavigationStatusService::onStatusUpdate(const aap_protobuf::service::navigationstatus::message::NavigationStatus &navStatus) {
             channel_->receive(this->shared_from_this());
           }
 
 
-          void NavigationStatusService::onTurnEvent(const aap_protobuf::channel::navigation::event::NavigationNextTurnEvent &turnEvent) {
+          void NavigationStatusService::onTurnEvent(const aap_protobuf::service::navigationstatus::message::NavigationNextTurnEvent &turnEvent) {
             channel_->receive(this->shared_from_this());
           }
 
-          void NavigationStatusService::onDistanceEvent(const aap_protobuf::service::navigation::message::NavigationNextTurnDistanceEvent &distanceEvent) {
+          void NavigationStatusService::onDistanceEvent(const aap_protobuf::service::navigationstatus::message::NavigationNextTurnDistanceEvent &distanceEvent) {
             channel_->receive(this->shared_from_this());
           }
 

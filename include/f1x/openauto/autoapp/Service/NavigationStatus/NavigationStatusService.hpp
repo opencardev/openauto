@@ -40,15 +40,15 @@ namespace f1x {
             void stop() override;
             void pause() override;
             void resume() override;
-            void fillFeatures(aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) override;
+            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-            void onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) override;
+            void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
             void onChannelError(const aasdk::error::Error &e) override;
 
-            void NavigationStatusService::onStatusUpdate(const aap_protobuf::channel::navigation::event::NavigationStatus &navStatus) override;
-            void NavigationStatusService::onTurnEvent(const aap_protobuf::channel::navigation::event::NavigationNextTurnEvent &turnEvent) override;
-            void NavigationStatusService::onDistanceEvent(const aap_protobuf::service::navigation::message::NavigationNextTurnDistanceEvent &distanceEvent) override;
+            void onStatusUpdate(const aap_protobuf::service::navigationstatus::message::NavigationStatus &navStatus) override;
+            void onTurnEvent(const aap_protobuf::service::navigationstatus::message::NavigationNextTurnEvent &turnEvent) override;
+            void onDistanceEvent(const aap_protobuf::service::navigationstatus::message::NavigationNextTurnDistanceEvent &distanceEvent) override;
 
           private:
             using std::enable_shared_from_this<NavigationStatusService>::shared_from_this;

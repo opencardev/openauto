@@ -54,44 +54,7 @@ void LocalBluetoothDevice::createBluetoothLocalDevice()
 
     localDevice_->powerOn();
     localDevice_->setHostMode(QBluetoothLocalDevice::HostDiscoverable);
-//
-//    rfcommServer_ = std::make_unique<QBluetoothServer>(QBluetoothServiceInfo::RfcommProtocol, this);
-//    connect(rfcommServer_.get(), &QBluetoothServer::newConnection, this, &LocalBluetoothDevice::onClientConnected, Qt::QueuedConnection);
-//    if (rfcommServer_->listen(localDevice_->address())) {
-//        OPENAUTO_LOG(debug) << "Listening for rfcomm connections on port " << rfcommServer_->serverPort();
-//    }
-//    else {
-//        OPENAUTO_LOG(debug) << "Could not start rfcomm";
-//    }
-//
-//    //"4de17a00-52cb-11e6-bdf4-0800200c9a66";
-//    //"669a0c20-0008-f4bd-e611-cb52007ae14d";
-//    const QBluetoothUuid serviceUuid(QLatin1String("4de17a00-52cb-11e6-bdf4-0800200c9a66"));
-//
-//    QBluetoothServiceInfo::Sequence classId;
-//    classId << QVariant::fromValue(QBluetoothUuid(QBluetoothUuid::SerialPort));
-//    serviceInfo_.setAttribute(QBluetoothServiceInfo::BluetoothProfileDescriptorList, classId);
-//    classId.prepend(QVariant::fromValue(serviceUuid));
-//    serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceClassIds, classId);
-//    serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceName, "OpenAuto Bluetooth Service");
-//    serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceDescription, "AndroidAuto WiFi projection automatic setup");
-//    serviceInfo_.setAttribute(QBluetoothServiceInfo::ServiceProvider, "f1xstudio.com");
-//    serviceInfo_.setServiceUuid(serviceUuid);
-//
-//    QBluetoothServiceInfo::Sequence publicBrowse;
-//    publicBrowse << QVariant::fromValue(QBluetoothUuid(QBluetoothUuid::PublicBrowseGroup));
-//    serviceInfo_.setAttribute(QBluetoothServiceInfo::BrowseGroupList, publicBrowse);
-//
-//    QBluetoothServiceInfo::Sequence protocolDescriptorList;
-//    QBluetoothServiceInfo::Sequence protocol;
-//    protocol << QVariant::fromValue(QBluetoothUuid(QBluetoothUuid::L2cap));
-//    protocolDescriptorList.append(QVariant::fromValue(protocol));
-//    protocol.clear();
-//    protocol << QVariant::fromValue(QBluetoothUuid(QBluetoothUuid::Rfcomm))
-//             << QVariant::fromValue(quint8(rfcommServer_->serverPort()));
-//    protocolDescriptorList.append(QVariant::fromValue(protocol));
-//    serviceInfo_.setAttribute(QBluetoothServiceInfo::ProtocolDescriptorList, protocolDescriptorList);
-//    serviceInfo_.registerService(localDevice_->address());
+
 }
 
 void LocalBluetoothDevice::stop()
@@ -217,19 +180,6 @@ void LocalBluetoothDevice::onHostModeStateChanged(QBluetoothLocalDevice::HostMod
         pairingPromise_->reject();
         pairingPromise_.reset();
         pairingAddress_ = QBluetoothAddress();
-    }
-}
-
-void LocalBluetoothDevice::onClientConnected() {
-    auto socket = rfcommServer_->nextPendingConnection();
-
-    if(socket != nullptr)
-    {
-        OPENAUTO_LOG(info) << "[BluetoothServer] rfcomm client connected, peer name: " << socket->peerName().toStdString();
-    }
-    else
-    {
-        OPENAUTO_LOG(error) << "[BluetoothServer] received null socket during client connection.";
     }
 }
 

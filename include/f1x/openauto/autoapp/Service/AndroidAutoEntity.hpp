@@ -56,14 +56,15 @@ public:
     // TODO: on channel open request... on channel close...  on navigation focus, on voice session notification, on user switch, on call availability, on service disc update, on battery status, on car connected devices
     void onVersionResponse(uint16_t majorCode, uint16_t minorCode, aap_protobuf::shared::MessageStatus status) override;
     void onHandshake(const aasdk::common::DataConstBuffer& payload) override;
-    void onServiceDiscoveryRequest(const aap_protobuf::channel::control::servicediscovery::event::ServiceDiscoveryRequest& request) override;
-    void onAudioFocusRequest(const aap_protobuf::channel::control::focus::audio::event::AudioFocusRequest& request) override;
-    void onByeByeRequest(const aap_protobuf::channel::control::byebye::event::ByeByeRequest& request) override;
-    void onByeByeResponse(const aap_protobuf::channel::control::byebye::notification::ByeByeResponse& response) override;
-    void onNavigationFocusRequest(const aap_protobuf::channel::control::focus::navigation::event::NavFocusRequestNotification& request) override;
-    void onVoiceSessionRequest(const aap_protobuf::channel::control::voice::VoiceSessionNotification &request) override;
-    void onPingResponse(const aap_protobuf::channel::control::ping::PingResponse& response) override;
-    void onPingRequest(const aap_protobuf::channel::control::ping::PingRequest& request) override;
+    void onServiceDiscoveryRequest(const aap_protobuf::service::control::message::ServiceDiscoveryRequest& request) override;
+    void onAudioFocusRequest(const aap_protobuf::service::control::message::AudioFocusRequest& request) override;
+    void onByeByeRequest(const aap_protobuf::service::control::message::ByeByeRequest& request) override;
+    void onByeByeResponse(const aap_protobuf::service::control::message::ByeByeResponse& response) override;
+    void onNavigationFocusRequest(const aap_protobuf::service::control::message::NavFocusRequestNotification& request) override;
+    void onVoiceSessionRequest(const aap_protobuf::service::control::message::VoiceSessionNotification &request) override;
+    void onBatteryStatusNotification(const aap_protobuf::service::control::message::BatteryStatusNotification &notification) override;
+    void onPingResponse(const aap_protobuf::service::control::message::PingResponse& response) override;
+    void onPingRequest(const aap_protobuf::service::control::message::PingRequest& request) override;
     void onChannelError(const aasdk::error::Error& e) override;
 
 private:

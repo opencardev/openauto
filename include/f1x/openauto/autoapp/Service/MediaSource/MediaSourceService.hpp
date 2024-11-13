@@ -55,18 +55,18 @@ namespace service
       void resume() override;
 
       void fillFeatures(
-          aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) override;
+          aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-      void onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) override;
+      void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
       void onMediaChannelSetupRequest(
-          const aap_protobuf::channel::media::event::Setup &request) override;
+          const aap_protobuf::service::media::shared::message::Setup &request) override;
 
       void onMediaSourceOpenRequest(
           const aap_protobuf::service::media::source::message::MicrophoneRequest &request) override;
 
       void onMediaChannelAckIndication(
-          const aap_protobuf::service::media::source::message::MediaSourceMediaAckIndication &indication) override;
+          const aap_protobuf::service::media::source::message::Ack &indication) override;
 
       void onChannelError(const aasdk::error::Error &e) override;
 

@@ -16,12 +16,12 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <aap_protobuf/connection/WirelessTcpConfiguration.pb.h>
-#include <aap_protobuf/connection/PingConfiguration.pb.h>
-#include <aap_protobuf/connection/ConnectionConfiguration.pb.h>
-#include <aap_protobuf/channel/control/focus/audio/event/AudioFocusRequestType.pb.h>
-#include <aap_protobuf/channel/control/focus/audio/notification/AudioFocusStateType.pb.h>
-#include <aap_protobuf/channel/control/focus/navigation/shared/NavFocusType.pb.h>
+#include <aap_protobuf/service/control/message/WirelessTcpConfiguration.pb.h>
+#include <aap_protobuf/service/control/message/PingConfiguration.pb.h>
+#include <aap_protobuf/service/control/message/ConnectionConfiguration.pb.h>
+#include <aap_protobuf/service/control/message/AudioFocusRequestType.pb.h>
+#include <aap_protobuf/service/control/message/AudioFocusStateType.pb.h>
+#include <aap_protobuf/service/control/message/NavFocusType.pb.h>
 #include <aasdk/Channel/Control/ControlServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/AndroidAutoEntity.hpp>
 #include <f1x/openauto/Common/Log.hpp>
@@ -36,7 +36,7 @@
  *
  * AAP needs Bluetooth HFP for Telephone
  *
- * HU > MD Bluetooth Announcement (HU MAC Address, Supported Pairing Methods)                         ***********
+ * HU > MD Bluetooth Announcement (HU MAC Address, Supported Pairing Methods)                         Done as Service Discovery
  * HU < MD Bluetooth Pairing Request                                                                  ***********
  * HU > MD Bluetoth Pairing Response***********
  *
@@ -205,7 +205,7 @@ namespace f1x {
             } else {
               OPENAUTO_LOG(info) << "[AndroidAutoEntity] Handshake completed.";
 
-              aap_protobuf::channel::control::auth::AuthResponse authCompleteIndication;
+              aap_protobuf::service::control::message::AuthResponse authCompleteIndication;
               authCompleteIndication.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
               auto authCompletePromise = aasdk::channel::SendPromise::defer(strand_);
@@ -223,24 +223,38 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onServiceDiscoveryRequest(
-            const aap_protobuf::channel::control::servicediscovery::event::ServiceDiscoveryRequest &request) {
+            const aap_protobuf::service::control::message::ServiceDiscoveryRequest &request) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onServiceDiscoveryRequest()";
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] Type: " << request.label_text() << ", Model: "
                              << request.device_name();
 
-          aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse serviceDiscoveryResponse;
+          aap_protobuf::service::control::message::ServiceDiscoveryResponse serviceDiscoveryResponse;
           serviceDiscoveryResponse.mutable_channels()->Reserve(256);
+          serviceDiscoveryResponse.set_driver_position(aap_protobuf::service::control::message::DriverPosition::DRIVER_POSITION_RIGHT);
+          serviceDiscoveryResponse.set_can_play_native_media_during_vr(false);
+          serviceDiscoveryResponse.set_display_name("CubeOne Journey");
+          serviceDiscoveryResponse.set_probe_for_support(false);
+
+          auto *connectionConfiguration = serviceDiscoveryResponse.mutable_connection_configuration();
+
+          auto *pingConfiguration = connectionConfiguration->mutable_ping_configuration();
+          pingConfiguration->set_tracked_ping_count(5);
+          pingConfiguration->set_timeout_ms(3000);
+          pingConfiguration->set_interval_ms(1000);
+          pingConfiguration->set_high_latency_threshold_ms(200);
+
+
           auto *headUnitInfo = serviceDiscoveryResponse.mutable_headunit_info();
 
           serviceDiscoveryResponse.set_display_name("JourneyOS");
           headUnitInfo->set_make("CubeOne");
           headUnitInfo->set_model("Journey");
           headUnitInfo->set_year("2024");
-          headUnitInfo->set_vehicle_id("2009");
+          headUnitInfo->set_vehicle_id("2024110822150988");
           headUnitInfo->set_head_unit_make("CubeOne");
           headUnitInfo->set_head_unit_model("Journey");
-          headUnitInfo->set_head_unit_software_build("2024.10.15");
-          headUnitInfo->set_head_unit_software_version("1");
+          headUnitInfo->set_head_unit_software_build("1");
+          headUnitInfo->set_head_unit_software_version("1.0");
 
           std::for_each(serviceList_.begin(), serviceList_.end(),
                         std::bind(&IService::fillFeatures, std::placeholders::_1, std::ref(serviceDiscoveryResponse)));
@@ -253,22 +267,36 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onAudioFocusRequest(
-            const aap_protobuf::channel::control::focus::audio::event::AudioFocusRequest &request) {
+            const aap_protobuf::service::control::message::AudioFocusRequest &request) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onAudioFocusRequest()";
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] AudioFocusRequestType received: "
                              << AudioFocusRequestType_Name(request.audio_focus_type());
 
-          aap_protobuf::channel::control::focus::audio::notification::AudioFocusStateType audioFocusStateType =
+          /*
+           * When the MD starts playing music for example, it sends a gain request. The HU replies:
+           * STATE_GAIN - no restrictions
+           * STATE_GAIN_MEDIA_ONLY when using a guidance channel
+           * STATE_LOSS when vehicle is playing high priority sound after stopping native media (ie USB, RADIO)
+           *
+           * When HU starts playing music, we should send a STATE LOSS to stop MD music and guidance.
+           */
+
+          // If release, we should stop all playback
+          // MD wants to play a sound, get a notifiation regarding GAIN
+          // HU grants focus - to enable MD to send audio over both MEDIA and GUIDANCE channels.
+          // MD can then play guidance over the MEDIA or GUIDANCE streams
+          // HU should send STATE_LOSS to stop MD playing (ie if user starts radio player)
+          aap_protobuf::service::control::message::AudioFocusStateType audioFocusStateType =
               request.audio_focus_type() ==
-              aap_protobuf::channel::control::focus::audio::event::AudioFocusRequestType::AUDIO_FOCUS_RELEASE
-              ? aap_protobuf::channel::control::focus::audio::notification::AudioFocusStateType::AUDIO_FOCUS_STATE_LOSS
-              : aap_protobuf::channel::control::focus::audio::notification::AudioFocusStateType::AUDIO_FOCUS_STATE_GAIN;
+              aap_protobuf::service::control::message::AudioFocusRequestType::AUDIO_FOCUS_RELEASE
+              ? aap_protobuf::service::control::message::AudioFocusStateType::AUDIO_FOCUS_STATE_LOSS
+              : aap_protobuf::service::control::message::AudioFocusStateType::AUDIO_FOCUS_STATE_GAIN;
 
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] AudioFocusStateType determined: "
                              << AudioFocusStateType_Name(audioFocusStateType);
 
-          aap_protobuf::channel::control::focus::audio::notification::AudioFocusNotification response;
-          response.set_audio_focus_state(audioFocusStateType);
+          aap_protobuf::service::control::message::AudioFocusNotification response;
+          response.set_focus_state(audioFocusStateType);
 
           auto promise = aasdk::channel::SendPromise::defer(strand_);
           promise->then([]() { OPENAUTO_LOG(info) "[AndroidAutoEntity] Resolved Promise"; },
@@ -278,11 +306,11 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onByeByeRequest(
-            const aap_protobuf::channel::control::byebye::event::ByeByeRequest &request) {
+            const aap_protobuf::service::control::message::ByeByeRequest &request) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onByeByeRequest()";
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] Reason received: " << request.reason();
 
-          aap_protobuf::channel::control::byebye::notification::ByeByeResponse response;
+          aap_protobuf::service::control::message::ByeByeResponse response;
           auto promise = aasdk::channel::SendPromise::defer(strand_);
           promise->then(std::bind(&AndroidAutoEntity::triggerQuit, this->shared_from_this()),
                         std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
@@ -291,19 +319,25 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onByeByeResponse(
-            const aap_protobuf::channel::control::byebye::notification::ByeByeResponse &response) {
+            const aap_protobuf::service::control::message::ByeByeResponse &response) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onByeByeResponse()";
           this->triggerQuit();
         }
 
         void AndroidAutoEntity::onNavigationFocusRequest(
-            const aap_protobuf::channel::control::focus::navigation::event::NavFocusRequestNotification &request) {
+            const aap_protobuf::service::control::message::NavFocusRequestNotification &request) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onByeByeResponse()";
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] NavFocusRequestNotification type received: " << NavFocusType_Name(request.focus_type());
 
-          aap_protobuf::channel::control::focus::navigation::notification::NavFocusNotification response;
+          /*
+           * If the MD sends NAV_FOCUS_PROJECTED in the request, we should stop any local navigation on the HU and grant NAV_FOCUS_NATIVE in the response.
+           * If the HU starts its own Nav, we should send NAV_FOCUS_NATIVE.
+           *
+           * For now, this is fine to be hardcoded as OpenAuto does not provide any local navigation, only that provided through Android Auto.
+           */
+          aap_protobuf::service::control::message::NavFocusNotification response;
           response.set_focus_type(
-              aap_protobuf::channel::control::focus::navigation::shared::NavFocusType::NAV_FOCUS_PROJECTED);
+              aap_protobuf::service::control::message::NavFocusType::NAV_FOCUS_PROJECTED);
 
           auto promise = aasdk::channel::SendPromise::defer(strand_);
           promise->then([]() {},
@@ -312,18 +346,23 @@ namespace f1x {
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
-        void AndroidAutoEntity::onBatteryStatusNotification(const aap_protobuf::channel::control::BatteryStatusNotification &notification) {
+        void AndroidAutoEntity::onBatteryStatusNotification(const aap_protobuf::service::control::message::BatteryStatusNotification &notification) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onBatteryStatusNotification()";
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
+        void AndroidAutoEntity::onPingRequest(const aap_protobuf::service::control::message::PingRequest& request) {
+          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onPingRequest()";
+          controlServiceChannel_->receive(this->shared_from_this());
+        }
+
         void AndroidAutoEntity::onVoiceSessionRequest(
-            const aap_protobuf::channel::control::voice::VoiceSessionNotification &request) {
+            const aap_protobuf::service::control::message::VoiceSessionNotification &request) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onVoiceSessionRequest()";
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
-        void AndroidAutoEntity::onPingResponse(const aap_protobuf::channel::control::ping::PingResponse &response) {
+        void AndroidAutoEntity::onPingResponse(const aap_protobuf::service::control::message::PingResponse &response) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onPingResponse()";
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] Timestamp: " << response.timestamp();
           pinger_->pong();
@@ -366,7 +405,7 @@ namespace f1x {
           promise->then([]() {},
                         std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
 
-          aap_protobuf::channel::control::ping::PingRequest request;
+          aap_protobuf::service::control::message::PingRequest request;
           auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
               std::chrono::high_resolution_clock::now().time_since_epoch());
           request.set_timestamp(timestamp.count());

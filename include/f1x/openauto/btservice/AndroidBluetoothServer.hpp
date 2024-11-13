@@ -24,6 +24,9 @@
 #include <f1x/openauto/btservice/IAndroidBluetoothServer.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <aasdk/Messenger/Message.hpp>
+#include <aap_protobuf/service/wifiprojection/message//WifiCredentialsRequest.pb.h>
+#include <aap_protobuf/service/wifiprojection/message//WifiCredentialsResponse.pb.h>
+#include <aap_protobuf/service/wifiprojection/WifiProjectionMessageId.pb.h>
 
 namespace f1x
 {

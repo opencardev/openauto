@@ -65,7 +65,6 @@ private:
     QBluetoothServiceInfo serviceInfo_;
     std::unique_ptr<QBluetoothServer> rfcommServer_;
 
-    void onClientConnected();
 };
 
 }

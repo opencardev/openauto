@@ -60,7 +60,7 @@ namespace f1x {
           }
 
           void MediaPlaybackStatusService::fillFeatures(
-              aap_protobuf::channel::control::servicediscovery::notification::ServiceDiscoveryResponse &response) {
+              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] fillFeatures()";
 
             auto *service = response.add_channels();
@@ -69,11 +69,11 @@ namespace f1x {
             auto *mediaPlaybackStatus = service->mutable_media_playback_service();
           }
 
-          void MediaPlaybackStatusService::onChannelOpenRequest(const aap_protobuf::channel::ChannelOpenRequest &request) {
+          void MediaPlaybackStatusService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[MediaPlaybackStatusService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
-            aap_protobuf::channel::ChannelOpenResponse response;
+            aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             response.set_status(status);
 
