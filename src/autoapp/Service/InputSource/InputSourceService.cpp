@@ -16,7 +16,6 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <aap_protobuf/service/inputsource/message/InputReport.pb.h>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/InputSource/InputSourceService.hpp>
 
@@ -101,7 +100,7 @@ namespace f1x {
           }
 
           void InputSourceService::onKeyBindingRequest(const aap_protobuf::service::media::sink::message::KeyBindingRequest &request) {
-            OPENAUTO_LOG(info) << "[InputSourceService] onKeyBindingRequest()";
+            OPENAUTO_LOG(debug) << "[InputSourceService] onKeyBindingRequest()";
             OPENAUTO_LOG(debug) << "[InputSourceService] KeyCodes Count: " << request.keycodes_size();
 
             aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;

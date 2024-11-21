@@ -27,6 +27,9 @@
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntity.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <f1x/openauto/autoapp/Service/IPinger.hpp>
+#include <aap_protobuf/service/control/message/AudioFocusRequestType.pb.h>
+#include <aap_protobuf/service/control/message/AudioFocusStateType.pb.h>
+#include <aap_protobuf/service/control/message/NavFocusType.pb.h>
 
 namespace f1x
 {

@@ -16,8 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <aap_protobuf/service/sensorsource/message/DrivingStatus.pb.h>
-#include <aap_protobuf/service/sensorsource/message/SensorType.pb.h>
+
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/Sensor/SensorService.hpp>
 #include <fstream>

@@ -100,7 +100,7 @@ namespace f1x {
                                                                ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
                                                                : aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR;
 
-            OPENAUTO_LOG(debug) << "[MediaSourceService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
+            OPENAUTO_LOG(info) << "[MediaSourceService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             response.set_status(status);
@@ -251,7 +251,7 @@ namespace f1x {
            * Reads audio from a MediaSource (eg Microphone). Promise resolves to onMediaSourceDataReady.
            */
           void MediaSourceService::readMediaSource() {
-            OPENAUTO_LOG(error) << "[MediaSourceService] readMediaSource()";
+            OPENAUTO_LOG(debug) << "[MediaSourceService] readMediaSource()";
             if (audioInput_->isActive()) {
               auto readPromise = projection::IAudioInput::ReadPromise::defer(strand_);
               readPromise->then(

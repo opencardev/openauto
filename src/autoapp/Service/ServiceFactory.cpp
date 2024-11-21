@@ -69,7 +69,7 @@ namespace f1x {
           serviceList.emplace_back(this->createSensorService(messenger));
           serviceList.emplace_back(this->createBluetoothService(messenger));
           serviceList.emplace_back(this->createInputService(messenger));
-          serviceList.emplace_back(this->createWifiProjectionService(messenger));
+          //serviceList.emplace_back(this->createWifiProjectionService(messenger));
 
           return serviceList;
         }
@@ -79,20 +79,20 @@ namespace f1x {
           projection::IBluetoothDevice::Pointer bluetoothDevice;
           switch (configuration_->getBluetoothAdapterType()) {
             case configuration::BluetoothAdapterType::LOCAL:
-              OPENAUTO_LOG(info) << "[ServiceFactory] Local Bluetooth";
+              OPENAUTO_LOG(info) << "[ServiceFactory] Using Local Bluetooth Adapter";
               bluetoothDevice = projection::IBluetoothDevice::Pointer(new projection::LocalBluetoothDevice(),
                                                                       std::bind(&QObject::deleteLater,
                                                                                 std::placeholders::_1));
               break;
 
             case configuration::BluetoothAdapterType::REMOTE:
-              OPENAUTO_LOG(info) << "[ServiceFactory] Remote Bluetooth";
+              OPENAUTO_LOG(debug) << "[ServiceFactory] Using Remote Bluetooth Adapter";
               bluetoothDevice = std::make_shared<projection::RemoteBluetoothDevice>(
                   configuration_->getBluetoothRemoteAdapterAddress());
               break;
 
             default:
-              OPENAUTO_LOG(info) << "[ServiceFactory] Dummy Bluetooth";
+              OPENAUTO_LOG(debug) << "[ServiceFactory] Using Dummy Bluetooth";
               bluetoothDevice = std::make_shared<projection::DummyBluetoothDevice>();
               break;
           }
@@ -151,7 +151,8 @@ namespace f1x {
                                                   std::bind(&QObject::deleteLater, std::placeholders::_1));
 
             serviceList.emplace_back(
-                std::make_shared<mediasink::GuidanceAudioService>(ioService_, messenger, std::move(guidanceAudioOutput)));
+                std::make_shared<mediasink::GuidanceAudioService>(ioService_, messenger,
+                                                                  std::move(guidanceAudioOutput)));
           }
 
           if (configuration_->telephonyAudioChannelEnabled()) {
@@ -162,8 +163,9 @@ namespace f1x {
                 projection::IAudioOutput::Pointer(new projection::QtAudioOutput(1, 16, 16000),
                                                   std::bind(&QObject::deleteLater, std::placeholders::_1));
 
-           // serviceList.emplace_back(
-           //     std::make_shared<mediasink::TelephonyAudioService>(ioService_, messenger, std::move(telephonyAudioOutput)));
+            serviceList.emplace_back(
+                std::make_shared<mediasink::TelephonyAudioService>(ioService_, messenger,
+                                                                   std::move(telephonyAudioOutput)));
           }
 
           /*
@@ -197,7 +199,8 @@ namespace f1x {
           OPENAUTO_LOG(info) << "[ServiceFactory] createMediaSourceServices()";
           projection::IAudioInput::Pointer audioInput(new projection::QtAudioInput(1, 16, 16000),
                                                       std::bind(&QObject::deleteLater, std::placeholders::_1));
-          serviceList.emplace_back(std::make_shared<mediasource::MicrophoneMediaSourceService>(ioService_, messenger, std::move(audioInput)));
+          serviceList.emplace_back(std::make_shared<mediasource::MicrophoneMediaSourceService>(ioService_, messenger,
+                                                                                               std::move(audioInput)));
         }
 
         IService::Pointer ServiceFactory::createSensorService(aasdk::messenger::IMessenger::Pointer messenger) {

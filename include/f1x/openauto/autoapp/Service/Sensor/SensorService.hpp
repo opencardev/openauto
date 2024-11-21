@@ -19,6 +19,8 @@
 #pragma once
 
 #include <gps.h>
+#include <aap_protobuf/service/sensorsource/message/DrivingStatus.pb.h>
+#include <aap_protobuf/service/sensorsource/message/SensorType.pb.h>
 #include <aasdk/Channel/SensorSource/SensorSourceService.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <boost/asio/io_service.hpp>

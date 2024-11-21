@@ -37,25 +37,25 @@ namespace f1x {
 
           void RadioService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] start()";
+              OPENAUTO_LOG(debug) << "[RadioService] start()";
             });
           }
 
           void RadioService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] stop()";
+              OPENAUTO_LOG(debug) << "[RadioService] stop()";
             });
           }
 
           void RadioService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] pause()";
+              OPENAUTO_LOG(debug) << "[RadioService] pause()";
             });
           }
 
           void RadioService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[RadioService] resume()";
+              OPENAUTO_LOG(debug) << "[RadioService] resume()";
             });
           }
 

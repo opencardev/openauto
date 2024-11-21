@@ -198,7 +198,7 @@ void App::waitForDevice()
 
 void App::startServerSocket() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-        OPENAUTO_LOG(info) << "Listening for WIFI clients on port 5000";
+        OPENAUTO_LOG(info) << "startServerSocket() - Listening for WIFI Clients on Port 5000";
         auto socket = std::make_shared<boost::asio::ip::tcp::socket>(ioService_);
         acceptor_.async_accept(
                 *socket,
@@ -208,7 +208,7 @@ void App::startServerSocket() {
 }
 
 void App::handleNewClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const boost::system::error_code &err) {
-    OPENAUTO_LOG(info) << "WIFI Client connected";
+    OPENAUTO_LOG(info) << "handleNewClient() - Handle WIFI Client Connection";
     if (!err) {
         start(std::move(socket));
     }

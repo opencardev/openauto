@@ -615,7 +615,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(info) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG(debug) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
                     return value;
                 }
             }
@@ -632,7 +632,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(info) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG(debug) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
                     return value;
                 }
             }
@@ -652,7 +652,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(info) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG(debug) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
                     return value;
                 }
             }
@@ -663,7 +663,7 @@ QString Configuration::getCSValue(QString searchString) const
 
 QString Configuration::getParamFromFile(QString fileName, QString searchString) const
 {
-    OPENAUTO_LOG(info) << "[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString();
+    OPENAUTO_LOG(debug) << "[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString();
     using namespace std;
     ifstream inFile;
     string line;
@@ -685,7 +685,7 @@ QString Configuration::getParamFromFile(QString fileName, QString searchString) 
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(info) << "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG(debug) << "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString();
                     return value;
                 }
             }

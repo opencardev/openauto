@@ -130,7 +130,7 @@ namespace f1x {
             OPENAUTO_LOG(info) << "[AudioMediaSinkService] onChannelOpenRequest()";
             OPENAUTO_LOG(info) << "[AudioMediaSinkService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
 
-            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] Sample Rate: " << audioOutput_->getSampleRate() << ", Sample Size: " << audioOutput_->getSampleSize() << ", Audio Channels: " << audioOutput_->getChannelCount();
+            OPENAUTO_LOG(info) << "[AudioMediaSinkService] Sample Rate: " << audioOutput_->getSampleRate() << ", Sample Size: " << audioOutput_->getSampleSize() << ", Audio Channels: " << audioOutput_->getChannelCount();
 
             const aap_protobuf::shared::MessageStatus status = audioOutput_->open()
                                                                ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
@@ -185,8 +185,8 @@ namespace f1x {
           }
 
           void AudioMediaSinkService::onMediaChannelStopIndication(const aap_protobuf::service::media::shared::message::Stop &indication) {
-            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] onMediaChannelStopIndication()";
-            OPENAUTO_LOG(debug) << "[AudioMediaSinkService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_;
+            OPENAUTO_LOG(info) << "[AudioMediaSinkService] onMediaChannelStopIndication()";
+            OPENAUTO_LOG(info) << "[AudioMediaSinkService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_;
 
             session_ = -1;
             audioOutput_->suspend();

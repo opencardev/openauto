@@ -65,7 +65,7 @@ namespace f1x {
             OPENAUTO_LOG(info) << "[BluetoothService] fillFeatures()";
 
             if (bluetoothDevice_->isAvailable()) {
-              OPENAUTO_LOG(debug) << "[BluetoothService] Local Address: " << bluetoothDevice_->getLocalAddress();
+              OPENAUTO_LOG(info) << "[BluetoothService] Local Address: " << bluetoothDevice_->getLocalAddress();
 
               auto *service = response.add_channels();
               service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -101,7 +101,7 @@ namespace f1x {
           void BluetoothService::onBluetoothPairingRequest(
               const aap_protobuf::service::bluetooth::message::BluetoothPairingRequest &request) {
             OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothPairingRequest()";
-            OPENAUTO_LOG(debug) << "[BluetoothService] Phone Address: " << request.phone_address();
+            OPENAUTO_LOG(info) << "[BluetoothService] Phone Address: " << request.phone_address();
 
             aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
 
@@ -122,9 +122,27 @@ namespace f1x {
             response.set_already_paired(isPaired);
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {}, std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
+            promise->then(std::bind(&BluetoothService::sendBluetoothAuthenticationData, this->shared_from_this()), std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
                                              std::placeholders::_1));
             channel_->sendBluetoothPairingResponse(response, std::move(promise));
+            channel_->receive(this->shared_from_this());
+          }
+
+          void BluetoothService::sendBluetoothAuthenticationData() {
+            aap_protobuf::service::bluetooth::message::BluetoothAuthenticationData data;
+            data.set_auth_data("123456");
+            data.set_pairing_method(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_PIN);
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
+                                             std::placeholders::_1));
+            channel_->sendBluetoothAuthenticationData(data, std::move(promise));
+            channel_->receive(this->shared_from_this());
+          }
+
+          void BluetoothService::onBluetoothAuthenticationResult(const aap_protobuf::service::bluetooth::message::BluetoothAuthenticationResult &request) {
+            OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothAuthenticationResult()";
+            OPENAUTO_LOG(info) << "[BluetoothService] AuthData " << request.status();
+            aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
 
             channel_->receive(this->shared_from_this());
           }

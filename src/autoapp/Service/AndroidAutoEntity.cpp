@@ -16,63 +16,9 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <aap_protobuf/service/control/message/WirelessTcpConfiguration.pb.h>
-#include <aap_protobuf/service/control/message/PingConfiguration.pb.h>
-#include <aap_protobuf/service/control/message/ConnectionConfiguration.pb.h>
-#include <aap_protobuf/service/control/message/AudioFocusRequestType.pb.h>
-#include <aap_protobuf/service/control/message/AudioFocusStateType.pb.h>
-#include <aap_protobuf/service/control/message/NavFocusType.pb.h>
 #include <aasdk/Channel/Control/ControlServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/AndroidAutoEntity.hpp>
 #include <f1x/openauto/Common/Log.hpp>
-
-/*
- * HU > MD Version Request
- * HU < MD ServiceDiscoveryRequest                                                                    **
- * HU > MD Car MetaData (Make, Model, year etc)                                                       **
- * HU < MD when Video Projection starts, it MUST be shown without User Ineraction                     ***********
- * HU < MD Prompt Use to Enable and Pair with Car                                                     ***********
- * HU < MD Request Video Focus for Projection (HU Grant)                                              ***********
- *
- * AAP needs Bluetooth HFP for Telephone
- *
- * HU > MD Bluetooth Announcement (HU MAC Address, Supported Pairing Methods)                         Done as Service Discovery
- * HU < MD Bluetooth Pairing Request                                                                  ***********
- * HU > MD Bluetoth Pairing Response***********
- *
- * AfterPairing, HU can request the Bluetooth PhoneBookAccessProtocol. Sensible UI.
- *
- * HU < MD connect to Bluetooth HFP***********
- * HU Suppress BAP or MAP while AAP connected.***********
- * A2DP should be treated by OEM as another such such as a USB stick or radio. If the user plays music via AA, HU should grant request from AA to change focus to AA. HU manages connectivity., ***********
- * MD connects to HU and routes call over Bluetooth (non Bluetooth call) ***********
- * MD connects Blueooth call and display projection mode ***********
- * MD on call to HFP device - MD continues call, disconnects from other HFP and connects to HFP on Vehicle. ***********
- * AA only uses HFP, hhowever HU may use MAP, PBAP, PAN and RSAP ***********
- * MD will reconnect when required. ***********
- *
- * Video
- * HU < MD - During Service Discovery, MD requests Video Configs supported
- * HU > MD sends Config Message with Prioritised indices for Video Conffigurations
- * HU < MD MD selects config
- * HU < MD sends start message
- * HU < MD sends focus request
- * HU > MD sends focus granted (unless unsafe - ie reverse camera etc)
- * HU < MD Audio Focus Requests when MD wants to play.
- * HU > MD Audio Focus Navigations (can be  unsolicited or responses to requests)
- * HU < MD VoiceSessionRequestNotification with VOICE_SESSION_START, HU should stop all sounds. MD will request GAIN or GAIN_TRANS to play beeps/tones and ASR response.
- * Nav Focus for onboard navigation.
- * UI System Sounds does not require audio focus as sounds should be played ASAP. System Stream is optionals (not required to support).
- * HU should wait to receive two frames of audio before starting playback to minimise buffer underruns.
- * AA Latency types supported - Audio Setup - max 500ms, Audio Output max 50ms.
- * HU > MD Navigation Focus Notification specified with NF is Phone or Car.
- * HU < MD Navigation Focus Request
- * "For vehicles that support next turn information in the instrument cluster, the HU can subscribe to next turn updates from the MD navigation engine." (NExt Turn etc)
- * same for Media Playback Status
- * Radio - Allows Control of Radio from Within AA.
- * Vehicle IDs SHOULD have at least 64 bits
- */
-
 
 namespace f1x {
   namespace openauto {
@@ -369,7 +315,7 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onChannelError(const aasdk::error::Error &e) {
-          OPENAUTO_LOG(error) << "[AndroidAutoEntity] onChannelError(): " << e.what();
+          OPENAUTO_LOG(fatal) << "[AndroidAutoEntity] onChannelError(): " << e.what();
           this->triggerQuit();
         }
 
@@ -381,7 +327,7 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::schedulePing() {
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] schedulePing()";
+          OPENAUTO_LOG(info) << "[AndroidAutoEntity] schedulePing()";
           auto promise = IPinger::Promise::defer(strand_);
           promise->then([this, self = this->shared_from_this()]() {
                           this->sendPing();

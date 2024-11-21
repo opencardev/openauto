@@ -48,11 +48,15 @@ namespace f1x {
             void onBluetoothPairingRequest(
                 const aap_protobuf::service::bluetooth::message::BluetoothPairingRequest &request) override;
 
+            void onBluetoothAuthenticationResult(const aap_protobuf::service::bluetooth::message::BluetoothAuthenticationResult &request) override;
+
             void onChannelError(const aasdk::error::Error &e) override;
 
 
           private:
             using std::enable_shared_from_this<BluetoothService>::shared_from_this;
+
+            void sendBluetoothAuthenticationData();
 
             boost::asio::io_service::strand strand_;
             aasdk::channel::bluetooth::BluetoothService::Pointer channel_;

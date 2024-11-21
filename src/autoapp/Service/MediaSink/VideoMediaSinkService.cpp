@@ -91,11 +91,11 @@ namespace f1x {
             videoConfig1->set_width_margin(videoMargins.width());
             videoConfig1->set_density(videoOutput_->getScreenDPI());
 
-            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] getVideoResolution " << VideoCodecResolutionType_Name(videoOutput_->getVideoResolution());
-            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] getVideoFPS " << VideoFrameRateType_Name(videoOutput_->getVideoFPS());
-            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] width " << videoMargins.width();
-            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] height " << videoMargins.height();
-            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] getScreenDPI " << videoOutput_->getScreenDPI();
+            OPENAUTO_LOG(info) << "[VideoMediaSinkService] getVideoResolution " << VideoCodecResolutionType_Name(videoOutput_->getVideoResolution());
+            OPENAUTO_LOG(info) << "[VideoMediaSinkService] getVideoFPS " << VideoFrameRateType_Name(videoOutput_->getVideoFPS());
+            OPENAUTO_LOG(info) << "[VideoMediaSinkService] width " << videoMargins.width();
+            OPENAUTO_LOG(info) << "[VideoMediaSinkService] height " << videoMargins.height();
+            OPENAUTO_LOG(info) << "[VideoMediaSinkService] getScreenDPI " << videoOutput_->getScreenDPI();
           }
 
           void
@@ -110,7 +110,7 @@ namespace f1x {
                           ? aap_protobuf::service::media::shared::message::Config::STATUS_READY
                           : aap_protobuf::service::media::shared::message::Config::STATUS_WAIT;
 
-            OPENAUTO_LOG(info) << "[VideoMediaSinkService] setup status: " << Config_Status_Name(status);
+            OPENAUTO_LOG(debug) << "[VideoMediaSinkService] setup status: " << Config_Status_Name(status);
 
             aap_protobuf::service::media::shared::message::Config response;
             response.set_status(status);

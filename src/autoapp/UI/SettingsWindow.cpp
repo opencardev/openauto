@@ -263,6 +263,7 @@ namespace f1x {
 
           configuration_->setMusicAudioChannelEnabled(ui_->checkBoxMusicAudioChannel->isChecked());
           configuration_->setGuidanceAudioChannelEnabled(ui_->checkBoxSpeechAudioChannel->isChecked());
+          configuration_->setTelephonyAudioChannelEnabled(ui_->checkBoxVoiceAudioChannel->isChecked());
           configuration_->setAudioOutputBackendType(
               ui_->radioButtonRtAudio->isChecked() ? configuration::AudioOutputBackendType::RTAUDIO
                                                    : configuration::AudioOutputBackendType::QT);
@@ -547,6 +548,7 @@ namespace f1x {
 
           ui_->checkBoxMusicAudioChannel->setChecked(configuration_->musicAudioChannelEnabled());
           ui_->checkBoxSpeechAudioChannel->setChecked(configuration_->guidanceAudioChannelEnabled());
+          ui_->telephonyAudioChannelEnabled->setChecked(configuration_->guidanceAudioChannelEnabled());
 
           const auto &audioOutputBackendType = configuration_->getAudioOutputBackendType();
           ui_->radioButtonRtAudio->setChecked(audioOutputBackendType == configuration::AudioOutputBackendType::RTAUDIO);

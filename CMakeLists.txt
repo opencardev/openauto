@@ -2,21 +2,33 @@ cmake_minimum_required(VERSION 3.5.1)
 
 project(openauto CXX)
 
+message(STATUS "OpenAuto")
+
+option(NOPI "Build for Non Raspberry Pi" OFF)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # Set Compile Versions
-set(OPENAUTO_BUILD_DATE 20241028)    # Binary Release Build Date
-set(OPENAUTO_BUILD_RELEASE 1)        # Binary Release Build Number (increment if released on same day)
-set(OPENAUTO_BUILD_INCREMENTAL 1)    # Binary Build Version - Increment for Each Build
+set(OPENAUTO_BUILD_DATE 20241121)       # Binary Release Build Date
+set(OPENAUTO_BUILD_MAJOR_RELEASE 4)     # Binary Release Build Major Number
+set(OPENAUTO_BUILD_MINOR_RELEASE 0)     # Binary Release Build Minor Number
+set(OPENAUTO_BUILD_INCREMENTAL 0)       # Binary Build Version - Increment for Each Build
 
 # Configure CMAKE
-SET(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -Wall -pedantic -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-g -O3")
-set(CMAKE_BUILD_TYPE Debug)
+
+# Default to Release mode unless overridden with -DCMAKE_BUILD_TYPE=Debug on cmake command
+if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "Forcing Release build type")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+    # Set the possible values of build type for cmake-gui
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
 
 # Paths
 set(resources_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets)
@@ -37,23 +49,29 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Disabling Boost DEBUG logs")
+    add_definitions(-DNDEBUG)
+endif()
+
 if (WIN32)
     set(WINSOCK2_LIBRARIES "ws2_32")
 endif (WIN32)
 
-add_definitions(-DRPI3_BUILD)
-
-if (RPI3_BUILD)
-    message(INFO "Compiling for RaspberryPi")
+if (DEFINED NOPI)
+    message(STATUS "Configuring for Non-Raspberry Pi")
+else()
+    message(STATUS "Configuring for RaspberryPi")
     add_definitions(-DUSE_OMX -DOMX_SKIP64BIT -DRASPBERRYPI3)
     set(BCM_HOST_LIBRARIES "/opt/vc/lib/libbcm_host.so")
     set(BCM_HOST_INCLUDE_DIRS "/opt/vc/include")
     set(ILCLIENT_INCLUDE_DIRS "/opt/vc/src/hello_pi/libs/ilclient")
     set(ILCLIENT_LIBRARIES "/opt/vc/src/hello_pi/libs/ilclient/libilclient.a;/opt/vc/lib/libvcos.so;/opt/vc/lib/libvcilcs.a;/opt/vc/lib/libvchiq_arm.so")
-endif (RPI3_BUILD)
+endif ()
 
 # Building on a Mac requires Abseil
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")  # macOS
+    message(STATUS "MacOS System Detected")
     add_definitions(-DMAC_OS)
     find_package(protobuf REQUIRED CONFIG)
     find_package(absl REQUIRED)
@@ -125,7 +143,12 @@ target_link_libraries(autoapp PUBLIC
         ${AAP_PROTOBUF_LIB_DIR}
         ${AASDK_LIB_DIR})
 
+set(PROGRAM_VERSION_STRING "${OPENAUTO_BUILD_MAJOR_RELEASE}.${OPENAUTO_BUILD_MINOR_RELEASE}.${OPENAUTO_BUILD_INCREMENTAL}+${OPENAUTO_BUILD_DATE}")
+
+message(STATUS "Project Version: ${PROGRAM_VERSION_STRING}")
+
 set(btservice_sources_directory ${sources_directory}/btservice)
+
 set(btservice_include_directory ${include_directory}/f1x/openauto/btservice)
 file(GLOB_RECURSE btservice_source_files ${btservice_sources_directory}/*.cpp ${btservice_include_directory}/*.hpp ${autoapp_sources_directory}/Configuration/*.cpp ${autoapp_includes_directory}/Configuration/*.hpp ${common_include_directory}/*.hpp)
 
@@ -138,3 +161,12 @@ target_link_libraries(btservice PUBLIC
         ${Qt5MultimediaWidgets_LIBRARIES}
         ${PROTOBUF_LIBRARIES}
         ${AAP_PROTOBUF_LIB_DIR})
+
+set_target_properties(openauto
+        PROPERTIES VERSION ${LIBRARY_VERSION_STRING} SOVERSION ${LIBRARY_BUILD_INCREMENTAL})
+
+# Install rules
+install(TARGETS openauto btservice
+        EXPORT aasdkTargets
+        RUNTIME DESTINATION bin
+)

@@ -24,49 +24,56 @@
 #include <f1x/openauto/btservice/IAndroidBluetoothServer.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <aasdk/Messenger/Message.hpp>
-#include <aap_protobuf/service/wifiprojection/message//WifiCredentialsRequest.pb.h>
-#include <aap_protobuf/service/wifiprojection/message//WifiCredentialsResponse.pb.h>
-#include <aap_protobuf/service/wifiprojection/WifiProjectionMessageId.pb.h>
+#include <aap_protobuf/aaw/MessageId.pb.h>
+#include <aap_protobuf/aaw/Status.pb.h>
+#include <aap_protobuf/aaw/WifiConnectionStatus.pb.h>
+#include <aap_protobuf/aaw/WifiInfoResponse.pb.h>
+#include <aap_protobuf/aaw/WifiVersionRequest.pb.h>
+#include <aap_protobuf/aaw/WifiVersionResponse.pb.h>
+#include <aap_protobuf/aaw/WifiStartResponse.pb.h>
+#include <aap_protobuf/aaw/WifiStartRequest.pb.h>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace btservice
-{
+namespace f1x {
+  namespace openauto {
+    namespace btservice {
 
-class AndroidBluetoothServer: public QObject, public IAndroidBluetoothServer
-{
-    Q_OBJECT
+      class AndroidBluetoothServer : public QObject, public IAndroidBluetoothServer {
+      Q_OBJECT
 
-public:
-    AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration);
+      public:
+        AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration);
 
-    uint16_t start(const QBluetoothAddress& address) override;
+        uint16_t start(const QBluetoothAddress &address) override;
 
-private slots:
-    void onClientConnected();
+      private slots:
 
-private:
-    std::unique_ptr<QBluetoothServer> rfcommServer_;
-    QBluetoothSocket* socket = nullptr;
-    autoapp::configuration::IConfiguration::Pointer configuration_;
+        void onClientConnected();
 
-    void readSocket();
+      private:
+        std::unique_ptr<QBluetoothServer> rfcommServer_;
+        QBluetoothSocket *socket = nullptr;
+        autoapp::configuration::IConfiguration::Pointer configuration_;
 
-    QByteArray buffer;
+        void readSocket();
 
-    void handleWifiInfoRequest(QByteArray &buffer, uint16_t length);
+        QByteArray buffer;
 
-    void sendMessage(const google::protobuf::Message &message, uint16_t type);
+        void handleWifiInfoRequest(QByteArray &buffer, uint16_t length);
 
-    void handleWifiSecurityRequest(QByteArray &buffer, uint16_t length);
+        void handleWifiVersionResponse(QByteArray &buffer, uint16_t length);
 
-    void handleWifiInfoRequestResponse(QByteArray &buffer, uint16_t length);
+        void handleWifiConnectionStatus(QByteArray &buffer, uint16_t length);
 
-    const ::std::string getIP4_(const QString intf);
-};
+        void handleWifiStartResponse(QByteArray &buffer, uint16_t length);
 
-}
-}
+        void sendMessage(const google::protobuf::Message &message, uint16_t type);
+
+
+        const ::std::string getIP4_(const QString intf);
+
+        void DecodeProtoMessage(const std::string &proto_data);
+      };
+
+    }
+  }
 }

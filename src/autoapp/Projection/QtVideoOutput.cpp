@@ -40,7 +40,7 @@ QtVideoOutput::QtVideoOutput(configuration::IConfiguration::Pointer configuratio
 
 void QtVideoOutput::createVideoOutput()
 {
-    OPENAUTO_LOG(debug) << "[QtVideoOutput] create.";
+    OPENAUTO_LOG(info) << "[QtVideoOutput] createVideoOutput()";
     videoWidget_ = std::make_unique<QVideoWidget>();
     mediaPlayer_ = std::make_unique<QMediaPlayer>(nullptr, QMediaPlayer::StreamPlayback);
 }
@@ -79,6 +79,7 @@ void QtVideoOutput::onStartPlayback()
     mediaPlayer_->setMedia(QMediaContent(), &videoBuffer_);
     mediaPlayer_->play();
 
+    // TODO: This only outputs a line if there's an error - FIXME - Output a proper status instead
     OPENAUTO_LOG(debug) << "Player error state -> " << mediaPlayer_->errorString().toStdString();
 }
 

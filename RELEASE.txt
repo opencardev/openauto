@@ -1,0 +1,7 @@
+Release Notes
+
+20241121 - 4.0.0
+Added support for new services provided by AASDK and AAP Protocol version 1.6.
+Add extensive logging
+Add logo for forked version
+Resolve display issue where if Raspberry Pi thinks both HDMI and LCD are enabled, the display width is appearing as two side by side monitors (double width) rather than  just using the physical width of the screen.
