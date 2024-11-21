@@ -87,11 +87,31 @@ int main(int argc, char* argv[])
     startIOServiceWorkers(ioService, threadPool);
 
     QApplication qApplication(argc, argv);
-    const int width = QApplication::desktop()->width();
-    const int height = QApplication::desktop()->height();
+    int width = QApplication::desktop()->width();
+    int height = QApplication::desktop()->height();
+
+    for (QScreen *screen : qApplication.screens()) {
+      OPENAUTO_LOG(info) << "[AutoApp] Screen name: " << screen->name().toStdString();
+      OPENAUTO_LOG(info) << "[AutoApp] Screen geometry: " << screen->geometry().width(); // This includes position and size
+      OPENAUTO_LOG(info) << "[AutoApp] Screen physical size: " << screen->physicalSize().width(); // Size in millimeters
+    }
+
+    QScreen *primaryScreen = QGuiApplication::primaryScreen();
+
+    // Check if a primary screen was found
+    if (primaryScreen) {
+      // Get the geometry of the primary screen
+      QRect screenGeometry = primaryScreen->geometry();
+      width = screenGeometry.width();
+      height = screenGeometry.height();
+      OPENAUTO_LOG(info) << "[AutoApp] Using gemoetry from primary screen.";
+    } else {
+      OPENAUTO_LOG(info) << "[AutoApp] Unable to find primary screen, using default values.";
+    }
+
     OPENAUTO_LOG(info) << "[AutoApp] Display width: " << width;
     OPENAUTO_LOG(info) << "[AutoApp] Display height: " << height;
-
+    
     auto configuration = std::make_shared<autoapp::configuration::Configuration>();
 
     autoapp::ui::MainWindow mainWindow(configuration);
