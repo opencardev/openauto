@@ -21,75 +21,73 @@
 #include <fstream>
 #include <QString>
 
-namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace genericnotification {
+namespace f1x::openauto::autoapp::service::genericnotification {
 
-          GenericNotificationService::GenericNotificationService(boost::asio::io_service &ioService,
-                                                       aasdk::messenger::IMessenger::Pointer messenger)
-              : strand_(ioService),
-                timer_(ioService),
-                channel_(std::make_shared<aasdk::channel::genericnotification::GenericNotificationService>(strand_, std::move(messenger))) {
+  GenericNotificationService::GenericNotificationService(boost::asio::io_service &ioService,
+                                                         aasdk::messenger::IMessenger::Pointer messenger)
+      : strand_(ioService),
+        timer_(ioService),
+        channel_(std::make_shared<aasdk::channel::genericnotification::GenericNotificationService>(strand_, std::move(
+            messenger))) {
 
-          }
+  }
 
-          void GenericNotificationService::start() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] start()";
-            });
-          }
+  void GenericNotificationService::start() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[GenericNotificationService] start()";
+    });
+  }
 
-          void GenericNotificationService::stop() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] stop()";
-            });
-          }
+  void GenericNotificationService::stop() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[GenericNotificationService] stop()";
+    });
+  }
 
-          void GenericNotificationService::pause() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] pause()";
-            });
-          }
+  void GenericNotificationService::pause() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[GenericNotificationService] pause()";
+    });
+  }
 
-          void GenericNotificationService::resume() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[GenericNotificationService] resume()";
-            });
-          }
+  void GenericNotificationService::resume() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[GenericNotificationService] resume()";
+    });
+  }
 
-          void GenericNotificationService::fillFeatures(
-              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[GenericNotificationService] fillFeatures()";
+  void GenericNotificationService::fillFeatures(
+      aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
+    OPENAUTO_LOG(info) << "[GenericNotificationService] fillFeatures()";
 
-            auto *service = response.add_channels();
-            service->set_id(static_cast<uint32_t>(channel_->getId()));
+    auto *service = response.add_channels();
+    service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto *genericNotification = service->mutable_wifi_projection_service();
-          }
+    auto *genericNotification = service->mutable_wifi_projection_service();
+  }
 
-          void GenericNotificationService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[GenericNotificationService] onChannelOpenRequest()";
-            OPENAUTO_LOG(debug) << "[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+  void GenericNotificationService::onChannelOpenRequest(
+      const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+    OPENAUTO_LOG(info) << "[GenericNotificationService] onChannelOpenRequest()";
+    OPENAUTO_LOG(debug) << "[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: "
+                        << request.priority();
 
-            aap_protobuf::service::control::message::ChannelOpenResponse response;
-            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
-            response.set_status(status);
+    aap_protobuf::service::control::message::ChannelOpenResponse response;
+    const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+    response.set_status(status);
 
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {}, std::bind(&GenericNotificationService::onChannelError, this->shared_from_this(),
-                                             std::placeholders::_1));
-            channel_->sendChannelOpenResponse(response, std::move(promise));
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {}, std::bind(&GenericNotificationService::onChannelError, this->shared_from_this(),
+                                     std::placeholders::_1));
+    channel_->sendChannelOpenResponse(response, std::move(promise));
 
-            channel_->receive(this->shared_from_this());
-          }
+    channel_->receive(this->shared_from_this());
+  }
 
-          void GenericNotificationService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[GenericNotificationService] onChannelError(): " << e.what();
-          }
-        }
-      }
-    }
+  void GenericNotificationService::onChannelError(const aasdk::error::Error &e) {
+    OPENAUTO_LOG(error) << "[GenericNotificationService] onChannelError(): " << e.what();
   }
 }
+
+
+

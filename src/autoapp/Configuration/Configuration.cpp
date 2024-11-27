@@ -20,13 +20,10 @@
 #include <f1x/openauto/Common/Log.hpp>
 #include <QTouchDevice>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace configuration
+
+
+
+namespace f1x::openauto::autoapp::configuration
 {
 
 const std::string Configuration::cConfigFileName = "openauto.ini";
@@ -766,6 +763,6 @@ void Configuration::writeButtonCodes(boost::property_tree::ptree& iniConfig)
 }
 
 }
-}
-}
-}
+
+
+

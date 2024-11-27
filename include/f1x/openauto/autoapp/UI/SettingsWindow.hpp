@@ -35,13 +35,7 @@ namespace Ui
 class SettingsWindow;
 }
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace ui
+namespace f1x::openauto::autoapp::ui
 {
 
 class SettingsWindow : public QWidget
@@ -112,6 +106,6 @@ private:
 };
 
 }
-}
-}
-}
+
+
+

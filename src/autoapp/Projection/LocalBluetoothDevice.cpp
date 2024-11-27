@@ -22,14 +22,7 @@
 #include <QBluetoothUuid>
 #include <QtBluetooth>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x::openauto::autoapp::projection {
 
 LocalBluetoothDevice::LocalBluetoothDevice()
 {
@@ -183,7 +176,3 @@ void LocalBluetoothDevice::onHostModeStateChanged(QBluetoothLocalDevice::HostMod
     }
 }
 
-}
-}
-}
-}

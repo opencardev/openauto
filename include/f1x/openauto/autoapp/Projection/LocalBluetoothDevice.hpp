@@ -23,13 +23,7 @@
 
 #pragma once
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
+namespace f1x::openauto::autoapp::projection
 {
 
 class LocalBluetoothDevice: public QObject, public IBluetoothDevice
@@ -37,7 +31,7 @@ class LocalBluetoothDevice: public QObject, public IBluetoothDevice
     Q_OBJECT
 
 public:
-    LocalBluetoothDevice();
+    LocalBluetoothDevice(const QString &adapterAddress = QString(), QObject *parent = nullptr);
 
     void stop() override;
     bool isPaired(const std::string& address) const override;
@@ -68,6 +62,6 @@ private:
 };
 
 }
-}
-}
-}
+
+
+

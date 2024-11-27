@@ -16,256 +16,258 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <time.h>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/MediaSource/MediaSourceService.hpp>
 
-namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace mediasource {
 
-          MediaSourceService::MediaSourceService(boost::asio::io_service &ioService,
-                                                 aasdk::channel::mediasource::IMediaSourceService::Pointer channel,
-                                                 projection::IAudioInput::Pointer audioInput)
-              : strand_(ioService), channel_(std::move(channel)), audioInput_(std::move(audioInput)), session_(-1) {
+namespace f1x::openauto::autoapp::service::mediasource {
 
-          }
+  MediaSourceService::MediaSourceService(boost::asio::io_service &ioService,
+                                         aasdk::channel::mediasource::IMediaSourceService::Pointer channel,
+                                         projection::IAudioInput::Pointer audioInput)
+      : strand_(ioService), channel_(std::move(channel)), audioInput_(std::move(audioInput)), session_(-1) {
 
-          void MediaSourceService::start() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaSourceService] start()";
-              channel_->receive(this->shared_from_this());
-            });
-          }
+  }
 
-          void MediaSourceService::stop() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaSourceService] stop()";
-              audioInput_->stop();
-            });
-          }
+  void MediaSourceService::start() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[MediaSourceService] start()";
+      channel_->receive(this->shared_from_this());
+    });
+  }
 
-          void MediaSourceService::pause() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaSourceService] pause()";
-            });
-          }
+  void MediaSourceService::stop() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[MediaSourceService] stop()";
+      audioInput_->stop();
+    });
+  }
 
-          void MediaSourceService::resume() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaSourceService] resume()";
-            });
-          }
+  void MediaSourceService::pause() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[MediaSourceService] pause()";
+    });
+  }
 
-          /*
-           * Service Discovery
-           */
+  void MediaSourceService::resume() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[MediaSourceService] resume()";
+    });
+  }
 
-          /**
-           * Fill Features of Service
-           * @param response
-           */
-          void MediaSourceService::fillFeatures(
-              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[MediaSourceService] fillFeatures()";
+  /*
+   * Service Discovery
+   */
 
-            auto *service = response.add_channels();
-            service->set_id(static_cast<uint32_t>(channel_->getId()));
+  /**
+   * Fill Features of Service
+   * @param response
+   */
+  void MediaSourceService::fillFeatures(
+      aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
+    OPENAUTO_LOG(info) << "[MediaSourceService] fillFeatures()";
 
-            auto *avInputChannel = service->mutable_media_source_service();
-            avInputChannel->set_available_type(
-                aap_protobuf::service::media::shared::message::MediaCodecType::MEDIA_CODEC_AUDIO_PCM);
+    auto *service = response.add_channels();
+    service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-            auto audioConfig = avInputChannel->mutable_audio_config();
-            audioConfig->set_sampling_rate(audioInput_->getSampleRate());
-            audioConfig->set_number_of_bits(audioInput_->getSampleSize());
-            audioConfig->set_number_of_channels(audioInput_->getChannelCount());
-          }
+    auto *avInputChannel = service->mutable_media_source_service();
+    avInputChannel->set_available_type(
+        aap_protobuf::service::media::shared::message::MediaCodecType::MEDIA_CODEC_AUDIO_PCM);
 
-          /*
-           * Base Channel Handling
-           */
+    auto audioConfig = avInputChannel->mutable_audio_config();
+    audioConfig->set_sampling_rate(audioInput_->getSampleRate());
+    audioConfig->set_number_of_bits(audioInput_->getSampleSize());
+    audioConfig->set_number_of_channels(audioInput_->getChannelCount());
+  }
 
-          /**
-           * Open Service Channel Request
-           * @param request
-           */
-          void MediaSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[MediaSourceService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+  /*
+   * Base Channel Handling
+   */
 
-            const aap_protobuf::shared::MessageStatus status = audioInput_->open()
-                                                               ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
-                                                               : aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR;
+  /**
+   * Open Service Channel Request
+   * @param request
+   */
+  void
+  MediaSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+    OPENAUTO_LOG(info) << "[MediaSourceService] onChannelOpenRequest()";
+    OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << request.service_id() << ", Priority: "
+                       << request.priority();
 
-            OPENAUTO_LOG(info) << "[MediaSourceService] Status determined: " << aap_protobuf::shared::MessageStatus_Name(status);
+    const aap_protobuf::shared::MessageStatus status = audioInput_->open()
+                                                       ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
+                                                       : aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR;
 
-            aap_protobuf::service::control::message::ChannelOpenResponse response;
-            response.set_status(status);
+    OPENAUTO_LOG(info) << "[MediaSourceService] Status determined: "
+                       << aap_protobuf::shared::MessageStatus_Name(status);
 
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {},
-                          std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
-                                    std::placeholders::_1));
+    aap_protobuf::service::control::message::ChannelOpenResponse response;
+    response.set_status(status);
 
-            channel_->sendChannelOpenResponse(response, std::move(promise));
-            channel_->receive(this->shared_from_this());
-          }
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {},
+                  std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
+                            std::placeholders::_1));
 
-          /**
-           * Generic Channel Error
-           * @param e
-           */
-          void MediaSourceService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[MediaSourceService] onChannelError(): " << e.what();
-          }
+    channel_->sendChannelOpenResponse(response, std::move(promise));
+    channel_->receive(this->shared_from_this());
+  }
 
-          /*
-           * Media Channel Handling
-           */
+  /**
+   * Generic Channel Error
+   * @param e
+   */
+  void MediaSourceService::onChannelError(const aasdk::error::Error &e) {
+    OPENAUTO_LOG(error) << "[MediaSourceService] onChannelError(): " << e.what();
+  }
 
-          /**
-           * Generic Media Channel Setup Request
-           * @param request
-           */
-          void
-          MediaSourceService::onMediaChannelSetupRequest(const aap_protobuf::service::media::shared::message::Setup &request) {
+  /*
+   * Media Channel Handling
+   */
 
-            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelSetupRequest()";
-            OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId()) << ", Codec: " << MediaCodecType_Name(request.type());
+  /**
+   * Generic Media Channel Setup Request
+   * @param request
+   */
+  void
+  MediaSourceService::onMediaChannelSetupRequest(const aap_protobuf::service::media::shared::message::Setup &request) {
 
-            aap_protobuf::service::media::shared::message::Config response;
-            auto status = aap_protobuf::service::media::shared::message::Config::STATUS_READY;
-            response.set_status(status);
-            response.set_max_unacked(1);
-            response.add_configuration_indices(0);
+    OPENAUTO_LOG(info) << "[MediaSourceService] onMediaChannelSetupRequest()";
+    OPENAUTO_LOG(info) << "[MediaSourceService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId())
+                       << ", Codec: " << MediaCodecType_Name(request.type());
 
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
+    aap_protobuf::service::media::shared::message::Config response;
+    auto status = aap_protobuf::service::media::shared::message::Config::STATUS_READY;
+    response.set_status(status);
+    response.set_max_unacked(1);
+    response.add_configuration_indices(0);
 
-            promise->then([]() {}, std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
-                                             std::placeholders::_1));
-            channel_->sendChannelSetupResponse(response, std::move(promise));
-            channel_->receive(this->shared_from_this());
-          }
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
 
-          /**
-           * Generic Media Ack
-           */
-          void MediaSourceService::onMediaChannelAckIndication(
-              const aap_protobuf::service::media::source::message::Ack &) {
-            OPENAUTO_LOG(debug) << "[MediaSourceService] onMediaChannelAckIndication()";
-            channel_->receive(this->shared_from_this());
-          }
+    promise->then([]() {}, std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
+                                     std::placeholders::_1));
+    channel_->sendChannelSetupResponse(response, std::move(promise));
+    channel_->receive(this->shared_from_this());
+  }
 
-          /*
-           * Source Media Channel Handling
-           */
+  /**
+   * Generic Media Ack
+   */
+  void MediaSourceService::onMediaChannelAckIndication(
+      const aap_protobuf::service::media::source::message::Ack &) {
+    OPENAUTO_LOG(debug) << "[MediaSourceService] onMediaChannelAckIndication()";
+    channel_->receive(this->shared_from_this());
+  }
 
-          /**
-           * Handle request to Open or Close Microphone Source Channel
-           * @param request
-           */
-          void MediaSourceService::onMediaSourceOpenRequest(
-              const aap_protobuf::service::media::source::message::MicrophoneRequest &request) {
-            OPENAUTO_LOG(info) << "[MediaSourceService] onMediaSourceOpenRequest()";
-            OPENAUTO_LOG(info) << "[MediaSourceService] Request to Open?: " << request.open() << ", anc: " << request.anc_enabled() << ", ec: " << request.ec_enabled() << ", max unacked: " << request.max_unacked();
+  /*
+   * Source Media Channel Handling
+   */
 
-            if (request.open()) {
-              // Request for Channel Open
-              auto startPromise = projection::IAudioInput::StartPromise::defer(strand_);
-              startPromise->then(std::bind(&MediaSourceService::onMediaSourceOpenSuccess, this->shared_from_this()),
-                                 [this, self = this->shared_from_this()]() {
-                                   OPENAUTO_LOG(error) << "[MediaSourceService] Media Source Open Failed";
+  /**
+   * Handle request to Open or Close Microphone Source Channel
+   * @param request
+   */
+  void MediaSourceService::onMediaSourceOpenRequest(
+      const aap_protobuf::service::media::source::message::MicrophoneRequest &request) {
+    OPENAUTO_LOG(info) << "[MediaSourceService] onMediaSourceOpenRequest()";
+    OPENAUTO_LOG(info) << "[MediaSourceService] Request to Open?: " << request.open() << ", anc: "
+                       << request.anc_enabled() << ", ec: " << request.ec_enabled() << ", max unacked: "
+                       << request.max_unacked();
 
-                                   aap_protobuf::service::media::source::message::MicrophoneResponse response;
-                                   response.set_session_id(session_);
+    if (request.open()) {
+      // Request for Channel Open
+      auto startPromise = projection::IAudioInput::StartPromise::defer(strand_);
+      startPromise->then(std::bind(&MediaSourceService::onMediaSourceOpenSuccess, this->shared_from_this()),
+                         [this, self = this->shared_from_this()]() {
+                           OPENAUTO_LOG(error) << "[MediaSourceService] Media Source Open Failed";
 
-                                   response.set_status(aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR);
+                           aap_protobuf::service::media::source::message::MicrophoneResponse response;
+                           response.set_session_id(session_);
 
-                                   auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
-                                   sendPromise->then([]() {},
-                                                     std::bind(&MediaSourceService::onChannelError,
-                                                               this->shared_from_this(),
-                                                               std::placeholders::_1));
-                                   channel_->sendMicrophoneOpenResponse(response, std::move(sendPromise));
-                                 });
+                           response.set_status(aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR);
 
-              audioInput_->start(std::move(startPromise));
-            } else {
-              // Request for Channel Close
-              audioInput_->stop();
+                           auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
+                           sendPromise->then([]() {},
+                                             std::bind(&MediaSourceService::onChannelError,
+                                                       this->shared_from_this(),
+                                                       std::placeholders::_1));
+                           channel_->sendMicrophoneOpenResponse(response, std::move(sendPromise));
+                         });
 
-              aap_protobuf::service::media::source::message::MicrophoneResponse response;
-              response.set_session_id(session_);
+      audioInput_->start(std::move(startPromise));
+    } else {
+      // Request for Channel Close
+      audioInput_->stop();
 
-              response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
+      aap_protobuf::service::media::source::message::MicrophoneResponse response;
+      response.set_session_id(session_);
 
-              auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
-              sendPromise->then([]() {}, std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
-                                                   std::placeholders::_1));
-              channel_->sendMicrophoneOpenResponse(response, std::move(sendPromise));
-            }
+      response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
-            channel_->receive(this->shared_from_this());
-          }
+      auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
+      sendPromise->then([]() {}, std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
+                                           std::placeholders::_1));
+      channel_->sendMicrophoneOpenResponse(response, std::move(sendPromise));
+    }
+
+    channel_->receive(this->shared_from_this());
+  }
 
 
-          /**
-           * Sends response to advise Microphone is Open
-           */
-          void MediaSourceService::onMediaSourceOpenSuccess() {
-            OPENAUTO_LOG(error) << "[MediaSourceService] onMediaSourceOpenSuccess()";
+  /**
+   * Sends response to advise Microphone is Open
+   */
+  void MediaSourceService::onMediaSourceOpenSuccess() {
+    OPENAUTO_LOG(error) << "[MediaSourceService] onMediaSourceOpenSuccess()";
 
-            aap_protobuf::service::media::source::message::MicrophoneResponse response;
-            response.set_session_id(session_);
-            response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
+    aap_protobuf::service::media::source::message::MicrophoneResponse response;
+    response.set_session_id(session_);
+    response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
 
-            auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
-            sendPromise->then([]() {}, std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
-                                                 std::placeholders::_1));
+    auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
+    sendPromise->then([]() {}, std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
+                                         std::placeholders::_1));
 
-            channel_->sendMicrophoneOpenResponse(response, std::move(sendPromise));
+    channel_->sendMicrophoneOpenResponse(response, std::move(sendPromise));
 
-            this->readMediaSource();
-          }
+    this->readMediaSource();
+  }
 
-          /**
-           * Resolves promise from readMediaSource. Sends Media with Timestamp Indication to channel.
-           * @param data
-           */
-          void MediaSourceService::onMediaSourceDataReady(aasdk::common::Data data) {
-            OPENAUTO_LOG(error) << "[MediaSourceService] onMediaSourceDataReady()";
-            auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
-            sendPromise->then(std::bind(&MediaSourceService::readMediaSource, this->shared_from_this()),
-                              std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
-                                        std::placeholders::_1));
+  /**
+   * Resolves promise from readMediaSource. Sends Media with Timestamp Indication to channel.
+   * @param data
+   */
+  void MediaSourceService::onMediaSourceDataReady(aasdk::common::Data data) {
+    OPENAUTO_LOG(error) << "[MediaSourceService] onMediaSourceDataReady()";
+    auto sendPromise = aasdk::channel::SendPromise::defer(strand_);
+    sendPromise->then(std::bind(&MediaSourceService::readMediaSource, this->shared_from_this()),
+                      std::bind(&MediaSourceService::onChannelError, this->shared_from_this(),
+                                std::placeholders::_1));
 
-            auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::high_resolution_clock::now().time_since_epoch());
-            channel_->sendMediaSourceWithTimestampIndication(timestamp.count(), std::move(data), std::move(sendPromise));
-          }
+    auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch());
+    channel_->sendMediaSourceWithTimestampIndication(timestamp.count(), std::move(data), std::move(sendPromise));
+  }
 
-          /**
-           * Reads audio from a MediaSource (eg Microphone). Promise resolves to onMediaSourceDataReady.
-           */
-          void MediaSourceService::readMediaSource() {
-            OPENAUTO_LOG(debug) << "[MediaSourceService] readMediaSource()";
-            if (audioInput_->isActive()) {
-              auto readPromise = projection::IAudioInput::ReadPromise::defer(strand_);
-              readPromise->then(
-                  std::bind(&MediaSourceService::onMediaSourceDataReady, this->shared_from_this(),
-                            std::placeholders::_1),
-                  [this, self = this->shared_from_this()]() {
-                    OPENAUTO_LOG(debug) << "[MediaSourceService] audio input read rejected.";
-                  });
+  /**
+   * Reads audio from a MediaSource (eg Microphone). Promise resolves to onMediaSourceDataReady.
+   */
+  void MediaSourceService::readMediaSource() {
+    OPENAUTO_LOG(debug) << "[MediaSourceService] readMediaSource()";
+    if (audioInput_->isActive()) {
+      auto readPromise = projection::IAudioInput::ReadPromise::defer(strand_);
+      readPromise->then(
+          std::bind(&MediaSourceService::onMediaSourceDataReady, this->shared_from_this(),
+                    std::placeholders::_1),
+          [this, self = this->shared_from_this()]() {
+            OPENAUTO_LOG(debug) << "[MediaSourceService] audio input read rejected.";
+          });
 
-              audioInput_->read(std::move(readPromise));
-            }
-          }
-        }
-      }
+      audioInput_->read(std::move(readPromise));
     }
   }
 }
+
+
+
+

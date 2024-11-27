@@ -19,50 +19,46 @@
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Service/Bluetooth/BluetoothService.hpp>
 
-namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace bluetooth {
+namespace f1x::openauto::autoapp::service::bluetooth {
 
-          BluetoothService::BluetoothService(boost::asio::io_service &ioService,
-                                             aasdk::messenger::IMessenger::Pointer messenger,
-                                             projection::IBluetoothDevice::Pointer bluetoothDevice)
-              : strand_(ioService),
-                channel_(std::make_shared<aasdk::channel::bluetooth::BluetoothService>(strand_, std::move(messenger))),
-                bluetoothDevice_(std::move(bluetoothDevice)) {
+  BluetoothService::BluetoothService(boost::asio::io_service &ioService,
+                                     aasdk::messenger::IMessenger::Pointer messenger,
+                                     projection::IBluetoothDevice::Pointer bluetoothDevice)
+      : strand_(ioService),
+        channel_(std::make_shared<aasdk::channel::bluetooth::BluetoothService>(strand_, std::move(messenger))),
+        bluetoothDevice_(std::move(bluetoothDevice)) {
 
-          }
+  }
 
-          void BluetoothService::start() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[BluetoothService] start()";
-              channel_->receive(this->shared_from_this());
-            });
-          }
+  void BluetoothService::start() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[BluetoothService] start()";
+      channel_->receive(this->shared_from_this());
+    });
+  }
 
-          void BluetoothService::stop() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[BluetoothService] stop()";
-              bluetoothDevice_->stop();
-            });
-          }
+  void BluetoothService::stop() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[BluetoothService] stop()";
+      bluetoothDevice_->stop();
+    });
+  }
 
-          void BluetoothService::pause() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[BluetoothService] pause()";
-            });
-          }
+  void BluetoothService::pause() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[BluetoothService] pause()";
+    });
+  }
 
-          void BluetoothService::resume() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[BluetoothService] resume()";
-            });
-          }
+  void BluetoothService::resume() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+      OPENAUTO_LOG(info) << "[BluetoothService] resume()";
+    });
+  }
 
-          void BluetoothService::fillFeatures(
-              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[BluetoothService] fillFeatures()";
+  void BluetoothService::fillFeatures(
+      aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
+    OPENAUTO_LOG(info) << "[BluetoothService] fillFeatures()";
 
             if (bluetoothDevice_->isAvailable()) {
               OPENAUTO_LOG(info) << "[BluetoothService] Local Address: " << bluetoothDevice_->getLocalAddress();
@@ -82,76 +78,81 @@ namespace f1x {
             }
           }
 
-          void BluetoothService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[BluetoothService] onChannelOpenRequest()";
-            OPENAUTO_LOG(debug) << "[BluetoothService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+  void
+  BluetoothService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+    OPENAUTO_LOG(info) << "[BluetoothService] onChannelOpenRequest()";
+    OPENAUTO_LOG(debug) << "[BluetoothService] Channel Id: " << request.service_id() << ", Priority: "
+                        << request.priority();
 
-            aap_protobuf::service::control::message::ChannelOpenResponse response;
-            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
-            response.set_status(status);
+    aap_protobuf::service::control::message::ChannelOpenResponse response;
+    const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+    response.set_status(status);
 
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {}, std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
-                                             std::placeholders::_1));
-            channel_->sendChannelOpenResponse(response, std::move(promise));
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {}, std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
+                                     std::placeholders::_1));
+    channel_->sendChannelOpenResponse(response, std::move(promise));
+    channel_->receive(this->shared_from_this());
+  }
 
-            channel_->receive(this->shared_from_this());
-          }
+  void BluetoothService::onBluetoothPairingRequest(
+      const aap_protobuf::service::bluetooth::message::BluetoothPairingRequest &request) {
+    OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothPairingRequest()";
+    OPENAUTO_LOG(info) << "[BluetoothService] Phone Address: " << request.phone_address();
 
-          void BluetoothService::onBluetoothPairingRequest(
-              const aap_protobuf::service::bluetooth::message::BluetoothPairingRequest &request) {
-            OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothPairingRequest()";
-            OPENAUTO_LOG(info) << "[BluetoothService] Phone Address: " << request.phone_address();
+    aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
 
-            aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
-
-            const auto isPaired = bluetoothDevice_->isPaired(request.phone_address());
-            if (isPaired) {
-              OPENAUTO_LOG(info) << "[BluetoothService] Phone is Already Paired";
-            } else {
-              OPENAUTO_LOG(info) << "[BluetoothService] Phone is Not Paired";
-            }
-
-            /*
-             * The HU must always sent a STATUS_SUCCESS response,
-             * or STATUS_BLUETOOTH_PAIRING_DELAYED if:
-             *    there's a delay in allowing bluetooth
-             *    the HU is already engaged in a bluetooth call
-             */
-            response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
-            response.set_already_paired(isPaired);
-
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then(std::bind(&BluetoothService::sendBluetoothAuthenticationData, this->shared_from_this()), std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
-                                             std::placeholders::_1));
-            channel_->sendBluetoothPairingResponse(response, std::move(promise));
-            channel_->receive(this->shared_from_this());
-          }
-
-          void BluetoothService::sendBluetoothAuthenticationData() {
-            aap_protobuf::service::bluetooth::message::BluetoothAuthenticationData data;
-            data.set_auth_data("123456");
-            data.set_pairing_method(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_PIN);
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {}, std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
-                                             std::placeholders::_1));
-            channel_->sendBluetoothAuthenticationData(data, std::move(promise));
-            channel_->receive(this->shared_from_this());
-          }
-
-          void BluetoothService::onBluetoothAuthenticationResult(const aap_protobuf::service::bluetooth::message::BluetoothAuthenticationResult &request) {
-            OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothAuthenticationResult()";
-            OPENAUTO_LOG(info) << "[BluetoothService] AuthData " << request.status();
-            aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
-
-            channel_->receive(this->shared_from_this());
-          }
-
-          void BluetoothService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[BluetoothService] onChannelError(): " << e.what();
-          }
-        }
-      }
+    const auto isPaired = bluetoothDevice_->isPaired(request.phone_address());
+    if (isPaired) {
+      OPENAUTO_LOG(info) << "[BluetoothService] Phone is Already Paired";
+    } else {
+      OPENAUTO_LOG(info) << "[BluetoothService] Phone is Not Paired";
     }
+
+    /*
+     * The HU must always sent a STATUS_SUCCESS response,
+     * or STATUS_BLUETOOTH_PAIRING_DELAYED if:
+     *    there's a delay in allowing bluetooth
+     *    the HU is already engaged in a bluetooth call
+     */
+    response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
+    response.set_already_paired(isPaired);
+
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then(std::bind(&BluetoothService::sendBluetoothAuthenticationData, this->shared_from_this()),
+                  std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
+                            std::placeholders::_1));
+    channel_->sendBluetoothPairingResponse(response, std::move(promise));
+    channel_->receive(this->shared_from_this());
+  }
+
+  void BluetoothService::sendBluetoothAuthenticationData() {
+    OPENAUTO_LOG(info) << "[BluetoothService] sendBluetoothAuthenticationData()";
+
+    aap_protobuf::service::bluetooth::message::BluetoothAuthenticationData data;
+    // TODO: Bluetooth Authentication Data
+    data.set_auth_data("123456");
+    data.set_pairing_method(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_PIN);
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {}, std::bind(&BluetoothService::onChannelError, this->shared_from_this(),
+                                     std::placeholders::_1));
+    channel_->sendBluetoothAuthenticationData(data, std::move(promise));
+    channel_->receive(this->shared_from_this());
+  }
+
+  void BluetoothService::onBluetoothAuthenticationResult(
+      const aap_protobuf::service::bluetooth::message::BluetoothAuthenticationResult &request) {
+    OPENAUTO_LOG(info) << "[BluetoothService] onBluetoothAuthenticationResult()";
+    OPENAUTO_LOG(info) << "[BluetoothService] AuthData " << request.status();
+    aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
+
+    channel_->receive(this->shared_from_this());
+  }
+
+  void BluetoothService::onChannelError(const aasdk::error::Error &e) {
+    OPENAUTO_LOG(error) << "[BluetoothService] onChannelError(): " << e.what();
   }
 }
+
+
+

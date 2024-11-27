@@ -18,13 +18,10 @@
 
 #include <f1x/openauto/autoapp/Projection/DummyBluetoothDevice.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
+
+
+
+namespace f1x::openauto::autoapp::projection
 {
 
 void DummyBluetoothDevice::stop()
@@ -53,6 +50,6 @@ bool DummyBluetoothDevice::isAvailable() const
 }
 
 }
-}
-}
-}
+
+
+

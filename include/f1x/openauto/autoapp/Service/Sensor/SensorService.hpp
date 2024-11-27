@@ -26,60 +26,60 @@
 #include <boost/asio/io_service.hpp>
 #include <aasdk/Messenger/IMessenger.hpp>
 
-namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace sensor {
-          class SensorService :
-              public aasdk::channel::sensorsource::ISensorSourceServiceEventHandler,
-              public IService,
-              public std::enable_shared_from_this<SensorService> {
-          public:
-            SensorService(boost::asio::io_service &ioService,
-                          aasdk::messenger::IMessenger::Pointer messenger);
 
-            bool isNight = false;
-            bool previous = false;
-            bool stopPolling = false;
+namespace f1x::openauto::autoapp::service::sensor {
+  class SensorService :
+      public aasdk::channel::sensorsource::ISensorSourceServiceEventHandler,
+      public IService,
+      public std::enable_shared_from_this<SensorService> {
+  public:
+    SensorService(boost::asio::io_service &ioService,
+                  aasdk::messenger::IMessenger::Pointer messenger);
 
-            void start() override;
-            void stop() override;
-            void pause() override;
-            void resume() override;
-            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
+    bool isNight = false;
+    bool previous = false;
+    bool stopPolling = false;
 
-            void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
+    void start() override;
 
-            void onSensorStartRequest(
-                const aap_protobuf::service::sensorsource::message::SensorRequest &request) override;
+    void stop() override;
 
-            void onChannelError(const aasdk::error::Error &e) override;
+    void pause() override;
 
-          private:
-            using std::enable_shared_from_this<SensorService>::shared_from_this;
+    void resume() override;
 
-            void sendDrivingStatusUnrestricted();
+    void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-            void sendNightData();
+    void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
-            void sendGPSLocationData();
+    void onSensorStartRequest(
+        const aap_protobuf::service::sensorsource::message::SensorRequest &request) override;
 
-            bool is_file_exist(const char *filename);
+    void onChannelError(const aasdk::error::Error &e) override;
 
-            void sensorPolling();
+  private:
+    using std::enable_shared_from_this<SensorService>::shared_from_this;
 
-            bool firstRun = true;
+    void sendDrivingStatusUnrestricted();
 
-            boost::asio::deadline_timer timer_;
-            boost::asio::io_service::strand strand_;
-            aasdk::channel::sensorsource::SensorSourceService::Pointer channel_;
-            struct gps_data_t gpsData_;
-            bool gpsEnabled_ = false;
-          };
+    void sendNightData();
 
-        }
-      }
-    }
-  }
+    void sendGPSLocationData();
+
+    bool is_file_exist(const char *filename);
+
+    void sensorPolling();
+
+    bool firstRun = true;
+
+    boost::asio::deadline_timer timer_;
+    boost::asio::io_service::strand strand_;
+    aasdk::channel::sensorsource::SensorSourceService::Pointer channel_;
+    struct gps_data_t gpsData_;
+    bool gpsEnabled_ = false;
+  };
+
 }
+
+
+
