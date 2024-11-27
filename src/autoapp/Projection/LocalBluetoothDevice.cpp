@@ -19,159 +19,53 @@
 #include <QApplication>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Projection/LocalBluetoothDevice.hpp>
-#include <QBluetoothUuid>
 #include <QtBluetooth>
 
 namespace f1x::openauto::autoapp::projection {
 
-LocalBluetoothDevice::LocalBluetoothDevice()
-{
+  LocalBluetoothDevice::LocalBluetoothDevice(const QString &adapterAddress, QObject *parent) : QObject(parent) {
     qRegisterMetaType<IBluetoothDevice::PairingPromise::Pointer>("PairingPromise::Pointer");
 
     this->moveToThread(QApplication::instance()->thread());
-    connect(this, &LocalBluetoothDevice::startPairing, this, &LocalBluetoothDevice::onStartPairing, Qt::QueuedConnection);
-    QMetaObject::invokeMethod(this, "createBluetoothLocalDevice", Qt::BlockingQueuedConnection);
-}
 
-void LocalBluetoothDevice::createBluetoothLocalDevice()
-{
+    QMetaObject::invokeMethod(this, "createBluetoothLocalDevice", Qt::BlockingQueuedConnection,
+                              Q_ARG(QString, adapterAddress));
+
+  }
+
+  void LocalBluetoothDevice::createBluetoothLocalDevice(const QString &adapterAddress) {
     OPENAUTO_LOG(info) << "[LocalBluetoothDevice] create.";
 
-    localDevice_ = std::make_unique<QBluetoothLocalDevice>(QBluetoothAddress());
 
-    connect(localDevice_.get(), &QBluetoothLocalDevice::pairingDisplayConfirmation, this, &LocalBluetoothDevice::onPairingDisplayConfirmation);
-    connect(localDevice_.get(), &QBluetoothLocalDevice::pairingDisplayPinCode, this, &LocalBluetoothDevice::onPairingDisplayPinCode);
-    connect(localDevice_.get(), &QBluetoothLocalDevice::pairingFinished, this, &LocalBluetoothDevice::onPairingFinished);
-    connect(localDevice_.get(), &QBluetoothLocalDevice::error, this, &LocalBluetoothDevice::onError);
-    connect(localDevice_.get(), &QBluetoothLocalDevice::hostModeStateChanged, this, &LocalBluetoothDevice::onHostModeStateChanged);
+    QBluetoothAddress address(adapterAddress);
+    localDevice_ = std::make_unique<QBluetoothLocalDevice>(address);
 
-    localDevice_->powerOn();
-    localDevice_->setHostMode(QBluetoothLocalDevice::HostDiscoverable);
+    // Pairing signals are being handled by btservice
 
-}
+  }
 
-void LocalBluetoothDevice::stop()
-{
+  void LocalBluetoothDevice::stop() {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    if(pairingPromise_ != nullptr)
-    {
-        pairingPromise_->reject();
-        pairingPromise_.reset();
-        pairingAddress_ = QBluetoothAddress();
-    }
-}
+  }
 
-bool LocalBluetoothDevice::isPaired(const std::string& address) const
-{
+  bool LocalBluetoothDevice::isPaired(const std::string &address) const {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    return localDevice_->pairingStatus(QBluetoothAddress(QString::fromStdString(address))) != QBluetoothLocalDevice::Unpaired;
-}
-
-void LocalBluetoothDevice::pair(const std::string& address, PairingPromise::Pointer promise)
-{
-    emit startPairing(QString::fromStdString(address), std::move(promise));
-}
+    return localDevice_->pairingStatus(QBluetoothAddress(QString::fromStdString(address))) !=
+           QBluetoothLocalDevice::Unpaired;
+  }
 
   std::string LocalBluetoothDevice::getAdapterAddress() const {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     return localDevice_->isValid() ? localDevice_->address().toString().toStdString() : "";
-}
+  }
 
-bool LocalBluetoothDevice::isAvailable() const
-{
+  bool LocalBluetoothDevice::isAvailable() const {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     return localDevice_->isValid();
+  }
 }
 
-void LocalBluetoothDevice::onStartPairing(const QString& address, PairingPromise::Pointer promise)
-{
-    OPENAUTO_LOG(debug) << "[LocalBluetoothDevice] onStartPairing, address: " << address.toStdString();
 
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-
-    if(!localDevice_->isValid())
-    {
-        promise->reject();
-    }
-    else
-    {
-        if(pairingPromise_ != nullptr)
-        {
-            pairingPromise_->reject();
-        }
-
-        pairingAddress_ = QBluetoothAddress(address);
-        pairingPromise_ = std::move(promise);
-        localDevice_->requestPairing(pairingAddress_, QBluetoothLocalDevice::AuthorizedPaired);
-    }
-}
-
-void LocalBluetoothDevice::onPairingDisplayConfirmation(const QBluetoothAddress &address, QString pin)
-{
-    OPENAUTO_LOG(info) << "[LocalBluetoothDevice] onPairingDisplayConfirmation, address: " << address.toString().toStdString()
-                           << ", pin: " << pin.toStdString();
-
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    localDevice_->pairingConfirmation(address == pairingAddress_);
-}
-
-void LocalBluetoothDevice::onPairingDisplayPinCode(const QBluetoothAddress &address, QString pin)
-{
-    OPENAUTO_LOG(info) << "[LocalBluetoothDevice] onPairingDisplayPinCode, address: " << address.toString().toStdString()
-                           << ", pin: " << pin.toStdString();
-
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    localDevice_->pairingConfirmation(address == pairingAddress_);
-}
-
-void LocalBluetoothDevice::onPairingFinished(const QBluetoothAddress &address, QBluetoothLocalDevice::Pairing pairing)
-{
-    OPENAUTO_LOG(info) << "[LocalBluetoothDevice] onPairingDisplayPinCode, address: " << address.toString().toStdString()
-                           << ", pin: " << pairing;
-
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-
-    if(address == pairingAddress_)
-    {
-        if(pairing != QBluetoothLocalDevice::Unpaired)
-        {
-            pairingPromise_->resolve();
-        }
-        else
-        {
-            pairingPromise_->reject();
-        }
-
-        pairingPromise_.reset();
-        pairingAddress_ = QBluetoothAddress();
-    }
-}
-
-void LocalBluetoothDevice::onError(QBluetoothLocalDevice::Error error)
-{
-    OPENAUTO_LOG(warning) << "[LocalBluetoothDevice] onError, error: " << error;
-
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-
-    if(pairingPromise_ != nullptr)
-    {
-        pairingPromise_->reject();
-        pairingPromise_.reset();
-        pairingAddress_ = QBluetoothAddress();
-    }
-}
-
-void LocalBluetoothDevice::onHostModeStateChanged(QBluetoothLocalDevice::HostMode state)
-{
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-
-    if(state == QBluetoothLocalDevice::HostPoweredOff && pairingPromise_ != nullptr)
-    {
-        pairingPromise_->reject();
-        pairingPromise_.reset();
-        pairingAddress_ = QBluetoothAddress();
-    }
-}
 

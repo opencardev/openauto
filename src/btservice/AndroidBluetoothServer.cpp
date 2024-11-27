@@ -16,6 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #include <boost/algorithm/hex.hpp>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
@@ -23,7 +24,15 @@
 #include <QString>
 #include <QtCore/QDataStream>
 #include <QNetworkInterface>
+#include <iostream>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/unknown_field_set.h>
 
+using namespace google::protobuf;
+using namespace google::protobuf::io;
+
+// 39171FDJG002WHhandleWifiVersionRequest
 
 namespace f1x::openauto::btservice {
 
@@ -34,14 +43,18 @@ namespace f1x::openauto::btservice {
             &AndroidBluetoothServer::onClientConnected);
   }
 
+  /// Start Server listening on Address
   uint16_t AndroidBluetoothServer::start(const QBluetoothAddress &address) {
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer] start()";
     if (rfcommServer_->listen(address)) {
       return rfcommServer_->serverPort();
     }
     return 0;
   }
 
+  /// Call-Back for when Client Connected
   void AndroidBluetoothServer::onClientConnected() {
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer] onClientConnected()";
     if (socket != nullptr) {
       socket->deleteLater();
     }
@@ -49,31 +62,31 @@ namespace f1x::openauto::btservice {
     socket = rfcommServer_->nextPendingConnection();
 
     if (socket != nullptr) {
-      OPENAUTO_LOG(info) << "[AndroidBluetoothServer] rfcomm client connected, peer name: "
+      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer] rfcomm client connected, peer name: "
                          << socket->peerName().toStdString();
 
       connect(socket, &QBluetoothSocket::readyRead, this, &AndroidBluetoothServer::readSocket);
 
-      aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest request;
-      // TODO: How do we ping back the Wireless Port and IP?
-      //aap_protobuf::service::::WifiInfoRequest request;
-      request.set_ip_address(getIP4_("wlan0"));
-      getIP4_()
-      //request.set_port(5000);
+      aap_protobuf::aaw::WifiVersionRequest versionRequest;
+      aap_protobuf::aaw::WifiStartRequest startRequest;
+      startRequest.set_ip_address(getIP4_("wlan0"));
+      startRequest.set_port(5000);
 
-      sendMessage(request, 1);
+      sendMessage(versionRequest, aap_protobuf::aaw::MessageId::WIFI_VERSION_REQUEST);
+      sendMessage(startRequest, aap_protobuf::aaw::MessageId::WIFI_START_REQUEST);
     } else {
       OPENAUTO_LOG(error) << "[AndroidBluetoothServer] received null socket during client connection.";
     }
   }
 
+  /// Read data from Bluetooth Socket
   void AndroidBluetoothServer::readSocket() {
     buffer += socket->readAll();
 
-    OPENAUTO_LOG(info) << "Received message";
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Reading from socket.";
 
     if (buffer.length() < 4) {
-      OPENAUTO_LOG(debug) << "Not enough data, waiting for more";
+      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Not enough data, waiting for more.";
       return;
     }
 
@@ -82,66 +95,112 @@ namespace f1x::openauto::btservice {
     stream >> length;
 
     if (buffer.length() < length + 4) {
-      OPENAUTO_LOG(info) << "Not enough data, waiting for more: " << buffer.length();
+      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Not enough data, waiting for more: " << buffer.length();
       return;
     }
 
-    aap_protobuf::service::wifiprojection::WifiProjectionMessageId messageId;
-    //uint16_t messageId;
-    stream >> messageId;
+    quint16 rawMessageId;
+    stream >> rawMessageId;
 
-    //OPENAUTO_LOG(info) << "[AndroidBluetoothServer] " << length << " " << messageId;
-    OPENAUTO_LOG(debug) << messageId;
+    aap_protobuf::aaw::MessageId messageId;
+    messageId = static_cast<aap_protobuf::aaw::MessageId>(rawMessageId);
+
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Message length: " << length << " MessageId: " << messageId;
+
+    switch (messageId) {
+
+      case aap_protobuf::aaw::MessageId::WIFI_INFO_REQUEST: // WifiInfoRequest - Respond with a WifiInfoResponse
+        handleWifiInfoRequest(buffer, length);
+        break;
+      case aap_protobuf::aaw::MessageId::WIFI_VERSION_RESPONSE: // WifiVersionRequest - Send a Version Request
+        handleWifiVersionResponse(buffer, length);// do something
+        break;
+      case aap_protobuf::aaw::MessageId::WIFI_CONNECTION_STATUS: // WifiStartResponse  - Receive a confirmation
+        handleWifiConnectionStatus(buffer, length);
+        break;
+      case aap_protobuf::aaw::MessageId::WIFI_START_RESPONSE: // WifiStartResponse  - Receive a confirmation
+        handleWifiStartResponse(buffer, length);
+        break;
+      case aap_protobuf::aaw::MessageId::WIFI_START_REQUEST:      // These are not received from the MD.
+      case aap_protobuf::aaw::MessageId::WIFI_INFO_RESPONSE:      // These are not received from the MD.
+      case aap_protobuf::aaw::MessageId::WIFI_VERSION_REQUEST:    // These are not received from the MD.
+      default:
+        QByteArray messageData = buffer.mid(stream.device()->pos(), length - 2);
+
+        // Convert QByteArray to std::string
+        std::string protoData = messageData.toStdString();
+
+        // Pass it to your function
+        this->DecodeProtoMessage(protoData);
 
         std::stringstream ss;
         ss << std::hex << std::setfill('0');
         for (auto &&val: buffer) {
           ss << std::setw(2) << static_cast<unsigned>(val);
         }
-        OPENAUTO_LOG(info) << "Unknown message: " << messageId;
-        OPENAUTO_LOG(info) << ss.str();
+        OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Unknown message: " << messageId;
+        OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Data " << ss.str();
+
+        break;
+    }
 
     buffer = buffer.mid(length + 4);
   }
 
+  /// Handles request for WifiInfoRequest by sending a WifiInfoResponse
+  /// \param buffer
+  /// \param length
   void AndroidBluetoothServer::handleWifiInfoRequest(QByteArray &buffer, uint16_t length) {
-    aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest msg;
-    msg.ParseFromArray(buffer.data() + 4, length);
-    OPENAUTO_LOG(info) << "WifiInfoRequest: " << msg.DebugString();
+    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiInfoRequest] Handling wifi info request";
 
-    aap_protobuf::service::wifiprojection::message::WifiCredentialsResponse response;
+    aap_protobuf::aaw::WifiInfoResponse response;
 
-    //response.set_ip_address(getIP4_("wlan0"));
-    //response.set_port(5000);
-    //response.set_status(aap_protobuf::service::control::WifiInfoResponse_Status_STATUS_SUCCESS);
-
-    sendMessage(response, 7);
-  }
-
-  void AndroidBluetoothServer::handleWifiSecurityRequest(QByteArray &buffer, uint16_t length) {
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer] WifiSecurityRequest:";
-    aap_protobuf::service::wifiprojection::message::WifiCredentialsResponse response;
-
-    response.set_car_wifi_security_mode(
-        aap_protobuf::service::wifiprojection::message::WifiSecurityMode::WPA2_PERSONAL);
-    response.set_car_wifi_ssid(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf", "ssid").toStdString());
-    response.set_car_wifi_password(
+    response.set_ssid(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf", "ssid").toStdString());
+    response.set_password(
         configuration_->getParamFromFile("/etc/hostapd/hostapd.conf", "wpa_passphrase").toStdString());
+    response.set_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
+    response.set_security_mode(
+        aap_protobuf::service::wifiprojection::message::WifiSecurityMode::WPA2_PERSONAL);
     response.set_access_point_type(aap_protobuf::service::wifiprojection::message::AccessPointType::STATIC);
-    response.add_supported_wifi_channels(1);
-
-
-    //response.set_ssid(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","ssid").toStdString());
-    //response.set_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
-    //response.set_key(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","wpa_passphrase").toStdString());
-    //response.set_security_mode(aap_protobuf::messages::WifiSecurityReponse_SecurityMode_WPA2_PERSONAL);
-    //response.set_access_point_type(aap_protobuf::messages::WifiSecurityReponse_AccessPointType_STATIC);
 
     sendMessage(response, 3);
   }
 
+  /// Listens for a WifiVersionResponse from the MD - usually just a notification
+  /// \param buffer
+  /// \param length
+  void AndroidBluetoothServer::handleWifiVersionResponse(QByteArray &buffer, uint16_t length) {
+    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiVersionResponse] Handling wifi version response";
+
+    aap_protobuf::aaw::WifiVersionResponse response;
+    response.ParseFromArray(buffer.data() + 4, length);
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::handleWifiVersionResponse] Unknown Param 1: " << response.unknown_value_a() << " Unknown Param 2: " << response.unknown_value_b();
+  }
+
+  /// Listens for WifiStartResponse from MD - usually just a notification with a status
+  /// \param buffer
+  /// \param length
+  void AndroidBluetoothServer::handleWifiStartResponse(QByteArray &buffer, uint16_t length) {
+    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiStartResponse] Handling wifi start response";
+
+    aap_protobuf::aaw::WifiStartResponse response;
+    response.ParseFromArray(buffer.data() + 4, length);
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::handleWifiStartResponse] " << response.ip_address() << " port " << response.port() << " status " << Status_Name(response.status());
+  }
+
+  /// Handles request for WifiStartRequest by sending a WifiStartResponse
+  /// \param buffer
+  /// \param length
+  void AndroidBluetoothServer::handleWifiConnectionStatus(QByteArray &buffer, uint16_t length) {
+    aap_protobuf::aaw::WifiConnectionStatus status;
+    status.ParseFromArray(buffer.data() + 4, length);
+    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiConnectionStatus] Handle wifi connection status, received: " << Status_Name(status.status());
+  }
+
   void AndroidBluetoothServer::sendMessage(const google::protobuf::Message &message, uint16_t type) {
-    int byteSize = message.ByteSize();
+    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::sendMessage] Sending message to connected device";
+
+    int byteSize = message.ByteSizeLong();
     QByteArray out(byteSize + 4, 0);
     QDataStream ds(&out, QIODevice::ReadWrite);
     ds << (uint16_t) byteSize;
@@ -153,22 +212,15 @@ namespace f1x::openauto::btservice {
     for (auto &&val: out) {
       ss << std::setw(2) << static_cast<unsigned>(val);
     }
-    //OPENAUTO_LOG(info) << "Writing message: " << ss.str();
+
     OPENAUTO_LOG(debug) << message.GetTypeName() << " - " + message.DebugString();
 
     auto written = socket->write(out);
     if (written > -1) {
-      OPENAUTO_LOG(info) << "Bytes written: " << written;
+      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::sendMessage] Bytes written: " << written;
     } else {
-      OPENAUTO_LOG(info) << "Could not write data";
+      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::sendMessage] Could not write data";
     }
-  }
-
-  void AndroidBluetoothServer::handleWifiInfoRequestResponse(QByteArray &buffer, uint16_t length) {
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer] WifiInfoRequestResponse";
-    aap_protobuf::service::wifiprojection::message::WifiCredentialsResponse msg;
-    msg.ParseFromArray(buffer.data() + 4, length);
-    OPENAUTO_LOG(info) << "WifiInfoResponse: " << msg.DebugString();
   }
 
   const ::std::string AndroidBluetoothServer::getIP4_(const QString intf) {
@@ -177,6 +229,48 @@ namespace f1x::openauto::btservice {
         return address.ip().toString().toStdString();
     }
     return "";
+  }
+
+  /// Decode Proto Messages to their constituent components
+  /// \param proto_data
+  void AndroidBluetoothServer::DecodeProtoMessage(const std::string& proto_data) {
+    UnknownFieldSet set;
+
+    // Create streams
+    ArrayInputStream raw_input(proto_data.data(), proto_data.size());
+    CodedInputStream input(&raw_input);
+
+    // Decode the message
+    if (!set.MergeFromCodedStream(&input)) {
+      std::cerr << "Failed to decode the message." << std::endl;
+      return;
+    }
+
+    // Iterate over the fields
+    for (int i = 0; i < set.field_count(); ++i) {
+      const UnknownField& field = set.field(i);
+      switch (field.type()) {
+        case UnknownField::TYPE_VARINT:
+          std::cout << "Field number " << field.number() << " is a varint: " << field.varint() << std::endl;
+          break;
+        case UnknownField::TYPE_FIXED32:
+          std::cout << "Field number " << field.number() << " is a fixed32: " << field.fixed32() << std::endl;
+          break;
+        case UnknownField::TYPE_FIXED64:
+          std::cout << "Field number " << field.number() << " is a fixed64: " << field.fixed64() << std::endl;
+          break;
+        case UnknownField::TYPE_LENGTH_DELIMITED:
+          std::cout << "Field number " << field.number() << " is length-delimited: ";
+          for (char ch : field.length_delimited()) {
+            std::cout << std::hex << (int)(unsigned char)ch;
+          }
+          std::cout << std::dec << std::endl;
+          break;
+        case UnknownField::TYPE_GROUP:  // Deprecated in modern Protobuf
+          std::cout << "Field number " << field.number() << " is a group." << std::endl;
+          break;
+      }
+    }
   }
 }
 

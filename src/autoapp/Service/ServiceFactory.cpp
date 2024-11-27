@@ -38,7 +38,6 @@
 #include <f1x/openauto/autoapp/Service/Bluetooth/BluetoothService.hpp>
 #include <f1x/openauto/autoapp/Service/InputSource/InputSourceService.hpp>
 #include <f1x/openauto/autoapp/Service/WifiProjection/WifiProjectionService.hpp>
-
 #include <f1x/openauto/autoapp/Projection/QtVideoOutput.hpp>
 #include <f1x/openauto/autoapp/Projection/OMXVideoOutput.hpp>
 #include <f1x/openauto/autoapp/Projection/RtAudioOutput.hpp>
@@ -46,7 +45,6 @@
 #include <f1x/openauto/autoapp/Projection/QtAudioInput.hpp>
 #include <f1x/openauto/autoapp/Projection/InputDevice.hpp>
 #include <f1x/openauto/autoapp/Projection/LocalBluetoothDevice.hpp>
-#include <f1x/openauto/autoapp/Projection/RemoteBluetoothDevice.hpp>
 #include <f1x/openauto/autoapp/Projection/DummyBluetoothDevice.hpp>
 
 namespace f1x::openauto::autoapp::service {

@@ -21,6 +21,7 @@
 #include <QWidget>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <QFileDialog>
+#include <QComboBox>
 #include <QKeyEvent>
 #ifdef MAC_OS
 #else
@@ -98,7 +99,16 @@ private:
     void saveButtonCheckBoxes();
     void saveButtonCheckBox(const QCheckBox* checkBox, configuration::IConfiguration::ButtonCodes& buttonCodes, aap_protobuf::service::media::sink::message::KeyCode buttonCode);
     void setButtonCheckBoxes(bool value);
-
+#ifdef Q_OS_LINUX
+    void populateBluetoothComboBoxLinux(QComboBox *comboBoxBluetooth);
+#endif
+#ifdef Q_OS_WIN
+    void populateBluetoothComboBoxWindows(QComboBox *comboBoxBluetooth);
+#endif
+#ifdef Q_OS_MAC
+    void populateBluetoothComboBoxMac(QComboBox *comboBoxBluetooth);
+#endif
+    void populateBluetoothComboBox(QComboBox *comboBoxBluetooth);
     Ui::SettingsWindow* ui_;
     configuration::IConfiguration::Pointer configuration_;
 

@@ -20,11 +20,7 @@
 
 #include <QBluetoothAddress>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace btservice
+namespace f1x::openauto::btservice
 {
 
 class IAndroidBluetoothService
@@ -37,5 +33,5 @@ public:
 };
 
 }
-}
-}
+
+

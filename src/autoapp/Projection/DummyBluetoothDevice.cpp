@@ -34,12 +34,7 @@ bool DummyBluetoothDevice::isPaired(const std::string&) const
     return false;
 }
 
-void DummyBluetoothDevice::pair(const std::string&, PairingPromise::Pointer promise)
-{
-    promise->reject();
-}
-
-std::string DummyBluetoothDevice::getLocalAddress() const
+std::string DummyBluetoothDevice::getAdapterAddress() const
 {
     return "";
 }

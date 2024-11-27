@@ -33,47 +33,46 @@
 #include <aap_protobuf/aaw/WifiStartResponse.pb.h>
 #include <aap_protobuf/aaw/WifiStartRequest.pb.h>
 
-namespace f1x {
-  namespace openauto {
-    namespace btservice {
 
-      class AndroidBluetoothServer : public QObject, public IAndroidBluetoothServer {
-      Q_OBJECT
+namespace f1x::openauto::btservice {
 
-      public:
-        AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration);
+  class AndroidBluetoothServer : public QObject, public IAndroidBluetoothServer {
+  Q_OBJECT
 
-        uint16_t start(const QBluetoothAddress &address) override;
+  public:
+    AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration);
 
-      private slots:
+    uint16_t start(const QBluetoothAddress &address) override;
 
-        void onClientConnected();
+  private slots:
 
-      private:
-        std::unique_ptr<QBluetoothServer> rfcommServer_;
-        QBluetoothSocket *socket = nullptr;
-        autoapp::configuration::IConfiguration::Pointer configuration_;
+    void onClientConnected();
 
-        void readSocket();
+  private:
+    std::unique_ptr<QBluetoothServer> rfcommServer_;
+    QBluetoothSocket *socket = nullptr;
+    autoapp::configuration::IConfiguration::Pointer configuration_;
 
-        QByteArray buffer;
+    void readSocket();
 
-        void handleWifiInfoRequest(QByteArray &buffer, uint16_t length);
+    QByteArray buffer;
 
-        void handleWifiVersionResponse(QByteArray &buffer, uint16_t length);
+    void handleWifiInfoRequest(QByteArray &buffer, uint16_t length);
 
-        void handleWifiConnectionStatus(QByteArray &buffer, uint16_t length);
+    void handleWifiVersionResponse(QByteArray &buffer, uint16_t length);
 
-        void handleWifiStartResponse(QByteArray &buffer, uint16_t length);
+    void handleWifiConnectionStatus(QByteArray &buffer, uint16_t length);
 
-        void sendMessage(const google::protobuf::Message &message, uint16_t type);
+    void handleWifiStartResponse(QByteArray &buffer, uint16_t length);
+
+    void sendMessage(const google::protobuf::Message &message, uint16_t type);
 
 
-        const ::std::string getIP4_(const QString intf);
+    const ::std::string getIP4_(const QString intf);
 
-        void DecodeProtoMessage(const std::string &proto_data);
-      };
+    void DecodeProtoMessage(const std::string &proto_data);
+  };
 
-    }
-  }
 }
+
+

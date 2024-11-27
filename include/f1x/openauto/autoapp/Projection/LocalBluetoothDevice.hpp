@@ -38,17 +38,8 @@ public:
     std::string getAdapterAddress() const override;
     bool isAvailable() const override;
 
-signals:
-    void startPairing(const QString& address, PairingPromise::Pointer promise);
-
 private slots:
-    void createBluetoothLocalDevice();
-    void onStartPairing(const QString& address, PairingPromise::Pointer promise);
-    void onPairingDisplayConfirmation(const QBluetoothAddress &address, QString pin);
-    void onPairingDisplayPinCode(const QBluetoothAddress &address, QString pin);
-    void onPairingFinished(const QBluetoothAddress &address, QBluetoothLocalDevice::Pairing pairing);
-    void onError(QBluetoothLocalDevice::Error error);
-    void onHostModeStateChanged(QBluetoothLocalDevice::HostMode state);
+    void createBluetoothLocalDevice(const QString &adapterAddress);
 
 private:
     mutable std::mutex mutex_;
