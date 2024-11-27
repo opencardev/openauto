@@ -305,7 +305,7 @@ color: rgb(211, 215, 207);</string>
             <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal; color:#ffffff;&quot;&gt;crank&lt;/span&gt;&lt;span style=&quot; font-style:normal; color:#5ce739;&quot;&gt;shaft &lt;/span&gt;&lt;span style=&quot; font-style:normal; color:#40bfbf;&quot;&gt;NG &lt;/span&gt;&lt;span style=&quot; font-style:normal; color:#888a85;&quot;&gt;- OpenCarOS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal; color:#7700C8;&quot;&gt;Journey&lt;/span&gt;&lt;span style=&quot; font-style:normal; color:#ffffff;&quot;&gt;OS &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
