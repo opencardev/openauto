@@ -72,28 +72,18 @@ namespace f1x::openauto::autoapp::service {
     return serviceList;
   }
 
-        IService::Pointer ServiceFactory::createBluetoothService(aasdk::messenger::IMessenger::Pointer messenger) {
-          OPENAUTO_LOG(info) << "[ServiceFactory] createBluetoothService()";
-          projection::IBluetoothDevice::Pointer bluetoothDevice;
-          switch (configuration_->getBluetoothAdapterType()) {
-            case configuration::BluetoothAdapterType::LOCAL:
-              OPENAUTO_LOG(info) << "[ServiceFactory] Using Local Bluetooth Adapter";
-              bluetoothDevice = projection::IBluetoothDevice::Pointer(new projection::LocalBluetoothDevice(),
-                                                                      std::bind(&QObject::deleteLater,
-                                                                                std::placeholders::_1));
-              break;
-
-            case configuration::BluetoothAdapterType::REMOTE:
-              OPENAUTO_LOG(debug) << "[ServiceFactory] Using Remote Bluetooth Adapter";
-              bluetoothDevice = std::make_shared<projection::RemoteBluetoothDevice>(
-                  configuration_->getBluetoothRemoteAdapterAddress());
-              break;
-
-            default:
-              OPENAUTO_LOG(debug) << "[ServiceFactory] Using Dummy Bluetooth";
-              bluetoothDevice = std::make_shared<projection::DummyBluetoothDevice>();
-              break;
-          }
+  IService::Pointer ServiceFactory::createBluetoothService(aasdk::messenger::IMessenger::Pointer messenger) {
+    OPENAUTO_LOG(info) << "[ServiceFactory] createBluetoothService()";
+    projection::IBluetoothDevice::Pointer bluetoothDevice;
+    if (configuration_->getBluetoothAdapterAddress() == "") {
+      OPENAUTO_LOG(debug) << "[ServiceFactory] Using Dummy Bluetooth";
+      bluetoothDevice = std::make_shared<projection::DummyBluetoothDevice>();
+    } else {
+      OPENAUTO_LOG(info) << "[ServiceFactory] Using Local Bluetooth Adapter";
+      bluetoothDevice = projection::IBluetoothDevice::Pointer(new projection::LocalBluetoothDevice(),
+                                                              std::bind(&QObject::deleteLater,
+                                                                        std::placeholders::_1));
+    }
 
     return std::make_shared<bluetooth::BluetoothService>(ioService_, messenger, std::move(bluetoothDevice));
   }

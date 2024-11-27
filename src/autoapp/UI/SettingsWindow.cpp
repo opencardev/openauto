@@ -49,61 +49,56 @@
 
 namespace f1x::openauto::autoapp::ui {
 
-        SettingsWindow::SettingsWindow(configuration::IConfiguration::Pointer configuration, QWidget *parent)
-            : QWidget(parent), ui_(new Ui::SettingsWindow), configuration_(std::move(configuration)) {
-          ui_->setupUi(this);
-          connect(ui_->pushButtonCancel, &QPushButton::clicked, this, &SettingsWindow::close);
-          connect(ui_->pushButtonSave, &QPushButton::clicked, this, &SettingsWindow::onSave);
-          connect(ui_->pushButtonUnpair, &QPushButton::clicked, this, &SettingsWindow::unpairAll);
-          connect(ui_->pushButtonUnpair, &QPushButton::clicked, this, &SettingsWindow::close);
-          connect(ui_->horizontalSliderScreenDPI, &QSlider::valueChanged, this, &SettingsWindow::onUpdateScreenDPI);
-          connect(ui_->horizontalSliderAlphaTrans, &QSlider::valueChanged, this, &SettingsWindow::onUpdateAlphaTrans);
-          connect(ui_->horizontalSliderDay, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightnessDay);
-          connect(ui_->horizontalSliderNight, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightnessNight);
-          connect(ui_->horizontalSliderBrightness1, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness1);
-          connect(ui_->horizontalSliderBrightness2, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness2);
-          connect(ui_->horizontalSliderBrightness3, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness3);
-          connect(ui_->horizontalSliderBrightness4, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness4);
-          connect(ui_->horizontalSliderBrightness5, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness5);
-          connect(ui_->horizontalSliderLux1, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux1);
-          connect(ui_->horizontalSliderLux2, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux2);
-          connect(ui_->horizontalSliderLux3, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux3);
-          connect(ui_->horizontalSliderLux4, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux4);
-          connect(ui_->horizontalSliderLux5, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux5);
-          connect(ui_->radioButtonUseExternalBluetoothAdapter, &QRadioButton::clicked,
-                  [&](bool checked) { ui_->lineEditExternalBluetoothAdapterAddress->setEnabled(checked); });
-          connect(ui_->radioButtonDisableBluetooth, &QRadioButton::clicked,
-                  [&]() { ui_->lineEditExternalBluetoothAdapterAddress->setEnabled(false); });
-          connect(ui_->radioButtonUseLocalBluetoothAdapter, &QRadioButton::clicked,
-                  [&]() { ui_->lineEditExternalBluetoothAdapterAddress->setEnabled(false); });
-          connect(ui_->pushButtonClearSelection, &QPushButton::clicked,
-                  std::bind(&SettingsWindow::setButtonCheckBoxes, this, false));
-          connect(ui_->pushButtonSelectAll, &QPushButton::clicked,
-                  std::bind(&SettingsWindow::setButtonCheckBoxes, this, true));
-          connect(ui_->pushButtonResetToDefaults, &QPushButton::clicked, this, &SettingsWindow::onResetToDefaults);
-          connect(ui_->horizontalSliderSystemVolume, &QSlider::valueChanged, this,
-                  &SettingsWindow::onUpdateSystemVolume);
-          connect(ui_->horizontalSliderSystemCapture, &QSlider::valueChanged, this,
-                  &SettingsWindow::onUpdateSystemCapture);
-          connect(ui_->radioButtonHotspot, &QPushButton::clicked, this, &SettingsWindow::onStartHotspot);
-          connect(ui_->radioButtonClient, &QPushButton::clicked, this, &SettingsWindow::onStopHotspot);
-          connect(ui_->pushButtonSetTime, &QPushButton::clicked, this, &SettingsWindow::setTime);
-          connect(ui_->pushButtonSetTime, &QPushButton::clicked, this, &SettingsWindow::close);
-          connect(ui_->pushButtonNTP, &QPushButton::clicked, [&]() { system("/usr/local/bin/crankshaft rtc sync &"); });
-          connect(ui_->pushButtonNTP, &QPushButton::clicked, this, &SettingsWindow::close);
-          connect(ui_->pushButtonCheckNow, &QPushButton::clicked,
-                  [&]() { system("/usr/local/bin/crankshaft update check &"); });
-          connect(ui_->pushButtonDebuglog, &QPushButton::clicked, this, &SettingsWindow::close);
-          connect(ui_->pushButtonDebuglog, &QPushButton::clicked,
-                  [&]() { system("/usr/local/bin/crankshaft debuglog &"); });
-          connect(ui_->pushButtonNetworkAuto, &QPushButton::clicked,
-                  [&]() { system("/usr/local/bin/crankshaft network auto &"); });
-          connect(ui_->pushButtonNetwork0, &QPushButton::clicked, this, &SettingsWindow::on_pushButtonNetwork0_clicked);
-          connect(ui_->pushButtonNetwork1, &QPushButton::clicked, this, &SettingsWindow::on_pushButtonNetwork1_clicked);
-          connect(ui_->pushButtonSambaStart, &QPushButton::clicked,
-                  [&]() { system("/usr/local/bin/crankshaft samba start &"); });
-          connect(ui_->pushButtonSambaStop, &QPushButton::clicked,
-                  [&]() { system("/usr/local/bin/crankshaft samba stop &"); });
+  SettingsWindow::SettingsWindow(configuration::IConfiguration::Pointer configuration, QWidget *parent)
+      : QWidget(parent), ui_(new Ui::SettingsWindow), configuration_(std::move(configuration)) {
+    ui_->setupUi(this);
+    connect(ui_->pushButtonCancel, &QPushButton::clicked, this, &SettingsWindow::close);
+    connect(ui_->pushButtonSave, &QPushButton::clicked, this, &SettingsWindow::onSave);
+    connect(ui_->pushButtonUnpair, &QPushButton::clicked, this, &SettingsWindow::unpairAll);
+    connect(ui_->pushButtonUnpair, &QPushButton::clicked, this, &SettingsWindow::close);
+    connect(ui_->horizontalSliderScreenDPI, &QSlider::valueChanged, this, &SettingsWindow::onUpdateScreenDPI);
+    connect(ui_->horizontalSliderAlphaTrans, &QSlider::valueChanged, this, &SettingsWindow::onUpdateAlphaTrans);
+    connect(ui_->horizontalSliderDay, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightnessDay);
+    connect(ui_->horizontalSliderNight, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightnessNight);
+    connect(ui_->horizontalSliderBrightness1, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness1);
+    connect(ui_->horizontalSliderBrightness2, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness2);
+    connect(ui_->horizontalSliderBrightness3, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness3);
+    connect(ui_->horizontalSliderBrightness4, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness4);
+    connect(ui_->horizontalSliderBrightness5, &QSlider::valueChanged, this, &SettingsWindow::onUpdateBrightness5);
+    connect(ui_->horizontalSliderLux1, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux1);
+    connect(ui_->horizontalSliderLux2, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux2);
+    connect(ui_->horizontalSliderLux3, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux3);
+    connect(ui_->horizontalSliderLux4, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux4);
+    connect(ui_->horizontalSliderLux5, &QSlider::valueChanged, this, &SettingsWindow::onUpdateLux5);
+
+    connect(ui_->pushButtonClearSelection, &QPushButton::clicked,
+            std::bind(&SettingsWindow::setButtonCheckBoxes, this, false));
+    connect(ui_->pushButtonSelectAll, &QPushButton::clicked,
+            std::bind(&SettingsWindow::setButtonCheckBoxes, this, true));
+    connect(ui_->pushButtonResetToDefaults, &QPushButton::clicked, this, &SettingsWindow::onResetToDefaults);
+    connect(ui_->horizontalSliderSystemVolume, &QSlider::valueChanged, this,
+            &SettingsWindow::onUpdateSystemVolume);
+    connect(ui_->horizontalSliderSystemCapture, &QSlider::valueChanged, this,
+            &SettingsWindow::onUpdateSystemCapture);
+    connect(ui_->radioButtonHotspot, &QPushButton::clicked, this, &SettingsWindow::onStartHotspot);
+    connect(ui_->radioButtonClient, &QPushButton::clicked, this, &SettingsWindow::onStopHotspot);
+    connect(ui_->pushButtonSetTime, &QPushButton::clicked, this, &SettingsWindow::setTime);
+    connect(ui_->pushButtonSetTime, &QPushButton::clicked, this, &SettingsWindow::close);
+    connect(ui_->pushButtonNTP, &QPushButton::clicked, [&]() { system("/usr/local/bin/crankshaft rtc sync &"); });
+    connect(ui_->pushButtonNTP, &QPushButton::clicked, this, &SettingsWindow::close);
+    connect(ui_->pushButtonCheckNow, &QPushButton::clicked,
+            [&]() { system("/usr/local/bin/crankshaft update check &"); });
+    connect(ui_->pushButtonDebuglog, &QPushButton::clicked, this, &SettingsWindow::close);
+    connect(ui_->pushButtonDebuglog, &QPushButton::clicked,
+            [&]() { system("/usr/local/bin/crankshaft debuglog &"); });
+    connect(ui_->pushButtonNetworkAuto, &QPushButton::clicked,
+            [&]() { system("/usr/local/bin/crankshaft network auto &"); });
+    connect(ui_->pushButtonNetwork0, &QPushButton::clicked, this, &SettingsWindow::on_pushButtonNetwork0_clicked);
+    connect(ui_->pushButtonNetwork1, &QPushButton::clicked, this, &SettingsWindow::on_pushButtonNetwork1_clicked);
+    connect(ui_->pushButtonSambaStart, &QPushButton::clicked,
+            [&]() { system("/usr/local/bin/crankshaft samba start &"); });
+    connect(ui_->pushButtonSambaStop, &QPushButton::clicked,
+            [&]() { system("/usr/local/bin/crankshaft samba stop &"); });
 
     // menu
     ui_->tab1->show();
@@ -116,10 +111,8 @@ namespace f1x::openauto::autoapp::ui {
     ui_->tab8->hide();
     ui_->tab9->hide();
 
-          ui_->horizontalGroupBox->hide();
-          ui_->labelBluetoothAdapterAddress->hide();
-          ui_->lineEditExternalBluetoothAdapterAddress->hide();
-          ui_->labelTestInProgress->hide();
+
+    ui_->labelTestInProgress->hide();
 
     connect(ui_->pushButtonTab1, &QPushButton::clicked, this, &SettingsWindow::show_tab1);
     connect(ui_->pushButtonTab2, &QPushButton::clicked, this, &SettingsWindow::show_tab2);
@@ -201,14 +194,105 @@ namespace f1x::openauto::autoapp::ui {
     delete ui_;
   }
 
-        void SettingsWindow::updateInfo() {
-          if (ui_->tab6->isVisible() == true) {
-            updateSystemInfo();
-          }
-          if (ui_->tab5->isVisible() == true) {
-            updateNetworkInfo();
-          }
+#ifdef Q_OS_LINUX
+  void SettingsWindow::populateBluetoothComboBoxLinux(QComboBox *comboBoxBluetooth) {
+    QList<QBluetoothHostInfo> adapters = QBluetoothLocalDevice::allDevices();
+
+    qDebug() << "Found" << adapters.count() << "Bluetooth adapters:";
+    // Iterate over the adapters and print their information.
+    comboBoxBluetooth->clear(); // Clear existing items
+
+    if (!adapters.isEmpty()) {
+      for (const QBluetoothHostInfo &adapter: adapters) {
+        QString adapterAddress = adapter.address().toString();
+        comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow",
+                                                            QString("%1 (%2)").arg(adapter.name()).arg(
+                                                                adapterAddress).toUtf8().constData()),
+                                                 QVariant(adapterAddress));
+      }
+    } else {
+      comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none", nullptr));
+    }
+  }
+#endif
+#ifdef Q_OS_WIN
+  void SettingsWindow::populateBluetoothComboBoxWindows(QComboBox *comboBoxBluetooth) {
+    QProcess process;
+    process.start("wmic",
+                  QStringList() << "path" << "Win32_PnPEntity" << "where" << "\"PNPDeviceID like '%BTHENUM%'\"" << "get"
+                                << "Name,PNPDeviceID");
+    process.waitForFinished(-1);
+
+    QString output = process.readAllStandardOutput();
+    QStringList lines = output.split("\n", QString::SkipEmptyParts);
+
+    comboBoxBluetooth->clear(); // Clear existing items
+
+    int index = 0;
+    for (auto line: lines) {
+      if (line.contains("BTH", Qt::CaseInsensitive)) {
+        QStringList parts = line.split(" ", QString::SkipEmptyParts);
+        if (parts.count() >= 2) {
+          QString name = parts[0].trimmed();
+          QString address = parts[1].trimmed(); // This might not be an address in all cases
+          comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", QString("%1 (%2)").arg(name).arg(
+              address).toUtf8().constData()), QVariant(address));
+          index++;
         }
+      }
+    }
+
+    // Optionally, add "none" if no adapters were found
+    if (index == 0) {
+      comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none", nullptr));
+    }
+  }
+#endif
+#ifdef Q_OS_MAC
+  void SettingsWindow::populateBluetoothComboBoxMac(QComboBox *comboBoxBluetooth) {
+    BluetoothAdapterLister lister;
+    QStringList adapters = lister.listAdapters();
+
+    comboBoxBluetooth->clear(); // Clear existing items
+
+    if (adapters.isEmpty()) {
+      comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none", nullptr));
+    } else {
+      for (const QString &adapter: adapters) {
+        QStringList parts = adapter.split(" (");
+        if (parts.count() == 2) {
+          QString name = parts[0];
+          QString address = parts[1].left(parts[1].length() - 1); // Remove trailing ')'
+          comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", adapter.toUtf8().constData()),
+                                     QVariant(address));
+        }
+      }
+    }
+  }
+#endif
+  void SettingsWindow::populateBluetoothComboBox(QComboBox *comboBoxBluetooth) {
+#ifdef Q_OS_LINUX
+    populateBluetoothComboBoxLinux(comboBoxBluetooth);
+#elif defined Q_OS_WIN
+    populateBluetoothComboBoxWindows(comboBoxBluetooth);
+#elif defined Q_OS_MAC
+    populateBluetoothComboBoxMac(comboBoxBluetooth);
+#else
+    // Fallback for other platforms
+comboBoxBluetooth->clear();
+comboBoxBluetooth->addItem("Test");
+comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none", nullptr));
+#endif
+  }
+
+  void SettingsWindow::updateInfo() {
+    if (ui_->tab6->isVisible() == true) {
+      updateSystemInfo();
+    }
+    if (ui_->tab5->isVisible() == true) {
+      updateNetworkInfo();
+    }
+  }
 
   void SettingsWindow::onSave() {
     configuration_->setHandednessOfTrafficType(
@@ -262,14 +346,11 @@ namespace f1x::openauto::autoapp::ui {
           ui_->comboBoxBluetooth->currentData().toString().toStdString());
     }
 
-          configuration_->setMusicAudioChannelEnabled(ui_->checkBoxMusicAudioChannel->isChecked());
-          configuration_->setGuidanceAudioChannelEnabled(ui_->checkBoxSpeechAudioChannel->isChecked());
-          configuration_->setTelephonyAudioChannelEnabled(ui_->checkBoxVoiceAudioChannel->isChecked());
-          configuration_->setAudioOutputBackendType(
-              ui_->radioButtonRtAudio->isChecked() ? configuration::AudioOutputBackendType::RTAUDIO
-                                                   : configuration::AudioOutputBackendType::QT);
     configuration_->setMusicAudioChannelEnabled(ui_->checkBoxMusicAudioChannel->isChecked());
     configuration_->setGuidanceAudioChannelEnabled(ui_->checkBoxSpeechAudioChannel->isChecked());
+    //configuration_->setTelephonyAudioChannelEnabled(ui_->checkBoxVoiceAudioChannel->isChecked());
+    // TODO: Add CheckBox In
+    configuration_->setTelephonyAudioChannelEnabled(true);
     configuration_->setAudioOutputBackendType(
         ui_->radioButtonRtAudio->isChecked() ? configuration::AudioOutputBackendType::RTAUDIO
                                              : configuration::AudioOutputBackendType::QT);
@@ -541,20 +622,9 @@ namespace f1x::openauto::autoapp::ui {
     this->loadButtonCheckBoxes();
     ui_->checkBoxPlayerControl->setChecked(configuration_->playerButtonControl());
 
-          ui_->radioButtonDisableBluetooth->setChecked(
-              configuration_->getBluetoothAdapterType() == configuration::BluetoothAdapterType::NONE);
-          ui_->radioButtonUseLocalBluetoothAdapter->setChecked(
-              configuration_->getBluetoothAdapterType() == configuration::BluetoothAdapterType::LOCAL);
-          ui_->radioButtonUseExternalBluetoothAdapter->setChecked(
-              configuration_->getBluetoothAdapterType() == configuration::BluetoothAdapterType::REMOTE);
-          ui_->lineEditExternalBluetoothAdapterAddress->setEnabled(
-              configuration_->getBluetoothAdapterType() == configuration::BluetoothAdapterType::REMOTE);
-          ui_->lineEditExternalBluetoothAdapterAddress->setText(
-              QString::fromStdString(configuration_->getBluetoothRemoteAdapterAddress()));
-
-          ui_->checkBoxMusicAudioChannel->setChecked(configuration_->musicAudioChannelEnabled());
-          ui_->checkBoxSpeechAudioChannel->setChecked(configuration_->guidanceAudioChannelEnabled());
-          ui_->telephonyAudioChannelEnabled->setChecked(configuration_->guidanceAudioChannelEnabled());
+    ui_->checkBoxMusicAudioChannel->setChecked(configuration_->musicAudioChannelEnabled());
+    ui_->checkBoxSpeechAudioChannel->setChecked(configuration_->guidanceAudioChannelEnabled());
+    //ui_->telephonyAudioChannelEnabled->setChecked(configuration_->telephonyAudioChannelEnabled());
 
     const auto &audioOutputBackendType = configuration_->getAudioOutputBackendType();
     ui_->radioButtonRtAudio->setChecked(audioOutputBackendType == configuration::AudioOutputBackendType::RTAUDIO);
@@ -1094,36 +1164,34 @@ namespace f1x::openauto::autoapp::ui {
         ui_->checkBoxFlipYUSB->setChecked(false);
       }
 
-            // set bluetooth
-            if (configuration_->getCSValue("ENABLE_BLUETOOTH") == "1") {
-              // check external bluetooth enabled
-              if (configuration_->getCSValue("EXTERNAL_BLUETOOTH") == "1") {
-                ui_->radioButtonUseExternalBluetoothAdapter->setChecked(true);
-              } else {
-                ui_->radioButtonUseLocalBluetoothAdapter->setChecked(true);
-              }
-              // mac
-              //ui_->lineEditExternalBluetoothAdapterAddress->setText(getparams[37]);
-            } else {
-              ui_->radioButtonDisableBluetooth->setChecked(true);
-              ui_->lineEditExternalBluetoothAdapterAddress->setText("");
-            }
-            if (configuration_->getCSValue("ENABLE_PAIRABLE") == "1") {
-              ui_->checkBoxBluetoothAutoPair->setChecked(true);
-            } else {
-              ui_->checkBoxBluetoothAutoPair->setChecked(false);
-            }
-            // set bluetooth type
-            if (configuration_->getCSValue("ENABLE_BLUETOOTH") == "1") {
-              QString bt = configuration_->getParamFromFile("/boot/config.txt", "dtoverlay=pi3-disable-bt");
-              if (bt.contains("pi3-disable-bt")) {
-                ui_->comboBoxBluetooth->setCurrentText("external");
-              } else {
-                ui_->comboBoxBluetooth->setCurrentText("builtin");
-              }
-            } else {
-              ui_->comboBoxBluetooth->setCurrentText("none");
-            }
+      if (configuration_->getCSValue("ENABLE_PAIRABLE") == "1") {
+        ui_->checkBoxBluetoothAutoPair->setChecked(true);
+      } else {
+        ui_->checkBoxBluetoothAutoPair->setChecked(false);
+      }
+      // set bluetooth type
+      if (configuration_->getCSValue("ENABLE_BLUETOOTH") == "1") {
+        QString bt = configuration_->getParamFromFile("/boot/config.txt", "dtoverlay=pi3-disable-bt");
+
+        QString selectedAddress = QString::fromStdString(
+            configuration_->getBluetoothAdapterAddress());  //.value("BluetoothAdapterAddress", "none").toString();
+
+        // Iterate through the items to find the one with the matching data
+        bool found = false;
+        for (int i = 0; i < ui_->comboBoxBluetooth->count(); ++i) {
+          if (ui_->comboBoxBluetooth->itemData(i).toString() == selectedAddress) {
+            ui_->comboBoxBluetooth->setCurrentIndex(i);
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          ui_->comboBoxBluetooth->setCurrentIndex(ui_->comboBoxBluetooth->findText("none"));
+        }
+      } else {
+        ui_->comboBoxBluetooth->setCurrentText("none");
+      }
 
 
 

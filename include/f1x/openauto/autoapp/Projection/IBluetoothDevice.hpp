@@ -37,8 +37,7 @@ public:
 
     virtual void stop() = 0;
     virtual bool isPaired(const std::string& address) const = 0;
-    virtual void pair(const std::string& address, PairingPromise::Pointer promise) = 0;
-    virtual std::string getLocalAddress() const = 0;
+    virtual std::string getAdapterAddress() const = 0;
     virtual bool isAvailable() const = 0;
 };
 

@@ -35,8 +35,7 @@ public:
 
     void stop() override;
     bool isPaired(const std::string& address) const override;
-    void pair(const std::string& address, PairingPromise::Pointer promise) override;
-    std::string getLocalAddress() const override;
+    std::string getAdapterAddress() const override;
     bool isAvailable() const override;
 
 signals:

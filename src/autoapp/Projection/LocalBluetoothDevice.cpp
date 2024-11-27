@@ -74,8 +74,7 @@ void LocalBluetoothDevice::pair(const std::string& address, PairingPromise::Poin
     emit startPairing(QString::fromStdString(address), std::move(promise));
 }
 
-std::string LocalBluetoothDevice::getLocalAddress() const
-{
+  std::string LocalBluetoothDevice::getAdapterAddress() const {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     return localDevice_->isValid() ? localDevice_->address().toString().toStdString() : "";
 }

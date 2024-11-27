@@ -2755,51 +2755,6 @@ QSlider::groove:horizontal { background: #6d6d6d; height: 32px;}</string>
        <number>2</number>
       </property>
       <item>
-       <widget class="QGroupBox" name="horizontalGroupBox">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="title">
-         <string>Bluetooth Adapter</string>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_32">
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QRadioButton" name="radioButtonDisableBluetooth">
-           <property name="text">
-            <string>Disable bluetooth</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="radioButtonUseLocalBluetoothAdapter">
-           <property name="text">
-            <string>Use local adapter</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="radioButtonUseExternalBluetoothAdapter">
-           <property name="text">
-            <string>Use external adapter</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
        <widget class="QGroupBox" name="groupBoxBluetoothAdapter">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -2932,47 +2887,6 @@ outline: none;</string>
             <property name="bottomMargin">
              <number>0</number>
             </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="labelBluetoothAdapterAddress">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>100</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Used Address:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="lineEditExternalBluetoothAdapterAddress">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>200</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>200</width>
-                <height>16777215</height>
-               </size>
-              </property>
-             </widget>
-            </item>
            </layout>
           </widget>
          </item>
@@ -8897,21 +8811,6 @@ QComboBox::item:selected {
 	min-height: 32px;
 }</string>
                    </property>
-                   <item>
-                    <property name="text">
-                     <string>none</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>builtin</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>external</string>
-                    </property>
-                   </item>
                   </widget>
                  </item>
                 </layout>

@@ -60,23 +60,29 @@ namespace f1x::openauto::autoapp::service::bluetooth {
       aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
     OPENAUTO_LOG(info) << "[BluetoothService] fillFeatures()";
 
-            if (bluetoothDevice_->isAvailable()) {
-              OPENAUTO_LOG(info) << "[BluetoothService] Local Address: " << bluetoothDevice_->getLocalAddress();
+    auto *service = response.add_channels();
+    service->set_id(static_cast<uint32_t>(channel_->getId()));
 
-              auto *service = response.add_channels();
-              service->set_id(static_cast<uint32_t>(channel_->getId()));
+    auto bluetooth = service->mutable_bluetooth_service();
 
-              auto bluetooth = service->mutable_bluetooth_service();
-              // If the HU wants the MD to skip the Bluetooth Pairing and Connection process, the HU can declaire it's address as SKIP_THIS_BLUETOOTH
-              bluetooth->set_car_address(bluetoothDevice_->getLocalAddress());
+    if (bluetoothDevice_->isAvailable()) {
+      OPENAUTO_LOG(info) << "[BluetoothService] Local Address: " << bluetoothDevice_->getAdapterAddress();
 
-              // AAP supports bth PIN and Numeric Comparison as pairing methods.
-              bluetooth->add_supported_pairing_methods(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_PIN);
-              bluetooth->add_supported_pairing_methods(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_NUMERIC_COMPARISON);
-            } else {
-              OPENAUTO_LOG(info) << "[BluetoothService] Bluetooth Not Available ";
-            }
-          }
+      // TODO: Also need to re-establish Bluetooth
+      // If the HU wants the MD to skip the Bluetooth Pairing and Connection process, the HU can declare its address as SKIP_THIS_BLUETOOTH
+      bluetooth->set_car_address(bluetoothDevice_->getAdapterAddress());
+
+      // AAP supports bth PIN and Numeric Comparison as pairing methods.
+      bluetooth->add_supported_pairing_methods(
+          aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_PIN);
+      bluetooth->add_supported_pairing_methods(
+          aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_NUMERIC_COMPARISON);
+    } else {
+      OPENAUTO_LOG(info) << "[BluetoothService] Bluetooth Not Available ";
+      bluetooth->set_car_address("");
+      bluetooth->add_supported_pairing_methods(aap_protobuf::service::bluetooth::message::BluetoothPairingMethod::BLUETOOTH_PAIRING_UNAVAILABLE);
+    }
+  }
 
   void
   BluetoothService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
