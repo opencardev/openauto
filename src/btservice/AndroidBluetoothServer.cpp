@@ -39,22 +39,30 @@ namespace f1x::openauto::btservice {
   AndroidBluetoothServer::AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration)
       : rfcommServer_(std::make_unique<QBluetoothServer>(QBluetoothServiceInfo::RfcommProtocol, this)),
         configuration_(std::move(configuration)) {
+    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::AndroidBluetoothServer] Initialising";
+
     connect(rfcommServer_.get(), &QBluetoothServer::newConnection, this,
             &AndroidBluetoothServer::onClientConnected);
+
   }
 
   /// Start Server listening on Address
   uint16_t AndroidBluetoothServer::start(const QBluetoothAddress &address) {
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer] start()";
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::start]";
     if (rfcommServer_->listen(address)) {
+
       return rfcommServer_->serverPort();
     }
     return 0;
   }
 
+  void AndroidBluetoothServer::onError(QBluetoothServer::Error error) {
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::onError]";
+  }
+
   /// Call-Back for when Client Connected
   void AndroidBluetoothServer::onClientConnected() {
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer] onClientConnected()";
+    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::onClientConnected]";
     if (socket != nullptr) {
       socket->deleteLater();
     }
@@ -159,8 +167,9 @@ namespace f1x::openauto::btservice {
     response.set_password(
         configuration_->getParamFromFile("/etc/hostapd/hostapd.conf", "wpa_passphrase").toStdString());
     response.set_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
+    // TODO: AAP uses different values than WiFiProjection....
     response.set_security_mode(
-        aap_protobuf::service::wifiprojection::message::WifiSecurityMode::WPA2_PERSONAL);
+        aap_protobuf::service::wifiprojection::message::WifiSecurityMode::WPA2_ENTERPRISE);
     response.set_access_point_type(aap_protobuf::service::wifiprojection::message::AccessPointType::STATIC);
 
     sendMessage(response, 3);

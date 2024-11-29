@@ -21,6 +21,7 @@
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Configuration/Configuration.hpp>
 #include <f1x/openauto/btservice/BluetoothHandler.hpp>
+#include <f1x/openauto/btservice/AndroidBluetoothService.hpp>
 
 namespace btservice = f1x::openauto::btservice;
 
@@ -31,7 +32,8 @@ int main(int argc, char *argv[]) {
   auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
 
   try {
-    btservice::BluetoothHandler bluetoothHandler(configuration);
+    auto androidBluetoothService = std::make_shared<btservice::AndroidBluetoothService>();
+    btservice::BluetoothHandler bluetoothHandler(androidBluetoothService, configuration);
     QCoreApplication::exec();
   } catch (std::runtime_error& e) {
     std::cerr << "Exception caught: " << e.what() << std::endl;

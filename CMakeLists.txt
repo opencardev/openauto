@@ -11,9 +11,9 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # Set Compile Versions
-set(OPENAUTO_BUILD_DATE 20241121)       # Binary Release Build Date
+set(OPENAUTO_BUILD_DATE 20241124)       # Binary Release Build Date
 set(OPENAUTO_BUILD_MAJOR_RELEASE 4)     # Binary Release Build Major Number
-set(OPENAUTO_BUILD_MINOR_RELEASE 0)     # Binary Release Build Minor Number
+set(OPENAUTO_BUILD_MINOR_RELEASE 1)     # Binary Release Build Minor Number
 set(OPENAUTO_BUILD_INCREMENTAL 0)       # Binary Build Version - Increment for Each Build
 
 # Configure CMAKE
@@ -26,6 +26,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-g -O3")
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Forcing Release build type")
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,/usr/local/qt5/lib")
+
     # Set the possible values of build type for cmake-gui
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
@@ -87,7 +90,7 @@ find_package(aap_protobuf REQUIRED)
 find_package(aasdk REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system log OPTIONAL_COMPONENTS unit_test_framework)
 find_package(libusb-1.0 REQUIRED)
-find_package(Qt5 COMPONENTS Multimedia MultimediaWidgets Bluetooth Network)
+find_package(Qt5 COMPONENTS DBus Multimedia MultimediaWidgets Bluetooth Network)
 find_package(OpenSSL REQUIRED)
 find_package(rtaudio REQUIRED)
 find_package(taglib REQUIRED)
@@ -119,7 +122,7 @@ set(common_include_directory ${include_directory}/f1x/openauto/Common)
 set(autoapp_sources_directory ${sources_directory}/autoapp)
 set(autoapp_include_directory ${include_directory}/f1x/openauto/autoapp)
 
-file(GLOB_RECURSE autoapp_source_files ${autoapp_sources_directory}/*.ui ${autoapp_sources_directory}/*.cpp ${autoapp_include_directory}/*.hpp ${common_include_directory}/*.hpp ${resources_directory}/*.qrc)
+file(GLOB_RECURSE autoapp_source_files ${autoapp_sources_directory}/*.ui ${autoapp_sources_directory}/*.cpp ${autoapp_include_directory}/*.hpp ${autoapp_include_directory}/*.h ${common_include_directory}/*.hpp ${resources_directory}/*.qrc)
 
 add_executable(autoapp ${autoapp_source_files})
 
@@ -128,6 +131,7 @@ target_include_directories(autoapp PUBLIC ${AAP_PROTOBUF_INCLUDE_DIR} ${AASDK_IN
 target_link_libraries(autoapp PUBLIC
         libusb
         ${Boost_LIBRARIES}
+        ${Qt5DBus_LIBRARIES}
         ${Qt5Multimedia_LIBRARIES}
         ${Qt5MultimediaWidgets_LIBRARIES}
         ${Qt5Bluetooth_LIBRARIES}
@@ -152,7 +156,8 @@ set(btservice_sources_directory ${sources_directory}/btservice)
 set(btservice_include_directory ${include_directory}/f1x/openauto/btservice)
 file(GLOB_RECURSE btservice_source_files ${btservice_sources_directory}/*.cpp ${btservice_include_directory}/*.hpp ${autoapp_sources_directory}/Configuration/*.cpp ${autoapp_includes_directory}/Configuration/*.hpp ${common_include_directory}/*.hpp)
 
-add_executable(btservice ${btservice_source_files})
+add_executable(btservice ${btservice_source_files}
+        src/btservice/BluetoothHandler.cpp)
 
 target_link_libraries(btservice PUBLIC
         ${Boost_LIBRARIES}
@@ -162,11 +167,11 @@ target_link_libraries(btservice PUBLIC
         ${PROTOBUF_LIBRARIES}
         ${AAP_PROTOBUF_LIB_DIR})
 
-set_target_properties(openauto
-        PROPERTIES VERSION ${LIBRARY_VERSION_STRING} SOVERSION ${LIBRARY_BUILD_INCREMENTAL})
+set_target_properties(autoapp
+        PROPERTIES VERSION ${PROGRAM_VERSION_STRING} SOVERSION ${OPENAUTO_BUILD_INCREMENTAL})
 
 # Install rules
-install(TARGETS openauto btservice
-        EXPORT aasdkTargets
-        RUNTIME DESTINATION bin
-)
+#install(TARGETS autoapp btservice
+#        EXPORT aasdkTargets
+#        RUNTIME DESTINATION bin
+#)

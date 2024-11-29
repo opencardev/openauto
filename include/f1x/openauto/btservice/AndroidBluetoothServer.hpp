@@ -47,6 +47,7 @@ namespace f1x::openauto::btservice {
   private slots:
 
     void onClientConnected();
+    void onError(QBluetoothServer::Error error);
 
   private:
     std::unique_ptr<QBluetoothServer> rfcommServer_;

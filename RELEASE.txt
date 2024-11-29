@@ -1,7 +1,15 @@
 Release Notes
 
-20241121 - 4.0.0
-Added support for new services provided by AASDK and AAP Protocol version 1.6.
-Add extensive logging
-Add logo for forked version
-Resolve display issue where if Raspberry Pi thinks both HDMI and LCD are enabled, the display width is appearing as two side by side monitors (double width) rather than  just using the physical width of the screen.
+20241124 - 4.1.0 - Bluetooth Updates
+* Rename BluetootAdapterType to BluetoothAdapterType, and change from NONE, LOCAL, REMOTE to NONE, LOCAL, EXTERNAL to better match available settings
+* getLocalAddress() on Dummy, Local and Remote bluetooth changed to getAdapterAddress()
+* Removed RemoteBluetoothDevice replacing all references with LocalBluetoothDevice. RemoteBluetoothDevice is a wrapper essentially with all pairing work handled by btservice.
+* Pairing overlaps between btservice and LocalBluetoothDevice - removed duplicated elements from LocalBluetoothDevice to rely on btservice.
+* Swap Bluetooth dropdown in Settings from none, builtin or external, to showing a list of detected Bluetooth Adapters. Write hardware address to config file.
+
+20241121 - 4.0.0 - AAP 1.6 Support
+* Added support for new services provided by AASDK and AAP Protocol version 1.6.
+* Add extensive logging
+* Add logo for forked version
+* Resolve display issue where if Raspberry Pi thinks both HDMI and LCD are enabled, the display width is appearing as two side by side monitors (double width) rather than  just using the physical width of the screen.
+

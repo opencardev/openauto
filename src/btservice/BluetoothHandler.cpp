@@ -8,8 +8,11 @@
 #include <f1x/openauto/Common/Log.hpp>
 
 namespace f1x::openauto::btservice {
-  BluetoothHandler::BluetoothHandler(autoapp::configuration::IConfiguration::Pointer configuration)
-  : configuration_(std::move(configuration)) {
+  BluetoothHandler::BluetoothHandler(btservice::IAndroidBluetoothService::Pointer androidBluetoothService,
+                                     autoapp::configuration::IConfiguration::Pointer configuration)
+  : configuration_(std::move(configuration)),
+    androidBluetoothService_(std::move(androidBluetoothService)),
+    androidBluetoothServer_(std::make_unique<btservice::AndroidBluetoothServer>(configuration_)) {
 
     OPENAUTO_LOG(info) << "[BluetoothHandler::BluetoothHandler] Starting Up...";
 
@@ -35,8 +38,7 @@ namespace f1x::openauto::btservice {
     // Make it visible to others
     localDevice_->setHostMode(QBluetoothLocalDevice::HostDiscoverable);
 
-    btservice::AndroidBluetoothServer androidBluetoothServer(configuration_);
-    uint16_t portNumber = androidBluetoothServer.start(address);
+    uint16_t portNumber = androidBluetoothServer_->start(address);
 
     if (portNumber == 0) {
       OPENAUTO_LOG(error) << "[BluetoothHandler::BluetoothHandler] Server start failed.";
@@ -46,15 +48,19 @@ namespace f1x::openauto::btservice {
     OPENAUTO_LOG(info) << "[BluetoothHandler::BluetoothHandler] Listening for connections, address: " << address.toString().toStdString()
                        << ", port: " << portNumber;
 
-    btservice::AndroidBluetoothService androidBluetoothService(portNumber);
-    if (!androidBluetoothService.registerService(address)) {
+   if (!androidBluetoothService_->registerService(portNumber, address)) {
       OPENAUTO_LOG(error) << "[BluetoothHandler::BluetoothHandler] Service registration failed.";
       throw std::runtime_error("Unable to register btservice");
     } else {
       OPENAUTO_LOG(info) << "[BluetoothHandler::BluetoothHandler] Service registered, port: " << portNumber;
     }
 
-    androidBluetoothService.unregisterService();
+    // TODO: Connect to any previously paired devices
+  }
+
+  void BluetoothHandler::shutdownService() {
+    OPENAUTO_LOG(info) << "[BluetoothHandler::shutdownService] Shutdown initiated";
+    androidBluetoothService_->unregisterService();
   }
 
   void BluetoothHandler::onPairingDisplayPinCode(const QBluetoothAddress &address, QString pin) {

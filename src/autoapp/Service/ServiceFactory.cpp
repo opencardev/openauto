@@ -141,6 +141,7 @@ namespace f1x::openauto::autoapp::service {
                                                             std::move(guidanceAudioOutput)));
     }
 
+    /*
     if (configuration_->telephonyAudioChannelEnabled()) {
       OPENAUTO_LOG(info) << "[ServiceFactory] Telephony Audio Channel enabled";
       auto telephonyAudioOutput =
@@ -153,7 +154,7 @@ namespace f1x::openauto::autoapp::service {
           std::make_shared<mediasink::TelephonyAudioService>(ioService_, messenger,
                                                              std::move(telephonyAudioOutput)));
     }
-
+*/
     /*
      * No Need to Check for systemAudioChannelEnabled - MUST be enabled by default.
      */
