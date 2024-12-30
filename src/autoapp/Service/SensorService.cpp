@@ -188,7 +188,7 @@ void SensorService::sendGPSLocationData()
     auto * locInd = indication.add_gps_location();
 
     // epoch seconds
-    locInd->set_timestamp(this->gpsData_.fix.time * 1e3);
+    locInd->set_timestamp(this->gpsData_.fix.time.tv_sec);
     // degrees
     locInd->set_latitude(this->gpsData_.fix.latitude * 1e7);
     locInd->set_longitude(this->gpsData_.fix.longitude * 1e7);
@@ -229,8 +229,7 @@ void SensorService::sensorPolling()
 
             if ((this->gpsEnabled_) &&
                (gps_waiting(&this->gpsData_, 0)) &&
-               (gps_read(&this->gpsData_) > 0) &&
-               (this->gpsData_.status != STATUS_NO_FIX) &&
+               (gps_read(&this->gpsData_, nullptr, 0) > 0) &&
                (this->gpsData_.fix.mode == MODE_2D || this->gpsData_.fix.mode == MODE_3D) &&
                (this->gpsData_.set & TIME_SET) &&
                (this->gpsData_.set & LATLON_SET))

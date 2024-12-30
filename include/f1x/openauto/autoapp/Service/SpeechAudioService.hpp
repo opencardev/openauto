@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <f1x/aasdk/Messenger/IMessenger.hpp>
+#include <aasdk/Messenger/IMessenger.hpp>
 #include <f1x/openauto/autoapp/Service/AudioService.hpp>
 
 namespace f1x

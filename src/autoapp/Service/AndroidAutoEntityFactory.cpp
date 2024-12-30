@@ -16,14 +16,14 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/aasdk/USB/AOAPDevice.hpp>
-#include <f1x/aasdk/Transport/SSLWrapper.hpp>
-#include <f1x/aasdk/Transport/USBTransport.hpp>
-#include <f1x/aasdk/Transport/TCPTransport.hpp>
-#include <f1x/aasdk/Messenger/Cryptor.hpp>
-#include <f1x/aasdk/Messenger/MessageInStream.hpp>
-#include <f1x/aasdk/Messenger/MessageOutStream.hpp>
-#include <f1x/aasdk/Messenger/Messenger.hpp>
+#include <aasdk/USB/AOAPDevice.hpp>
+#include <aasdk/Transport/SSLWrapper.hpp>
+#include <aasdk/Transport/USBTransport.hpp>
+#include <aasdk/Transport/TCPTransport.hpp>
+#include <aasdk/Messenger/Cryptor.hpp>
+#include <aasdk/Messenger/MessageInStream.hpp>
+#include <aasdk/Messenger/MessageOutStream.hpp>
+#include <aasdk/Messenger/Messenger.hpp>
 #include <f1x/openauto/autoapp/Service/AndroidAutoEntityFactory.hpp>
 #include <f1x/openauto/autoapp/Service/AndroidAutoEntity.hpp>
 #include <f1x/openauto/autoapp/Service/Pinger.hpp>

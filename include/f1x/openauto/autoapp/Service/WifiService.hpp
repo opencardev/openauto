@@ -21,7 +21,9 @@
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <boost/asio/io_service.hpp>
-#include <f1x/aasdk/Messenger/IMessenger.hpp>
+#include <aasdk/Messenger/IMessenger.hpp>
+#include <aasdk/Channel/WIFI/WIFIServiceChannel.hpp>
+#include <aasdk/Channel/WIFI/IWIFIServiceChannelEventHandler.hpp>
 
 namespace f1x
 {
@@ -32,22 +34,27 @@ namespace autoapp
 namespace service
 {
 
-class WifiService: public IService, public std::enable_shared_from_this<WifiService>
+class WifiService: public aasdk::channel::wifi::IWIFIServiceChannelEventHandler, public IService, public std::enable_shared_from_this<WifiService>
 {
 public:
     typedef std::shared_ptr<WifiService> Pointer;
 
-    WifiService(configuration::IConfiguration::Pointer configuration);
+    WifiService(boost::asio::io_service& ioService, aasdk::messenger::IMessenger::Pointer messenger, configuration::IConfiguration::Pointer configuration);
 
     void start() override;
     void stop() override;
     void pause() override;
     void resume() override;
     void fillFeatures(aasdk::proto::messages::ServiceDiscoveryResponse& response) override;
+    void onChannelOpenRequest(const aasdk::proto::messages::ChannelOpenRequest& request) override;
+    void onChannelError(const aasdk::error::Error& e) override;
+    void onWifiSecurityRequest() override;
 
 private:
     using std::enable_shared_from_this<WifiService>::shared_from_this;
     configuration::IConfiguration::Pointer configuration_;
+    boost::asio::io_service::strand strand_;
+    aasdk::channel::wifi::WIFIServiceChannel::Pointer channel_;
 };
 
 }

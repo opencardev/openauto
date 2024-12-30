@@ -19,7 +19,7 @@
 #pragma once
 
 #include <aasdk_proto/ButtonCodeEnum.pb.h>
-#include <f1x/aasdk/Channel/Input/InputServiceChannel.hpp>
+#include <aasdk/Channel/Input/InputServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <f1x/openauto/autoapp/Projection/IInputDevice.hpp>
 #include <f1x/openauto/autoapp/Projection/IInputDeviceEventHandler.hpp>

@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <f1x/aasdk/Channel/AV/AVInputServiceChannel.hpp>
+#include <aasdk/Channel/AV/AVInputServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <f1x/openauto/autoapp/Projection/IAudioInput.hpp>
 

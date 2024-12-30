@@ -19,10 +19,10 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <f1x/aasdk/Transport/ITransport.hpp>
-#include <f1x/aasdk/Channel/Control/IControlServiceChannel.hpp>
-#include <f1x/aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
-#include <f1x/aasdk/Channel/AV/VideoServiceChannel.hpp>
+#include <aasdk/Transport/ITransport.hpp>
+#include <aasdk/Channel/Control/IControlServiceChannel.hpp>
+#include <aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
+#include <aasdk/Channel/AV/VideoServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntity.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
@@ -60,8 +60,10 @@ public:
     void onShutdownRequest(const aasdk::proto::messages::ShutdownRequest& request) override;
     void onShutdownResponse(const aasdk::proto::messages::ShutdownResponse& response) override;
     void onNavigationFocusRequest(const aasdk::proto::messages::NavigationFocusRequest& request) override;
-    void onPingResponse(const aasdk::proto::messages::PingResponse& response) override;
     void onChannelError(const aasdk::error::Error& e) override;
+    void onPingRequest(const aasdk::proto::messages::PingRequest& request) override;
+    void onPingResponse(const aasdk::proto::messages::PingResponse& response) override;
+    void onVoiceSessionRequest(const aasdk::proto::messages::VoiceSessionRequest& request) override;
 
 private:
     using std::enable_shared_from_this<AndroidAutoEntity>::shared_from_this;

@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <f1x/aasdk/Channel/AV/IAudioServiceChannel.hpp>
-#include <f1x/aasdk/Channel/AV/IAudioServiceChannelEventHandler.hpp>
+#include <aasdk/Channel/AV/IAudioServiceChannel.hpp>
+#include <aasdk/Channel/AV/IAudioServiceChannelEventHandler.hpp>
 #include <f1x/openauto/autoapp/Projection/IAudioOutput.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 

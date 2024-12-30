@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/aasdk/Channel/AV/SystemAudioServiceChannel.hpp>
+#include <aasdk/Channel/AV/SystemAudioServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/SystemAudioService.hpp>
 
 namespace f1x

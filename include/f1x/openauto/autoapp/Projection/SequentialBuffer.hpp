@@ -21,7 +21,7 @@
 #include <QIODevice>
 #include <mutex>
 #include <boost/circular_buffer.hpp>
-#include <f1x/aasdk/Common/Data.hpp>
+#include <aasdk/Common/Data.hpp>
 
 namespace f1x
 {

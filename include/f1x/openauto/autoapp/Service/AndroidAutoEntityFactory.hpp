@@ -19,7 +19,7 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <f1x/aasdk/Transport/ITransport.hpp>
+#include <aasdk/Transport/ITransport.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntityFactory.hpp>
 #include <f1x/openauto/autoapp/Service/IServiceFactory.hpp>

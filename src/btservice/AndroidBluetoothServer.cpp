@@ -23,6 +23,7 @@
 #include <QString>
 #include <QtCore/QDataStream>
 #include <QNetworkInterface>
+
 #include <aasdk_proto/WifiInfoRequestMessage.pb.h>
 #include <aasdk_proto/WifiInfoResponseMessage.pb.h>
 #include <aasdk_proto/WifiSecurityResponseMessage.pb.h>
@@ -61,7 +62,7 @@ namespace f1x {
 //                    connect(socket, &QBluetoothSocket::disconnected, this,
 //                            QOverload<>::of(&ChatServer::clientDisconnected));
 
-                    f1x::aasdk::proto::messages::WifiInfoRequest request;
+                    ::aasdk::proto::messages::WifiInfoRequest request;
                     request.set_ip_address(getIP4_("wlan0"));
                     request.set_port(5000);
 
@@ -121,26 +122,26 @@ namespace f1x {
             }
 
             void AndroidBluetoothServer::handleWifiInfoRequest(QByteArray &buffer, uint16_t length) {
-                f1x::aasdk::proto::messages::WifiInfoRequest msg;
+                ::aasdk::proto::messages::WifiInfoRequest msg;
                 msg.ParseFromArray(buffer.data() + 4, length);
                 OPENAUTO_LOG(info) << "WifiInfoRequest: " << msg.DebugString();
 
-                f1x::aasdk::proto::messages::WifiInfoResponse response;
+                ::aasdk::proto::messages::WifiInfoResponse response;
                 response.set_ip_address(getIP4_("wlan0"));
                 response.set_port(5000);
-                response.set_status(aasdk::proto::messages::WifiInfoResponse_Status_STATUS_SUCCESS);
+                response.set_status(::aasdk::proto::messages::WifiInfoResponse_Status_STATUS_SUCCESS);
 
                 sendMessage(response, 7);
             }
 
             void AndroidBluetoothServer::handleWifiSecurityRequest(QByteArray &buffer, uint16_t length) {
-                f1x::aasdk::proto::messages::WifiSecurityReponse response;
+                ::aasdk::proto::messages::WifiSecurityResponse response;
 
                 response.set_ssid(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","ssid").toStdString());
-                response.set_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
+                // response.set_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
                 response.set_key(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","wpa_passphrase").toStdString());
-                response.set_security_mode(aasdk::proto::messages::WifiSecurityReponse_SecurityMode_WPA2_PERSONAL);
-                response.set_access_point_type(aasdk::proto::messages::WifiSecurityReponse_AccessPointType_STATIC);
+                response.set_security_mode(::aasdk::proto::messages::WifiSecurityResponse_SecurityMode_WPA2_PERSONAL);
+                response.set_access_point_type(::aasdk::proto::messages::WifiSecurityResponse_AccessPointType_STATIC);
 
                 sendMessage(response, 3);
             }
@@ -170,7 +171,7 @@ namespace f1x {
             }
 
             void AndroidBluetoothServer::handleWifiInfoRequestResponse(QByteArray &buffer, uint16_t length) {
-                f1x::aasdk::proto::messages::WifiInfoResponse msg;
+                ::aasdk::proto::messages::WifiInfoResponse msg;
                 msg.ParseFromArray(buffer.data() + 4, length);
                 OPENAUTO_LOG(info) << "WifiInfoResponse: " << msg.DebugString();
             }

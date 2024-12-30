@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <f1x/aasdk/IO/Promise.hpp>
+#include <aasdk/IO/Promise.hpp>
 
 namespace f1x
 {

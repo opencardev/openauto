@@ -18,9 +18,9 @@
 
 #include <QApplication>
 #include <QScreen>
-#include <f1x/aasdk/Channel/AV/MediaAudioServiceChannel.hpp>
-#include <f1x/aasdk/Channel/AV/SystemAudioServiceChannel.hpp>
-#include <f1x/aasdk/Channel/AV/SpeechAudioServiceChannel.hpp>
+#include <aasdk/Channel/AV/MediaAudioServiceChannel.hpp>
+#include <aasdk/Channel/AV/SystemAudioServiceChannel.hpp>
+#include <aasdk/Channel/AV/SpeechAudioServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/ServiceFactory.hpp>
 #include <f1x/openauto/autoapp/Service/VideoService.hpp>
 #include <f1x/openauto/autoapp/Service/MediaAudioService.hpp>
@@ -68,7 +68,7 @@ ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messeng
     serviceList.emplace_back(this->createVideoService(messenger));
     serviceList.emplace_back(this->createBluetoothService(messenger));
     serviceList.emplace_back(this->createInputService(messenger));
-    serviceList.emplace_back(std::make_shared<WifiService>(configuration_));
+    serviceList.emplace_back(std::make_shared<WifiService>(ioService_, messenger, configuration_));
 
     return serviceList;
 }

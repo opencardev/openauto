@@ -22,7 +22,7 @@
 #include <QRect>
 #include <aasdk_proto/VideoFPSEnum.pb.h>
 #include <aasdk_proto/VideoResolutionEnum.pb.h>
-#include <f1x/aasdk/Common/Data.hpp>
+#include <aasdk/Common/Data.hpp>
 
 namespace f1x
 {

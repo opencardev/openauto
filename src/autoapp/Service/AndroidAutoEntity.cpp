@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/aasdk/Channel/Control/ControlServiceChannel.hpp>
+#include <aasdk/Channel/Control/ControlServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/AndroidAutoEntity.hpp>
 #include <f1x/openauto/Common/Log.hpp>
 
@@ -236,6 +236,20 @@ void AndroidAutoEntity::onShutdownRequest(const aasdk::proto::messages::Shutdown
                   std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
 
     controlServiceChannel_->sendShutdownResponse(response, std::move(promise));
+}
+
+void AndroidAutoEntity::onPingRequest(const aasdk::proto::messages::PingRequest& request)
+{
+    OPENAUTO_LOG(info) << "[AndroidAutoEntity] ping request ";
+    
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
+    controlServiceChannel_->sendPingRequest(request, std::move(promise));
+}
+
+void AndroidAutoEntity::onVoiceSessionRequest(const aasdk::proto::messages::VoiceSessionRequest& request)
+{
+	OPENAUTO_LOG(error) << "[AndroidAutoEntity] voice session request not implemented";
 }
 
 void AndroidAutoEntity::onShutdownResponse(const aasdk::proto::messages::ShutdownResponse&)

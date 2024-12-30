@@ -19,8 +19,8 @@
 #pragma once
 
 #include <memory>
-#include <f1x/aasdk/Channel/AV/VideoServiceChannel.hpp>
-#include <f1x/aasdk/Channel/AV/IVideoServiceChannelEventHandler.hpp>
+#include <aasdk/Channel/AV/VideoServiceChannel.hpp>
+#include <aasdk/Channel/AV/IVideoServiceChannelEventHandler.hpp>
 #include <f1x/openauto/autoapp/Projection/IVideoOutput.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 
