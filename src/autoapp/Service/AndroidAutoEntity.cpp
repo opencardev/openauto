@@ -249,7 +249,8 @@ void AndroidAutoEntity::onPingRequest(const aasdk::proto::messages::PingRequest&
 
 void AndroidAutoEntity::onVoiceSessionRequest(const aasdk::proto::messages::VoiceSessionRequest& request)
 {
-	OPENAUTO_LOG(error) << "[AndroidAutoEntity] voice session request not implemented";
+    OPENAUTO_LOG(info) << "[AndroidAutoEntity] onVoiceSessionRequest()";
+    controlServiceChannel_->receive(this->shared_from_this());
 }
 
 void AndroidAutoEntity::onShutdownResponse(const aasdk::proto::messages::ShutdownResponse&)

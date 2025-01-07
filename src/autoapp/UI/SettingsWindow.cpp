@@ -250,6 +250,12 @@ void SettingsWindow::onSave()
         configuration_->setBluetoothAdapterType(configuration::BluetoothAdapterType::REMOTE);
     }
 
+    if (ui_->disableProjectionButton->isChecked()) {
+        configuration_->setWirelessProjectionEnabled(false);
+    } else {
+        configuration_->setWirelessProjectionEnabled(true);
+    }
+
     configuration_->setBluetoothRemoteAdapterAddress(ui_->lineEditExternalBluetoothAdapterAddress->text().toStdString());
 
     configuration_->setMusicAudioChannelEnabled(ui_->checkBoxMusicAudioChannel->isChecked());
@@ -524,6 +530,7 @@ void SettingsWindow::load()
     ui_->radioButtonUseExternalBluetoothAdapter->setChecked(configuration_->getBluetoothAdapterType() == configuration::BluetoothAdapterType::REMOTE);
     ui_->lineEditExternalBluetoothAdapterAddress->setEnabled(configuration_->getBluetoothAdapterType() == configuration::BluetoothAdapterType::REMOTE);
     ui_->lineEditExternalBluetoothAdapterAddress->setText(QString::fromStdString(configuration_->getBluetoothRemoteAdapterAddress()));
+    ui_->disableProjectionButton->setChecked(!configuration_->getWirelessProjectionEnabled());
 
     ui_->checkBoxMusicAudioChannel->setChecked(configuration_->musicAudioChannelEnabled());
     ui_->checkBoxSpeechAudioChannel->setChecked(configuration_->speechAudioChannelEnabled());

@@ -110,6 +110,8 @@ public:
     void setBluetoothAdapterType(BluetoothAdapterType value) override;
     std::string getBluetoothRemoteAdapterAddress() const override;
     void setBluetoothRemoteAdapterAddress(const std::string& value) override;
+    bool getWirelessProjectionEnabled() const override;
+    void setWirelessProjectionEnabled(bool value) override;
 
     bool musicAudioChannelEnabled() const override;
     void setMusicAudioChannelEnabled(bool value) override;
@@ -152,6 +154,7 @@ private:
     bool enablePlayerControl_;
     ButtonCodes buttonCodes_;
     BluetoothAdapterType bluetoothAdapterType_;
+    bool wirelessProjectionEnabled_;
     std::string bluetoothRemoteAdapterAddress_;
     bool musicAudioChannelEnabled_;
     bool speechAudiochannelEnabled_;
@@ -194,6 +197,7 @@ private:
 
     static const std::string cBluetoothAdapterTypeKey;
     static const std::string cBluetoothRemoteAdapterAddressKey;
+    static const std::string cBluetoothWirelessProjectionEnabledKey;
 
     static const std::string cInputEnableTouchscreenKey;
     static const std::string cInputEnablePlayerControlKey;
