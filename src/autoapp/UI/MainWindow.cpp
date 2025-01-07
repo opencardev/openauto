@@ -2142,7 +2142,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
     this->openautoupdate = check_file_exist("/tmp/openauto_update_available");
     this->systemupdate = check_file_exist("/tmp/system_update_available");
 
-    /*if (this->csmtupdate || this->udevupdate || this->openautoupdate || this->systemupdate) {
+    if (this->csmtupdate || this->udevupdate || this->openautoupdate || this->systemupdate) {
         if (ui_->pushButtonUpdate->isVisible() == false) {
             ui_->pushButtonUpdate->show();
             ui_->label_left->show();
@@ -2153,7 +2153,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
                 ui_->label_dummy_right->show();
             }
         }
-    } else {*/
+    } else {
         if (ui_->pushButtonUpdate->isVisible() == true) {
             ui_->pushButtonUpdate->hide();
             ui_->label_left->hide();
@@ -2163,7 +2163,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
                 ui_->devlabel_right->show();
             }
         }
-   // }
+   }
 
     if (std::ifstream("/tmp/btdevice") || std::ifstream("/tmp/media_playing") || std::ifstream("/tmp/dev_mode_enabled") || std::ifstream("/tmp/android_device")) {
         if (ui_->labelLock->isVisible() == false) {

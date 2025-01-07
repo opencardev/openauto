@@ -131,7 +131,7 @@ void ConnectDialog::loadClientList()
 
     if (std::ifstream("/tmp/hotspot_active")) {
         ui_->listWidgetClients->show();
-        //ui_->pushButtonUpdate->show();
+        ui_->pushButtonUpdate->show();
         if (std::ifstream("/tmp/temp_recent_list")) {
             QFile versionFile(QString("/tmp/temp_recent_list"));
             versionFile.open(QIODevice::ReadOnly);

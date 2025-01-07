@@ -177,7 +177,7 @@ namespace f1x {
           serviceDiscoveryResponse.mutable_channels()->Reserve(256);
           serviceDiscoveryResponse.set_driver_position(aap_protobuf::service::control::message::DriverPosition::DRIVER_POSITION_RIGHT);
           serviceDiscoveryResponse.set_can_play_native_media_during_vr(false);
-          serviceDiscoveryResponse.set_display_name("CubeOne Journey");
+          serviceDiscoveryResponse.set_display_name("Crankshaft-NG");
           serviceDiscoveryResponse.set_probe_for_support(false);
 
           auto *connectionConfiguration = serviceDiscoveryResponse.mutable_connection_configuration();
@@ -191,13 +191,13 @@ namespace f1x {
 
           auto *headUnitInfo = serviceDiscoveryResponse.mutable_headunit_info();
 
-          serviceDiscoveryResponse.set_display_name("JourneyOS");
-          headUnitInfo->set_make("CubeOne");
-          headUnitInfo->set_model("Journey");
-          headUnitInfo->set_year("2024");
+          serviceDiscoveryResponse.set_display_name("Crankshaft-NG");
+          headUnitInfo->set_make("Crankshaft");
+          headUnitInfo->set_model("Universal");
+          headUnitInfo->set_year("2018");
           headUnitInfo->set_vehicle_id("2024110822150988");
-          headUnitInfo->set_head_unit_make("CubeOne");
-          headUnitInfo->set_head_unit_model("Journey");
+          headUnitInfo->set_head_unit_make("f1x");
+          headUnitInfo->set_head_unit_model("Crankshaft-NG Autoapp");
           headUnitInfo->set_head_unit_software_build("1");
           headUnitInfo->set_head_unit_software_version("1.0");
 
