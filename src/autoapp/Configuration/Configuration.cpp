@@ -187,6 +187,7 @@ void Configuration::reset()
     musicAudioChannelEnabled_ = true;
     speechAudiochannelEnabled_ = true;
     audioOutputBackendType_ = AudioOutputBackendType::QT;
+    wirelessProjectionEnabled_ = true;
 }
 
 void Configuration::save()
