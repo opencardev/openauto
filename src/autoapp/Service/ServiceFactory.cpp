@@ -66,9 +66,12 @@ ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messeng
     this->createAudioServices(serviceList, messenger);
     serviceList.emplace_back(std::make_shared<SensorService>(ioService_, messenger));
     serviceList.emplace_back(this->createVideoService(messenger));
-    serviceList.emplace_back(this->createBluetoothService(messenger));
+    if (configuration_->getWirelessProjectionEnabled())
+    {
+        serviceList.emplace_back(this->createBluetoothService(messenger));
+        serviceList.emplace_back(std::make_shared<WifiService>(ioService_, messenger, configuration_));
+    }
     serviceList.emplace_back(this->createInputService(messenger));
-    serviceList.emplace_back(std::make_shared<WifiService>(ioService_, messenger, configuration_));
 
     return serviceList;
 }
