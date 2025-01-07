@@ -23,6 +23,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+
 #include <stdio.h>
 
 namespace f1x
@@ -88,10 +89,10 @@ public:
     QString readFileContent(QString fileName) const override;
     QString getParamFromFile(QString fileName, QString searchString) const override;
 
-    aasdk::proto::enums::VideoFPS::Enum getVideoFPS() const override;
-    void setVideoFPS(aasdk::proto::enums::VideoFPS::Enum value) override;
-    aasdk::proto::enums::VideoResolution::Enum getVideoResolution() const override;
-    void setVideoResolution(aasdk::proto::enums::VideoResolution::Enum value) override;
+    aap_protobuf::service::media::sink::message::VideoFrameRateType getVideoFPS() const override;
+    void setVideoFPS(aap_protobuf::service::media::sink::message::VideoFrameRateType value) override;
+    aap_protobuf::service::media::sink::message::VideoCodecResolutionType getVideoResolution() const override;
+    void setVideoResolution(aap_protobuf::service::media::sink::message::VideoCodecResolutionType value) override;
     size_t getScreenDPI() const override;
     void setScreenDPI(size_t value) override;
     void setOMXLayerIndex(int32_t value) override;
@@ -108,19 +109,24 @@ public:
 
     BluetoothAdapterType getBluetoothAdapterType() const override;
     void setBluetoothAdapterType(BluetoothAdapterType value) override;
-    std::string getBluetoothRemoteAdapterAddress() const override;
-    void setBluetoothRemoteAdapterAddress(const std::string& value) override;
+    std::string getBluetoothAdapterAddress() const override;
+
+    void setBluetoothAdapterAddress(const std::string& value) override;
 
     bool musicAudioChannelEnabled() const override;
     void setMusicAudioChannelEnabled(bool value) override;
-    bool speechAudioChannelEnabled() const override;
-    void setSpeechAudioChannelEnabled(bool value) override;
+    bool guidanceAudioChannelEnabled() const override;
+    void setGuidanceAudioChannelEnabled(bool value) override;
+    bool systemAudioChannelEnabled() const override;
+    void setSystemAudioChannelEnabled(bool value) override;
+    bool telephonyAudioChannelEnabled() const override;
+    void setTelephonyAudioChannelEnabled(bool value) override;
+
     AudioOutputBackendType getAudioOutputBackendType() const override;
     void setAudioOutputBackendType(AudioOutputBackendType value) override;
-
 private:
     void readButtonCodes(boost::property_tree::ptree& iniConfig);
-    void insertButtonCode(boost::property_tree::ptree& iniConfig, const std::string& buttonCodeKey, aasdk::proto::enums::ButtonCode::Enum buttonCode);
+    void insertButtonCode(boost::property_tree::ptree& iniConfig, const std::string& buttonCodeKey, aap_protobuf::service::media::sink::message::KeyCode buttonCode);
     void writeButtonCodes(boost::property_tree::ptree& iniConfig);
 
     HandednessOfTrafficType handednessOfTrafficType_;
@@ -143,8 +149,8 @@ private:
     bool showAutoPlay_;
     bool instantPlay_;
 
-    aasdk::proto::enums::VideoFPS::Enum videoFPS_;
-    aasdk::proto::enums::VideoResolution::Enum videoResolution_;
+    aap_protobuf::service::media::sink::message::VideoFrameRateType videoFPS_;
+    aap_protobuf::service::media::sink::message::VideoCodecResolutionType videoResolution_;
     size_t screenDPI_;
     int32_t omxLayerIndex_;
     QRect videoMargins_;
@@ -152,9 +158,12 @@ private:
     bool enablePlayerControl_;
     ButtonCodes buttonCodes_;
     BluetoothAdapterType bluetoothAdapterType_;
-    std::string bluetoothRemoteAdapterAddress_;
-    bool musicAudioChannelEnabled_;
-    bool speechAudiochannelEnabled_;
+    std::string bluetoothAdapterAddress_;
+    bool _audioChannelEnabledMedia;
+    bool _audioChannelEnabledGuidance;
+    bool _audioChannelEnabledSystem;
+    bool _audioChannelEnabledTelephony;
+
     AudioOutputBackendType audioOutputBackendType_;
 
     static const std::string cConfigFileName;
@@ -188,12 +197,15 @@ private:
     static const std::string cVideoMarginWidth;
     static const std::string cVideoMarginHeight;
 
-    static const std::string cAudioMusicAudioChannelEnabled;
-    static const std::string cAudioSpeechAudioChannelEnabled;
+    static const std::string cAudioChannelMediaEnabled;
+    static const std::string cAudioChannelGuidanceEnabled;
+    static const std::string cAudioChannelSystemEnabled;
+    static const std::string cAudioChannelTelephonyEnabled;
+
     static const std::string cAudioOutputBackendType;
 
     static const std::string cBluetoothAdapterTypeKey;
-    static const std::string cBluetoothRemoteAdapterAddressKey;
+    static const std::string cBluetoothAdapterAddressKey;
 
     static const std::string cInputEnableTouchscreenKey;
     static const std::string cInputEnablePlayerControlKey;

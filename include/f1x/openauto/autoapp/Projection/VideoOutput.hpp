@@ -35,8 +35,8 @@ class VideoOutput: public IVideoOutput
 public:
     VideoOutput(configuration::IConfiguration::Pointer configuration);
 
-    aasdk::proto::enums::VideoFPS::Enum getVideoFPS() const override;
-    aasdk::proto::enums::VideoResolution::Enum getVideoResolution() const override;
+    aap_protobuf::service::media::sink::message::VideoFrameRateType getVideoFPS() const override;
+    aap_protobuf::service::media::sink::message::VideoCodecResolutionType getVideoResolution() const override;
     size_t getScreenDPI() const override;
     QRect getVideoMargins() const override;
 

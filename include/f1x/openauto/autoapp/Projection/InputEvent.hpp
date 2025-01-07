@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <aasdk_proto/ButtonCodeEnum.pb.h>
-#include <aasdk_proto/TouchActionEnum.pb.h>
+#include <aap_protobuf/service/media/sink/message/KeyCode.pb.h>
+#include <aap_protobuf/service/inputsource/message/PointerAction.pb.h>
 #include <aasdk/IO/Promise.hpp>
 
 namespace f1x
@@ -49,12 +49,12 @@ struct ButtonEvent
 {
     ButtonEventType type;
     WheelDirection wheelDirection;
-    aasdk::proto::enums::ButtonCode::Enum code;
+    aap_protobuf::service::media::sink::message::KeyCode code;
 };
 
 struct TouchEvent
 {
-    aasdk::proto::enums::TouchAction::Enum type;
+    aap_protobuf::service::inputsource::message::PointerAction type;
     uint32_t x;
     uint32_t y;
     uint32_t pointerId;

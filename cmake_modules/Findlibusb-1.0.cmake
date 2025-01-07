@@ -49,7 +49,7 @@ if (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
 else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
   find_path(LIBUSB_1_INCLUDE_DIR
     NAMES
-    libusb.h
+      libusb.h
     PATHS
       /usr/include
       /usr/local/include
@@ -90,9 +90,9 @@ else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
       target_link_libraries(libusb INTERFACE ${LIBUSB_1_LIBRARY})
     endif (NOT libusb_1_FIND_QUIETLY)
   else (LIBUSB_1_FOUND)
-    if (libusb_1_FIND_REQUIRED)
+    if (libusb-1.0_FIND_REQUIRED)
       message(FATAL_ERROR "Could not find libusb")
-    endif (libusb_1_FIND_REQUIRED)
+    endif (libusb-1.0_FIND_REQUIRED)
   endif (LIBUSB_1_FOUND)
 
   # show the LIBUSB_1_INCLUDE_DIRS and LIBUSB_1_LIBRARIES variables only in the advanced view

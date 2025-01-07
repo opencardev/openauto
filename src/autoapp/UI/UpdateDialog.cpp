@@ -36,7 +36,8 @@ UpdateDialog::UpdateDialog(QWidget *parent)
     ui_->labelSystemReadyInstall->hide();
     ui_->labelUpdateChecking->hide();
     ui_->pushButtonUpdateCancel->hide();
-    updateCheck();
+    // TODO: Restore once switched
+    //updateCheck();
 
     watcher_tmp = new QFileSystemWatcher(this);
     watcher_tmp->addPath("/tmp");

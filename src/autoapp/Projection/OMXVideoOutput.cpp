@@ -58,7 +58,7 @@ bool OMXVideoOutput::open()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[OMXVideoOutput] open.";
+    OPENAUTO_LOG(debug) << "[OMXVideoOutput] open.";
 
     bcm_host_init();
     if(OMX_Init() != OMX_ErrorNone)
@@ -102,7 +102,7 @@ bool OMXVideoOutput::init()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[OMXVideoOutput] init, state: " << isActive_;
+    OPENAUTO_LOG(debug) << "[OMXVideoOutput] init, state: " << isActive_;
     ilclient_change_component_state(components_[VideoComponent::DECODER], OMX_StateExecuting);
     
     return this->setupDisplayRegion();
@@ -179,7 +179,7 @@ void OMXVideoOutput::write(uint64_t timestamp, const aasdk::common::DataConstBuf
 
 void OMXVideoOutput::stop()
 {
-    OPENAUTO_LOG(info) << "[OMXVideoOutput] stop.";
+    OPENAUTO_LOG(debug) << "[OMXVideoOutput] stop.";
 
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 

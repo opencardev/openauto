@@ -54,7 +54,7 @@ QtAudioOutput::QtAudioOutput(uint32_t channelCount, uint32_t sampleSize, uint32_
 
 void QtAudioOutput::createAudioOutput()
 {
-    OPENAUTO_LOG(debug) << "[QtAudioOutput] create.";
+    OPENAUTO_LOG(info) << "[QtAudioOutput] createAudioOutput()";
     audioOutput_ = std::make_unique<QAudioOutput>(QAudioDeviceInfo::defaultOutputDevice(), audioFormat_);
 }
 
