@@ -26,6 +26,7 @@
 #include <aasdk/USB/AccessoryModeQueryChainFactory.hpp>
 #include <aasdk/USB/AccessoryModeQueryFactory.hpp>
 #include <aasdk/TCP/TCPWrapper.hpp>
+#include <boost/log/utility/setup.hpp>
 #include <f1x/openauto/autoapp/App.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Configuration/RecentAddressesList.hpp>
@@ -71,8 +72,25 @@ void startIOServiceWorkers(boost::asio::io_service& ioService, ThreadPool& threa
     threadPool.emplace_back(ioServiceWorker);
 }
 
+void configureLogging() {
+    const std::string logIni = "openauto-logs.ini";
+    std::ifstream logSettings(logIni);
+    if (logSettings.good()) {
+        try {
+            // For boost < 1.71 the severity types are not automatically parsed so lets register them.
+            boost::log::register_simple_filter_factory<boost::log::trivial::severity_level>("Severity");
+            boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
+            boost::log::init_from_stream(logSettings);
+        } catch (std::exception const & e) {
+            OPENAUTO_LOG(warning) << "[OpenAuto] " << logIni << " was provided but was not valid.";
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
+    configureLogging();
+
     libusb_context* usbContext;
     if(libusb_init(&usbContext) != 0)
     {

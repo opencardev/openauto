@@ -178,7 +178,11 @@ namespace f1x::openauto::autoapp::service::sensor {
     auto *locInd = indication.add_location_data();
 
     // epoch seconds
-    // locInd->set_timestamp(this->gpsData_.fix.time * 1e3);
+#if GPSD_API_MAJOR_VERSION >= 7
+    locInd->set_timestamp(this->gpsData_.fix.time.tv_sec);
+#else
+    locInd->set_timestamp(this->gpsData_.fix.time);
+#endif
     // degrees
     locInd->set_latitude_e7(this->gpsData_.fix.latitude * 1e7);
     locInd->set_longitude_e7(this->gpsData_.fix.longitude * 1e7);
@@ -214,14 +218,23 @@ namespace f1x::openauto::autoapp::service::sensor {
           this->previous = this->isNight;
           this->sendNightData();
         }
-
+        bool gpsDataAvailable = false;
+#if GPSD_API_MAJOR_VERSION >= 7
+        if (gps_read (&this->gpsData_, NULL, 0) != -1) {
+          gpsDataAvailable = true;
+        }
+#else
+        if (gps_read (&this->gpsData_) != -1) {
+                    gpsDataAvailable = true;
+                }
+#endif
         if ((this->gpsEnabled_) &&
             (gps_waiting(&this->gpsData_, 0)) &&
-            (gps_read(&this->gpsData_) > 0) &&
-            (this->gpsData_.status != STATUS_NO_FIX) &&
+            (gpsDataAvailable == true) &&
             (this->gpsData_.fix.mode == MODE_2D || this->gpsData_.fix.mode == MODE_3D) &&
             (this->gpsData_.set & TIME_SET) &&
-            (this->gpsData_.set & LATLON_SET)) {
+            (this->gpsData_.set & LATLON_SET))
+        {
           this->sendGPSLocationData();
         }
 
