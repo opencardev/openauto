@@ -64,8 +64,15 @@ namespace f1x::openauto::autoapp::service {
     serviceList.emplace_back(this->createSensorService(messenger));
     serviceList.emplace_back(this->createBluetoothService(messenger));
     serviceList.emplace_back(this->createInputService(messenger));
-    // TODO: What is WiFi Projection Service?
-    //serviceList.emplace_back(this->createWifiProjectionService(messenger));
+    if (configuration_->getWirelessProjectionEnabled())
+    {
+        // TODO: What is WiFi Projection Service?
+        /*
+         * The btservice seems to handle connecting over bluetooth and allow AA to establish a WiFi connection for Projection
+         * If WifiProjection is a legitimate service, then it seems clear it is not what we think it actually is.
+         */
+        serviceList.emplace_back(this->createWifiProjectionService(messenger));
+    }
 
     return serviceList;
   }
@@ -141,7 +148,7 @@ namespace f1x::openauto::autoapp::service {
                                                             std::move(guidanceAudioOutput)));
     }
 
-    /*
+    /* TODO: This also causes a problem - suspect not actually enabled yet in AA, or removed due to preference of Bluetooth.
     if (configuration_->telephonyAudioChannelEnabled()) {
       OPENAUTO_LOG(info) << "[ServiceFactory] Telephony Audio Channel enabled";
       auto telephonyAudioOutput =

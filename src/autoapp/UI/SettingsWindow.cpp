@@ -346,6 +346,12 @@ comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none",
           ui_->comboBoxBluetooth->currentData().toString().toStdString());
     }
 
+    if (ui_->disableProjectionButton->isChecked()) {
+        configuration_->setWirelessProjectionEnabled(false);
+    } else {
+        configuration_->setWirelessProjectionEnabled(true);
+    }
+
     configuration_->setMusicAudioChannelEnabled(ui_->checkBoxMusicAudioChannel->isChecked());
     configuration_->setGuidanceAudioChannelEnabled(ui_->checkBoxSpeechAudioChannel->isChecked());
     //configuration_->setTelephonyAudioChannelEnabled(ui_->checkBoxVoiceAudioChannel->isChecked());
@@ -621,6 +627,8 @@ comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none",
     ui_->checkBoxEnableTouchscreen->setChecked(configuration_->getTouchscreenEnabled());
     this->loadButtonCheckBoxes();
     ui_->checkBoxPlayerControl->setChecked(configuration_->playerButtonControl());
+
+    ui_->disableProjectionButton->setChecked(!configuration_->getWirelessProjectionEnabled());
 
     ui_->checkBoxMusicAudioChannel->setChecked(configuration_->musicAudioChannelEnabled());
     ui_->checkBoxSpeechAudioChannel->setChecked(configuration_->guidanceAudioChannelEnabled());

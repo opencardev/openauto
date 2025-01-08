@@ -263,6 +263,21 @@ namespace f1x {
           controlServiceChannel_->sendShutdownResponse(response, std::move(promise));
         }
 
+        void AndroidAutoEntity::onPingRequest(const aasdk::proto::messages::PingRequest& request)
+        {
+            OPENAUTO_LOG(info) << "[AndroidAutoEntity] ping request ";
+
+            auto promise = aasdk::channel::SendPromise::defer(strand_);
+            promise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
+            controlServiceChannel_->sendPingRequest(request, std::move(promise));
+        }
+
+        void AndroidAutoEntity::onVoiceSessionRequest(const aasdk::proto::messages::VoiceSessionRequest& request)
+        {
+            OPENAUTO_LOG(info) << "[AndroidAutoEntity] onVoiceSessionRequest()";
+            controlServiceChannel_->receive(this->shared_from_this());
+        }
+
         void AndroidAutoEntity::onByeByeResponse(
             const aap_protobuf::service::control::message::ByeByeResponse &response) {
           OPENAUTO_LOG(info) << "[AndroidAutoEntity] onByeByeResponse()";

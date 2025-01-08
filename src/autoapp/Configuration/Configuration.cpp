@@ -66,6 +66,7 @@ const std::string Configuration::cAudioOutputBackendType = "Audio.OutputBackendT
 
 const std::string Configuration::cBluetoothAdapterTypeKey = "Bluetooth.AdapterType";
 const std::string Configuration::cBluetoothAdapterAddressKey = "Bluetooth.AdapterAddress";
+const std::string Configuration::cBluetoothWirelessProjectionEnabledKey = "Bluetooth.WirelessProjectionEnabled";
 
 const std::string Configuration::cInputEnableTouchscreenKey = "Input.EnableTouchscreen";
 const std::string Configuration::cInputEnablePlayerControlKey = "Input.EnablePlayerControl";
@@ -137,6 +138,8 @@ void Configuration::load()
         bluetoothAdapterType_ = static_cast<BluetoothAdapterType>(iniConfig.get<uint32_t>(cBluetoothAdapterTypeKey,
                                                                                           static_cast<uint32_t>(BluetoothAdapterType::NONE)));
 
+        wirelessProjectionEnabled_ = iniConfig.get<bool>(cBluetoothWirelessProjectionEnabledKey, true);
+
         bluetoothAdapterAddress_ = iniConfig.get<std::string>(cBluetoothAdapterAddressKey, "");
 
         _audioChannelEnabledMedia = iniConfig.get<bool>(cAudioChannelMediaEnabled, true);
@@ -144,7 +147,7 @@ void Configuration::load()
         _audioChannelEnabledSystem = iniConfig.get<bool>(cAudioChannelSystemEnabled, true);
         _audioChannelEnabledTelephony = iniConfig.get<bool>(cAudioChannelTelephonyEnabled, true);
 
-        audioOutputBackendType_ = static_cast<AudioOutputBackendType>(iniConfig.get<uint32_t>(cAudioOutputBackendType, static_cast<uint32_t>(AudioOutputBackendType::RTAUDIO)));
+         audioOutputBackendType_ = static_cast<AudioOutputBackendType>(iniConfig.get<uint32_t>(cAudioOutputBackendType, static_cast<uint32_t>(AudioOutputBackendType::RTAUDIO)));
     }
     catch(const boost::property_tree::ini_parser_error& e)
     {
@@ -192,6 +195,7 @@ void Configuration::reset()
    _audioChannelEnabledTelephony = true;
 
     audioOutputBackendType_ = AudioOutputBackendType::QT;
+    wirelessProjectionEnabled_ = true;
 }
 
 void Configuration::save()
@@ -230,6 +234,7 @@ void Configuration::save()
 
     iniConfig.put<uint32_t>(cBluetoothAdapterTypeKey, static_cast<uint32_t>(bluetoothAdapterType_));
     iniConfig.put<std::string>(cBluetoothAdapterAddressKey, bluetoothAdapterAddress_);
+    iniConfig.put<bool>(cBluetoothWirelessProjectionEnabledKey, wirelessProjectionEnabled_);
 
     iniConfig.put<bool>(cAudioChannelMediaEnabled, _audioChannelEnabledMedia);
     iniConfig.put<bool>(cAudioChannelGuidanceEnabled, _audioChannelEnabledGuidance);
@@ -537,6 +542,14 @@ std::string Configuration::getBluetoothAdapterAddress() const
 void Configuration::setBluetoothAdapterAddress(const std::string& value)
 {
     bluetoothAdapterAddress_ = value;
+}
+
+bool Configuration::getWirelessProjectionEnabled() const {
+    return wirelessProjectionEnabled_;
+}
+
+void Configuration::setWirelessProjectionEnabled(bool value) {
+    wirelessProjectionEnabled_ = value;
 }
 
 bool Configuration::musicAudioChannelEnabled() const

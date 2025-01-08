@@ -114,6 +114,8 @@ public:
     virtual void setBluetoothAdapterType(BluetoothAdapterType value) = 0;
     virtual std::string getBluetoothAdapterAddress() const = 0;
     virtual void setBluetoothAdapterAddress(const std::string& value) = 0;
+    virtual bool getWirelessProjectionEnabled() const = 0;
+    virtual void setWirelessProjectionEnabled(bool value) = 0;
 
     virtual bool musicAudioChannelEnabled() const = 0;
     virtual void setMusicAudioChannelEnabled(bool value) = 0;
