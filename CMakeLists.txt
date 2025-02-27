@@ -88,7 +88,7 @@ endif ()
 
 find_package(aap_protobuf REQUIRED)
 find_package(aasdk REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system log OPTIONAL_COMPONENTS unit_test_framework)
+find_package(Boost REQUIRED COMPONENTS system log_setup log OPTIONAL_COMPONENTS unit_test_framework)
 find_package(libusb-1.0 REQUIRED)
 find_package(Qt5 COMPONENTS DBus Multimedia MultimediaWidgets Bluetooth Network)
 find_package(OpenSSL REQUIRED)

@@ -49,6 +49,7 @@ namespace f1x::openauto::btservice {
   /// Start Server listening on Address
   uint16_t AndroidBluetoothServer::start(const QBluetoothAddress &address) {
     OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::start]";
+    rfcommServer_->close(); // Close should always be called before listen.
     if (rfcommServer_->listen(address)) {
 
       return rfcommServer_->serverPort();

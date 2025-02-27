@@ -19,10 +19,10 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <f1x/aasdk/Transport/ITransport.hpp>
-#include <f1x/aasdk/Channel/Control/IControlServiceChannel.hpp>
-#include <f1x/aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
-#include <f1x/aasdk/Channel/AV/VideoServiceChannel.hpp>
+#include <aasdk/Transport/ITransport.hpp>
+#include <aasdk/Channel/Control/IControlServiceChannel.hpp>
+#include <aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
+#include <aasdk/Channel/MediaSink/Video/Channel/VideoChannel.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntity.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>

@@ -62,7 +62,6 @@ namespace f1x::openauto::autoapp::service {
     this->createMediaSinkServices(serviceList, messenger);
     this->createMediaSourceServices(serviceList, messenger);
     serviceList.emplace_back(this->createSensorService(messenger));
-    serviceList.emplace_back(this->createBluetoothService(messenger));
     serviceList.emplace_back(this->createInputService(messenger));
     if (configuration_->getWirelessProjectionEnabled())
     {
@@ -71,7 +70,8 @@ namespace f1x::openauto::autoapp::service {
          * The btservice seems to handle connecting over bluetooth and allow AA to establish a WiFi connection for Projection
          * If WifiProjection is a legitimate service, then it seems clear it is not what we think it actually is.
          */
-        serviceList.emplace_back(this->createWifiProjectionService(messenger));
+        serviceList.emplace_back(this->createBluetoothService(messenger));
+        // serviceList.emplace_back(this->createWifiProjectionService(messenger));
     }
 
     return serviceList;
@@ -204,7 +204,7 @@ namespace f1x::openauto::autoapp::service {
 
   IService::Pointer ServiceFactory::createWifiProjectionService(aasdk::messenger::IMessenger::Pointer messenger) {
     OPENAUTO_LOG(info) << "[ServiceFactory] createWifiProjectionService()";
-    return std::make_shared<wifiprojection::WifiProjectionService>(ioService_, messenger);
+    return std::make_shared<wifiprojection::WifiProjectionService>(ioService_, messenger, configuration_);
   }
 
 }
