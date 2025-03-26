@@ -23,13 +23,7 @@
 
 #pragma once
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
+namespace f1x::openauto::autoapp::projection
 {
 
 class LocalBluetoothDevice: public QObject, public IBluetoothDevice
@@ -37,25 +31,15 @@ class LocalBluetoothDevice: public QObject, public IBluetoothDevice
     Q_OBJECT
 
 public:
-    LocalBluetoothDevice();
+    LocalBluetoothDevice(const QString &adapterAddress = QString(), QObject *parent = nullptr);
 
     void stop() override;
     bool isPaired(const std::string& address) const override;
-    void pair(const std::string& address, PairingPromise::Pointer promise) override;
-    std::string getLocalAddress() const override;
+    std::string getAdapterAddress() const override;
     bool isAvailable() const override;
 
-signals:
-    void startPairing(const QString& address, PairingPromise::Pointer promise);
-
 private slots:
-    void createBluetoothLocalDevice();
-    void onStartPairing(const QString& address, PairingPromise::Pointer promise);
-    void onPairingDisplayConfirmation(const QBluetoothAddress &address, QString pin);
-    void onPairingDisplayPinCode(const QBluetoothAddress &address, QString pin);
-    void onPairingFinished(const QBluetoothAddress &address, QBluetoothLocalDevice::Pairing pairing);
-    void onError(QBluetoothLocalDevice::Error error);
-    void onHostModeStateChanged(QBluetoothLocalDevice::HostMode state);
+    void createBluetoothLocalDevice(const QString &adapterAddress);
 
 private:
     mutable std::mutex mutex_;
@@ -65,10 +49,9 @@ private:
     QBluetoothServiceInfo serviceInfo_;
     std::unique_ptr<QBluetoothServer> rfcommServer_;
 
-    void onClientConnected();
 };
 
 }
-}
-}
-}
+
+
+

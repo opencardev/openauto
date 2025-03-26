@@ -43,7 +43,7 @@ void InputDevice::start(IInputDeviceEventHandler& eventHandler)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[InputDevice] start.";
+    OPENAUTO_LOG(info) << "[InputDevice] start()";
     eventHandler_ = &eventHandler;
     parent_.installEventFilter(this);
 }
@@ -52,7 +52,7 @@ void InputDevice::stop()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[InputDevice] stop.";
+    OPENAUTO_LOG(info) << "[InputDevice] stop()";
     parent_.removeEventFilter(this);
     eventHandler_ = nullptr;
 }
@@ -83,91 +83,91 @@ bool InputDevice::eventFilter(QObject* obj, QEvent* event)
 bool InputDevice::handleKeyEvent(QEvent* event, QKeyEvent* key)
 {
     auto eventType = event->type() == QEvent::KeyPress ? ButtonEventType::PRESS : ButtonEventType::RELEASE;
-    aasdk::proto::enums::ButtonCode::Enum buttonCode;
+    aap_protobuf::service::media::sink::message::KeyCode buttonCode;
     WheelDirection wheelDirection = WheelDirection::NONE;
 
     switch(key->key())
     {
     case Qt::Key_Return:
     case Qt::Key_Enter:
-        buttonCode = aasdk::proto::enums::ButtonCode::ENTER;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_CENTER;
         break;
 
     case Qt::Key_Left:
-        buttonCode = aasdk::proto::enums::ButtonCode::LEFT;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_LEFT;
         break;
 
     case Qt::Key_Right:
-        buttonCode = aasdk::proto::enums::ButtonCode::RIGHT;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_RIGHT;
         break;
 
     case Qt::Key_Up:
-        buttonCode = aasdk::proto::enums::ButtonCode::UP;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_UP;
         break;
 
     case Qt::Key_Down:
-        buttonCode = aasdk::proto::enums::ButtonCode::DOWN;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_DPAD_DOWN;
         break;
 
     case Qt::Key_Escape:
-        buttonCode = aasdk::proto::enums::ButtonCode::BACK;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_BACK;
         break;
 
     case Qt::Key_H:
-        buttonCode = aasdk::proto::enums::ButtonCode::HOME;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_HOME;
         break;
 
     case Qt::Key_P:
-        buttonCode = aasdk::proto::enums::ButtonCode::PHONE;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_CALL;
         break;
 
     case Qt::Key_O:
-        buttonCode = aasdk::proto::enums::ButtonCode::CALL_END;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ENDCALL;
         break;
 
     case Qt::Key_MediaPlay:
     case Qt::Key_X:
-        buttonCode = aasdk::proto::enums::ButtonCode::PLAY;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PLAY;
         break;
 
     case Qt::Key_MediaPause:
     case Qt::Key_C:
-        buttonCode = aasdk::proto::enums::ButtonCode::PAUSE;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PAUSE;
         break;
 
     case Qt::Key_MediaPrevious:
     case Qt::Key_V:
-        buttonCode = aasdk::proto::enums::ButtonCode::PREV;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PREVIOUS;
         break;
 
     case Qt::Key_MediaTogglePlayPause:
     case Qt::Key_B:
-        buttonCode = aasdk::proto::enums::ButtonCode::TOGGLE_PLAY;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_PLAY_PAUSE;
         break;
 
     case Qt::Key_MediaNext:
     case Qt::Key_N:
-        buttonCode = aasdk::proto::enums::ButtonCode::NEXT;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_MEDIA_NEXT;
         break;
 
     case Qt::Key_M:
-        buttonCode = aasdk::proto::enums::ButtonCode::MICROPHONE_1;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_SEARCH;
         break;
 
     case Qt::Key_1:
         wheelDirection = WheelDirection::LEFT;
         eventType = ButtonEventType::NONE;
-        buttonCode = aasdk::proto::enums::ButtonCode::SCROLL_WHEEL;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ROTARY_CONTROLLER;
         break;
 
     case Qt::Key_2:
         wheelDirection = WheelDirection::RIGHT;
         eventType = ButtonEventType::NONE;
-        buttonCode = aasdk::proto::enums::ButtonCode::SCROLL_WHEEL;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ROTARY_CONTROLLER;
         break;
 
     case Qt::Key_F:
-        buttonCode = aasdk::proto::enums::ButtonCode::NAVIGATION;
+        buttonCode = aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_NAVIGATION;
         break;
 
     default:
@@ -177,7 +177,7 @@ bool InputDevice::handleKeyEvent(QEvent* event, QKeyEvent* key)
     const auto& buttonCodes = this->getSupportedButtonCodes();
     if(std::find(buttonCodes.begin(), buttonCodes.end(), buttonCode) != buttonCodes.end())
     {
-        if(buttonCode != aasdk::proto::enums::ButtonCode::SCROLL_WHEEL || event->type() == QEvent::KeyRelease)
+        if(buttonCode != aap_protobuf::service::media::sink::message::KeyCode::KEYCODE_ROTARY_CONTROLLER || event->type() == QEvent::KeyRelease)
         {
             eventHandler_->onButtonEvent({eventType, wheelDirection, buttonCode});
         }
@@ -193,18 +193,18 @@ bool InputDevice::handleTouchEvent(QEvent* event)
         return true;
     }
 
-    aasdk::proto::enums::TouchAction::Enum type;
+    aap_protobuf::service::inputsource::message::PointerAction type;
 
     switch(event->type())
     {
     case QEvent::MouseButtonPress:
-        type = aasdk::proto::enums::TouchAction::PRESS;
+        type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_DOWN;
         break;
     case QEvent::MouseButtonRelease:
-        type = aasdk::proto::enums::TouchAction::RELEASE;
+        type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_UP;
         break;
     case QEvent::MouseMove:
-        type = aasdk::proto::enums::TouchAction::DRAG;
+        type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_MOVED;
         break;
     default:
         return true;

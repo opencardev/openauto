@@ -21,19 +21,15 @@
 #include <QBluetoothServiceInfo>
 #include <f1x/openauto/btservice/IAndroidBluetoothService.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace btservice
+namespace f1x::openauto::btservice
 {
 
 class AndroidBluetoothService: public IAndroidBluetoothService
 {
 public:
-    AndroidBluetoothService(uint16_t portNumber);
+    AndroidBluetoothService();
 
-    bool registerService(const QBluetoothAddress& bluetoothAddress) override;
+    bool registerService(int16_t portNumber, const QBluetoothAddress& bluetoothAddress) override;
     bool unregisterService() override;
 
 private:
@@ -41,5 +37,5 @@ private:
 };
 
 }
-}
-}
+
+

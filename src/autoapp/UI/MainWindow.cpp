@@ -2163,7 +2163,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
                 ui_->devlabel_right->show();
             }
         }
-    }
+   }
 
     if (std::ifstream("/tmp/btdevice") || std::ifstream("/tmp/media_playing") || std::ifstream("/tmp/dev_mode_enabled") || std::ifstream("/tmp/android_device")) {
         if (ui_->labelLock->isVisible() == false) {

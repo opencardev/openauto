@@ -22,11 +22,15 @@
 #include <aasdk/Transport/ITransport.hpp>
 #include <aasdk/Channel/Control/IControlServiceChannel.hpp>
 #include <aasdk/Channel/Control/IControlServiceChannelEventHandler.hpp>
-#include <aasdk/Channel/AV/VideoServiceChannel.hpp>
+#include <aasdk/Channel/MediaSink/Video/Channel/VideoChannel.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntity.hpp>
 #include <f1x/openauto/autoapp/Service/IService.hpp>
 #include <f1x/openauto/autoapp/Service/IPinger.hpp>
+#include <Transport/ITransport.hpp>
+#include <aap_protobuf/service/control/message/AudioFocusRequestType.pb.h>
+#include <aap_protobuf/service/control/message/AudioFocusStateType.pb.h>
+#include <aap_protobuf/service/control/message/NavFocusType.pb.h>
 
 namespace f1x
 {
@@ -53,17 +57,19 @@ public:
     void stop() override;
     void pause() override;
     void resume() override;
-    void onVersionResponse(uint16_t majorCode, uint16_t minorCode, aasdk::proto::enums::VersionResponseStatus::Enum status) override;
+    // TODO: on channel open request... on channel close...  on navigation focus, on voice session notification, on user switch, on call availability, on service disc update, on battery status, on car connected devices
+    void onVersionResponse(uint16_t majorCode, uint16_t minorCode, aap_protobuf::shared::MessageStatus status) override;
     void onHandshake(const aasdk::common::DataConstBuffer& payload) override;
-    void onServiceDiscoveryRequest(const aasdk::proto::messages::ServiceDiscoveryRequest& request) override;
-    void onAudioFocusRequest(const aasdk::proto::messages::AudioFocusRequest& request) override;
-    void onShutdownRequest(const aasdk::proto::messages::ShutdownRequest& request) override;
-    void onShutdownResponse(const aasdk::proto::messages::ShutdownResponse& response) override;
-    void onNavigationFocusRequest(const aasdk::proto::messages::NavigationFocusRequest& request) override;
+    void onServiceDiscoveryRequest(const aap_protobuf::service::control::message::ServiceDiscoveryRequest& request) override;
+    void onAudioFocusRequest(const aap_protobuf::service::control::message::AudioFocusRequest& request) override;
+    void onByeByeRequest(const aap_protobuf::service::control::message::ByeByeRequest& request) override;
+    void onByeByeResponse(const aap_protobuf::service::control::message::ByeByeResponse& response) override;
+    void onNavigationFocusRequest(const aap_protobuf::service::control::message::NavFocusRequestNotification& request) override;
+    void onVoiceSessionRequest(const aap_protobuf::service::control::message::VoiceSessionNotification &request) override;
+    void onBatteryStatusNotification(const aap_protobuf::service::control::message::BatteryStatusNotification &notification) override;
+    void onPingResponse(const aap_protobuf::service::control::message::PingResponse& response) override;
+    void onPingRequest(const aap_protobuf::service::control::message::PingRequest& request) override;
     void onChannelError(const aasdk::error::Error& e) override;
-    void onPingRequest(const aasdk::proto::messages::PingRequest& request) override;
-    void onPingResponse(const aasdk::proto::messages::PingResponse& response) override;
-    void onVoiceSessionRequest(const aasdk::proto::messages::VoiceSessionRequest& request) override;
 
 private:
     using std::enable_shared_from_this<AndroidAutoEntity>::shared_from_this;

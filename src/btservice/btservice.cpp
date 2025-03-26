@@ -20,48 +20,26 @@
 #include <QtBluetooth>
 #include <f1x/openauto/Common/Log.hpp>
 #include <f1x/openauto/autoapp/Configuration/Configuration.hpp>
+#include <f1x/openauto/btservice/BluetoothHandler.hpp>
 #include <f1x/openauto/btservice/AndroidBluetoothService.hpp>
-#include <f1x/openauto/btservice/AndroidBluetoothServer.hpp>
 
 namespace btservice = f1x::openauto::btservice;
 
 int main(int argc, char *argv[]) {
-    QLoggingCategory::setFilterRules(QStringLiteral("qt.bluetooth*=true"));
-    QCoreApplication qApplication(argc, argv);
+  QLoggingCategory::setFilterRules(QStringLiteral("qt.bluetooth*=true"));
+  QCoreApplication qApplication(argc, argv);
 
-    QBluetoothLocalDevice localDevice;
-    const QBluetoothAddress address = localDevice.address();
+  auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
 
-    auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
-
-    // Turn Bluetooth on
-    localDevice.powerOn();
-    // Make it visible to others
-    localDevice.setHostMode(QBluetoothLocalDevice::HostDiscoverable);
-
-    btservice::AndroidBluetoothServer androidBluetoothServer(configuration);
-    uint16_t portNumber = androidBluetoothServer.start(address);
-
-    if (portNumber == 0) {
-        OPENAUTO_LOG(error) << "[btservice] Server start failed.";
-        return 2;
-    }
-
-    OPENAUTO_LOG(info) << "[btservice] Listening for connections, address: " << address.toString().toStdString()
-                       << ", port: " << portNumber;
-
-    btservice::AndroidBluetoothService androidBluetoothService(portNumber);
-    if (!androidBluetoothService.registerService(address)) {
-        OPENAUTO_LOG(error) << "[btservice] Service registration failed.";
-        return 1;
-    } else {
-        OPENAUTO_LOG(info) << "[btservice] Service registered, port: " << portNumber;
-    }
-
+  try {
+    auto androidBluetoothService = std::make_shared<btservice::AndroidBluetoothService>();
+    btservice::BluetoothHandler bluetoothHandler(androidBluetoothService, configuration);
     QCoreApplication::exec();
+  } catch (std::runtime_error& e) {
+    std::cerr << "Exception caught: " << e.what() << std::endl;
+  }
 
-    OPENAUTO_LOG(info) << "stop";
-    androidBluetoothService.unregisterService();
+  OPENAUTO_LOG(info) << "stop";
 
-    return 0;
+  return 0;
 }
