@@ -61,7 +61,7 @@ if (WIN32)
     set(WINSOCK2_LIBRARIES "ws2_32")
 endif (WIN32)
 
-if (DEFINED NOPI)
+if (NOPI)
     message(STATUS "Configuring for Non-Raspberry Pi")
 else()
     message(STATUS "Configuring for RaspberryPi")
