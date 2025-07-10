@@ -573,7 +573,7 @@ QSlider::groove:horizontal { background: #6d6d6d; height: 32px;}</string>
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="horizontalWidget" native="true">
+       <widget class="QWidget" name="horizontalWidget1" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -1953,7 +1953,7 @@ QComboBox::item:selected {
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QWidget" name="horizontalWidget" native="true">
+          <widget class="QWidget" name="horizontalWidget2" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -2217,7 +2217,7 @@ QSlider::groove:horizontal { background: #6d6d6d; height: 32px;}</string>
        </spacer>
       </item>
       <item>
-       <widget class="QWidget" name="widget" native="true">
+       <widget class="QWidget" name="widget1" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2771,7 +2771,7 @@ QSlider::groove:horizontal { background: #6d6d6d; height: 32px;}</string>
           <number>0</number>
          </property>
          <item>
-          <widget class="QWidget" name="widget" native="true">
+          <widget class="QWidget" name="widget2" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -2867,7 +2867,7 @@ outline: none;</string>
           </widget>
          </item>
          <item>
-          <widget class="QWidget" name="horizontalWidget" native="true">
+          <widget class="QWidget" name="horizontalWidget3" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -2934,7 +2934,7 @@ outline: none;</string>
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="horizontalWidget" native="true">
+       <widget class="QWidget" name="horizontalWidget4" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3531,7 +3531,7 @@ outline: none;</string>
           </widget>
          </item>
          <item>
-          <widget class="QWidget" name="verticalWidget" native="true">
+          <widget class="QWidget" name="verticalWidget1" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -4067,7 +4067,7 @@ outline: none;</string>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QWidget" name="horizontalWidget" native="true">
+            <widget class="QWidget" name="horizontalWidget5" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -4209,7 +4209,7 @@ outline: none;</string>
        </spacer>
       </item>
       <item>
-       <widget class="QWidget" name="formWidget" native="true">
+       <widget class="QWidget" name="formWidget1" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4671,7 +4671,7 @@ outline: none;</string>
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="horizontalWidget" native="true">
+       <widget class="QWidget" name="horizontalWidget6" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -5068,7 +5068,7 @@ subcontrol-position: center left;
             <number>2</number>
            </property>
            <item>
-            <widget class="QWidget" name="formWidget" native="true">
+            <widget class="QWidget" name="formWidget2" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -5255,7 +5255,7 @@ subcontrol-position: center left;
        </spacer>
       </item>
       <item>
-       <widget class="QWidget" name="formWidget" native="true">
+       <widget class="QWidget" name="formWidget3" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -6013,7 +6013,7 @@ subcontrol-position: center left;
           <number>0</number>
          </property>
          <item>
-          <widget class="QWidget" name="widget" native="true">
+          <widget class="QWidget" name="widget3" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -7089,7 +7089,7 @@ outline: none;</string>
           <number>0</number>
          </property>
          <item>
-          <widget class="QWidget" name="horizontalWidget" native="true">
+          <widget class="QWidget" name="horizontalWidget7" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -7380,7 +7380,7 @@ subcontrol-position: center left;
        </spacer>
       </item>
       <item>
-       <widget class="QWidget" name="formWidget" native="true">
+       <widget class="QWidget" name="formWidget4" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -7483,7 +7483,7 @@ subcontrol-position: center left;
        <number>2</number>
       </property>
       <item>
-       <widget class="QWidget" name="horizontalWidget" native="true">
+       <widget class="QWidget" name="horizontalWidget8" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -7762,7 +7762,7 @@ QSlider::groove:horizontal { background: #6d6d6d; height: 32px;}</string>
              <number>0</number>
             </property>
             <item>
-             <widget class="QWidget" name="formWidget" native="true">
+             <widget class="QWidget" name="formWidget5" native="true">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -7999,7 +7999,7 @@ QSlider::groove:horizontal { background: #6d6d6d; height: 32px;}</string>
           <number>2</number>
          </property>
          <item>
-          <widget class="QWidget" name="horizontalWidget" native="true">
+          <widget class="QWidget" name="horizontalWidget9" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -8241,7 +8241,7 @@ or lower</string>
        </spacer>
       </item>
       <item>
-       <widget class="QWidget" name="widget" native="true">
+       <widget class="QWidget" name="widget4" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -8732,7 +8732,7 @@ QComboBox::item:selected {
             </widget>
            </item>
            <item row="1" column="0" colspan="2">
-            <widget class="QWidget" name="horizontalWidget" native="true">
+            <widget class="QWidget" name="horizontalWidget10" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -8753,7 +8753,7 @@ QComboBox::item:selected {
                <number>0</number>
               </property>
               <item>
-               <widget class="QWidget" name="formWidget" native="true">
+               <widget class="QWidget" name="formWidget6" native="true">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -8849,7 +8849,7 @@ QComboBox::item:selected {
                </widget>
               </item>
               <item>
-               <widget class="QWidget" name="formWidget_2" native="true">
+               <widget class="QWidget" name="formWidget_21" native="true">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -8983,7 +8983,7 @@ QComboBox::item:selected {
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QWidget" name="widget" native="true">
+            <widget class="QWidget" name="widget5" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -9101,7 +9101,7 @@ QComboBox::item:selected {
                </widget>
               </item>
               <item>
-               <widget class="QWidget" name="formWidget" native="true">
+               <widget class="QWidget" name="formWidget7" native="true">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                   <horstretch>0</horstretch>
@@ -9234,7 +9234,7 @@ QComboBox::item:selected {
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QWidget" name="horizontalWidget" native="true">
+            <widget class="QWidget" name="horizontalWidget11" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -9595,7 +9595,7 @@ QComboBox::item:selected {
             </widget>
            </item>
            <item row="4" column="1">
-            <widget class="QWidget" name="horizontalWidget" native="true">
+            <widget class="QWidget" name="horizontalWidget12" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -9948,7 +9948,7 @@ QComboBox::item:selected {
             </widget>
            </item>
            <item row="5" column="1">
-            <widget class="QWidget" name="horizontalWidget" native="true">
+            <widget class="QWidget" name="horizontalWidget13" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -9972,7 +9972,7 @@ QComboBox::item:selected {
             </widget>
            </item>
            <item row="6" column="1">
-            <widget class="QWidget" name="horizontalWidget" native="true">
+            <widget class="QWidget" name="horizontalWidget14" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -10256,7 +10256,7 @@ QComboBox::item:selected {
             </widget>
            </item>
            <item row="7" column="1">
-            <widget class="QWidget" name="horizontalWidget" native="true">
+            <widget class="QWidget" name="horizontalWidget15" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -10483,7 +10483,7 @@ QComboBox::item:selected {
           </layout>
          </item>
          <item>
-          <widget class="QWidget" name="horizontalWidget" native="true">
+          <widget class="QWidget" name="horizontalWidget16" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>

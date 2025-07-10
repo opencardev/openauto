@@ -20,7 +20,9 @@
 
 extern "C"
 {
+#ifdef USE_OMX
 #include <bcm_host.h>
+#endif
 }
 
 #include <aasdk/Common/Data.hpp>
@@ -60,7 +62,9 @@ bool OMXVideoOutput::open()
 
     OPENAUTO_LOG(debug) << "[OMXVideoOutput] open.";
 
+#ifdef USE_OMX
     bcm_host_init();
+#endif
     if(OMX_Init() != OMX_ErrorNone)
     {
         OPENAUTO_LOG(error) << "[OMXVideoOutput] omx init failed.";

@@ -50,8 +50,8 @@ namespace f1x::openauto::autoapp::service::vendorextension {
 
   private:
     using std::enable_shared_from_this<VendorExtensionService>::shared_from_this;
-    boost::asio::deadline_timer timer_;
     boost::asio::io_service::strand strand_;
+    boost::asio::deadline_timer timer_;
     aasdk::channel::vendorextension::VendorExtensionService::Pointer channel_;
   };
 

@@ -49,8 +49,8 @@ namespace f1x {
 
           private:
             using std::enable_shared_from_this<MediaPlaybackStatusService>::shared_from_this;
-            boost::asio::deadline_timer timer_;
             boost::asio::io_service::strand strand_;
+            boost::asio::deadline_timer timer_;
             aasdk::channel::mediaplaybackstatus::MediaPlaybackStatusService::Pointer channel_;
           };
 

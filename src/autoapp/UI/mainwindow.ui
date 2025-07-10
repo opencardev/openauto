@@ -593,7 +593,7 @@ color: rgb(78, 244, 37);</string>
            </widget>
           </item>
           <item>
-           <widget class="QWidget" name="widget" native="true">
+           <widget class="QWidget" name="widget2" native="true">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -3445,7 +3445,7 @@ outline: none;</string>
            <number>0</number>
           </property>
           <item>
-           <widget class="QWidget" name="verticalWidget_2" native="true">
+           <widget class="QWidget" name="verticalWidget_3" native="true">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
               <horstretch>0</horstretch>
