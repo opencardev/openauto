@@ -200,7 +200,11 @@ namespace f1x {
           void VideoMediaSinkService::onVideoFocusRequest(
               const aap_protobuf::service::media::video::message::VideoFocusRequestNotification &request) {
             OPENAUTO_LOG(info) << "[VideoMediaSinkService] onVideoFocusRequest()";
+            // Note: disp_channel_id() is deprecated but still used for logging compatibility
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             OPENAUTO_LOG(info) << "[VideoMediaSinkService] Display index: " << request.disp_channel_id() << ", focus mode: " << VideoFocusMode_Name(request.mode()) << ", focus reason: " << VideoFocusReason_Name(request.reason());
+            #pragma GCC diagnostic pop
 
             if (request.mode() ==
                 aap_protobuf::service::media::video::message::VideoFocusMode::VIDEO_FOCUS_NATIVE) {

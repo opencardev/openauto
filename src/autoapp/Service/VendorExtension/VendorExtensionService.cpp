@@ -64,6 +64,7 @@ namespace f1x::openauto::autoapp::service::vendorextension {
     service->set_id(static_cast<uint32_t>(channel_->getId()));
 
     auto *vendorExtension = service->mutable_vendor_extension_service();
+    (void)vendorExtension; // Suppress unused variable warning
   }
 
   void VendorExtensionService::onChannelError(const aasdk::error::Error &e) {
