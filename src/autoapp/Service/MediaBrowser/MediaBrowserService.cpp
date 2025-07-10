@@ -67,6 +67,7 @@ namespace f1x {
             service->set_id(static_cast<uint32_t>(channel_->getId()));
 
             auto *mediaBrowser = service->mutable_media_browser_service();
+            (void)mediaBrowser; // Suppress unused variable warning
           }
 
           void MediaBrowserService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
