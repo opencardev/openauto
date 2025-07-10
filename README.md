@@ -1,4 +1,3 @@
-
 # OpenAuto
 
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
@@ -71,3 +70,48 @@ However, its easiest to just develop on a more capable `amd64` device.
 
 ### Remarks
 **This software is not certified by Google Inc. It is created for R&D purposes and may not work as expected by the original authors. Do not use while driving. You use this software at your own risk.**
+
+## Testing
+
+This project includes a comprehensive test suite to verify the functionality of the application.
+
+### Running Tests
+
+To run the tests, follow these steps:
+
+1. Make sure you have built the project successfully
+2. Navigate to the build directory and execute the test runner:
+
+```bash
+cd build
+ctest -V
+```
+
+Or to run specific test categories:
+
+```bash
+cd build
+# Run unit tests
+./tests/unit/openauto_unit_tests
+
+# Run integration tests
+./tests/integration/openauto_integration_tests
+```
+
+### Test Coverage
+
+You can generate test coverage reports using:
+
+```bash
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_COVERAGE=ON ..
+make
+make test
+make coverage
+```
+
+This will generate coverage reports in the `coverage` directory.
+
+### Test Plan
+
+For detailed information about test cases and validation procedures, refer to [TESTPLAN.md](TESTPLAN.md).

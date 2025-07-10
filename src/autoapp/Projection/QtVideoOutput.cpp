@@ -69,11 +69,15 @@ void QtVideoOutput::write(uint64_t, const aasdk::common::DataConstBuffer& buffer
 
 void QtVideoOutput::onStartPlayback()
 {
+    videoWidget_->setAttribute(Qt::WA_OpaquePaintEvent, true);
+    videoWidget_->setAttribute(Qt::WA_NoSystemBackground, true);
     videoWidget_->setAspectRatioMode(Qt::IgnoreAspectRatio);
     videoWidget_->setFocus();
-    //videoWidget_->setWindowFlags(Qt::WindowStaysOnTopHint);
+    videoWidget_->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    videoWidget_->raise();
     videoWidget_->setFullScreen(true);
     videoWidget_->show();
+    videoWidget_->activateWindow();
 
     mediaPlayer_->setVideoOutput(videoWidget_.get());
     mediaPlayer_->setMedia(QMediaContent(), &videoBuffer_);
@@ -86,7 +90,9 @@ void QtVideoOutput::onStartPlayback()
 void QtVideoOutput::onStopPlayback()
 {
     videoWidget_->hide();
+    videoWidget_->clearFocus();
     mediaPlayer_->stop();
+    mediaPlayer_->setMedia(QMediaContent());
 }
 
 }
