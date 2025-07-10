@@ -1,5 +1,9 @@
 Release Notes
 
+20250710 - 4.1.0 - Build Date Update
+* Updated build date to 20250710
+* Fixed compiler warnings and build issues
+
 20241124 - 4.1.0 - Bluetooth Updates
 * Rename BluetootAdapterType to BluetoothAdapterType, and change from NONE, LOCAL, REMOTE to NONE, LOCAL, EXTERNAL to better match available settings
 * getLocalAddress() on Dummy, Local and Remote bluetooth changed to getAdapterAddress()

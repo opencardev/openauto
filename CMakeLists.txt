@@ -11,10 +11,10 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # Set Compile Versions
-set(OPENAUTO_BUILD_DATE 20241124)       # Binary Release Build Date
-set(OPENAUTO_BUILD_MAJOR_RELEASE 4)     # Binary Release Build Major Number
-set(OPENAUTO_BUILD_MINOR_RELEASE 1)     # Binary Release Build Minor Number
-set(OPENAUTO_BUILD_INCREMENTAL 0)       # Binary Build Version - Increment for Each Build
+string(TIMESTAMP OPENAUTO_BUILD_DATE "%Y%m%d")  # Dynamic Binary Release Build Date
+set(OPENAUTO_BUILD_MAJOR_RELEASE 4)             # Binary Release Build Major Number
+set(OPENAUTO_BUILD_MINOR_RELEASE 1)             # Binary Release Build Minor Number
+set(OPENAUTO_BUILD_INCREMENTAL 0)               # Binary Build Version - Increment for Each Build
 
 # Configure CMAKE
 set(CMAKE_CXX_STANDARD 17)
