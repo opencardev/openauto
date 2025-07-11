@@ -147,9 +147,9 @@ void Configuration::load()
     }
     catch(const boost::property_tree::ini_parser_error& e)
     {
-        LOG_WARN(CONFIG, "[Configuration] failed to read configuration file: " << cConfigFileName
-                            << ", error: " << e.what()
-                            << ". Using default configuration.");
+        LOG_WARN_STREAM(CONFIG, "[Configuration] failed to read configuration file: " << cConfigFileName
+                           << ", error: " << e.what()
+                           << ". Using default configuration.");
         this->reset();
     }
 }
@@ -238,13 +238,13 @@ bool Configuration::hasTouchScreen() const
 {
     auto touchdevs = QTouchDevice::devices();
 
-    LOG_INFO(CONFIG, "[Touchdev] " <<
+    LOG_INFO_STREAM(CONFIG, "[Touchdev] " <<
                           "Querying available touch devices [" <<
                           touchdevs.length() << " available]");
 
     for (int i = 0; i < touchdevs.length(); i++) {
         if (touchdevs[i]->type() == QTouchDevice::TouchScreen) {
-            LOG_INFO(CONFIG, "[Touchdev] Device " << i <<
+            LOG_INFO_STREAM(CONFIG, "[Touchdev] Device " << i <<
                                   ": " << touchdevs[i]->name().toStdString() <<
                                   ", type " << touchdevs[i]->type());
             return true;
@@ -594,12 +594,12 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());
+                    LOG_DEBUG_STREAM(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());
                     return value;
                 }
             }
         }
-        LOG_WARN(CONFIG, "[Configuration] unable to find cs param: " << searchString.toStdString());
+        LOG_WARN_STREAM(CONFIG, "[Configuration] unable to find cs param: " << searchString.toStdString());
         LOG_WARN(CONFIG, "[Configuration] Fallback to /opt/crankshaft/crankshaft_default_env.sh)");
         while(inFile2.good())
         {
@@ -611,7 +611,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());
+                    LOG_DEBUG_STREAM(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());
                     return value;
                 }
             }
@@ -631,7 +631,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());
+                    LOG_DEBUG_STREAM(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());
                     return value;
                 }
             }
@@ -642,7 +642,7 @@ QString Configuration::getCSValue(QString searchString) const
 
 QString Configuration::getParamFromFile(QString fileName, QString searchString) const
 {
-    LOG_DEBUG(CONFIG, "[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString());
+    LOG_DEBUG_STREAM(CONFIG, "[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString());
     using namespace std;
     ifstream inFile;
     string line;
@@ -664,7 +664,7 @@ QString Configuration::getParamFromFile(QString fileName, QString searchString) 
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString());
+                    LOG_DEBUG_STREAM(CONFIG, "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString());
                     return value;
                 }
             }
