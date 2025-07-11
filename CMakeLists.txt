@@ -175,3 +175,50 @@ set_target_properties(autoapp
 #        EXPORT aasdkTargets
 #        RUNTIME DESTINATION bin
 #)
+
+# Modern Architecture Components
+option(ENABLE_MODERN_API "Enable modern REST API and event bus" ON)
+
+if(ENABLE_MODERN_API)
+    message(STATUS "Modern API enabled")
+    
+    # Find required packages for modern components
+    find_package(PkgConfig REQUIRED)
+    
+    # Check for nlohmann/json
+    find_path(NLOHMANN_JSON_INCLUDE_DIRS nlohmann/json.hpp
+        PATHS /usr/include /usr/local/include /opt/homebrew/include
+        PATH_SUFFIXES nlohmann)
+    
+    if(NOT NLOHMANN_JSON_INCLUDE_DIRS)
+        message(FATAL_ERROR "nlohmann/json not found. Please install nlohmann-json-dev package.")
+    endif()
+    
+    # Check for httplib
+    find_path(HTTPLIB_INCLUDE_DIRS httplib.h
+        PATHS /usr/include /usr/local/include /opt/homebrew/include)
+    
+    if(NOT HTTPLIB_INCLUDE_DIRS)
+        message(WARNING "httplib.h not found. You may need to install cpp-httplib manually.")
+    endif()
+    
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_MODERN_API")
+    
+    # Modern sources
+    set(modern_sources_directory ${sources_directory}/modern)
+    set(modern_include_directory ${include_directory}/modern)
+    
+    file(GLOB_RECURSE modern_source_files 
+        ${modern_sources_directory}/*.cpp 
+        ${modern_include_directory}/*.hpp)
+    
+    # Add modern components to autoapp
+    target_sources(autoapp PRIVATE ${modern_source_files})
+    target_include_directories(autoapp PRIVATE ${NLOHMANN_JSON_INCLUDE_DIRS} ${HTTPLIB_INCLUDE_DIRS})
+    
+    # Add threading support for REST API
+    find_package(Threads REQUIRED)
+    target_link_libraries(autoapp PUBLIC Threads::Threads)
+    
+    message(STATUS "Modern API components added to build")
+endif()
