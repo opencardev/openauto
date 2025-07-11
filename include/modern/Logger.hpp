@@ -278,64 +278,64 @@ private:
 
 // Modern logging macros with detailed context
 #define LOG_TRACE(category, message) \
-    openauto::modern::Logger::getInstance().trace( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().trace( \
+        ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message)
 
 #define LOG_DEBUG(category, message) \
-    openauto::modern::Logger::getInstance().debug( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().debug( \
+        ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message)
 
 #define LOG_INFO(category, message) \
-    openauto::modern::Logger::getInstance().info( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().info( \
+        ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message)
 
 #define LOG_WARN(category, message) \
-    openauto::modern::Logger::getInstance().warn( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().warn( \
+        ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message)
 
 #define LOG_ERROR(category, message) \
-    openauto::modern::Logger::getInstance().error( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().error( \
+        ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message)
 
 #define LOG_FATAL(category, message) \
-    openauto::modern::Logger::getInstance().fatal( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().fatal( \
+        ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message)
 
 // Static logging macros (for use in static functions or C-style code)
 #define SLOG_TRACE(category, component, message) \
-    openauto::modern::Logger::getInstance().trace( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().trace( \
+        ::openauto::modern::LogCategory::category, \
         component, __FUNCTION__, __FILE__, __LINE__, message)
 
 #define SLOG_DEBUG(category, component, message) \
-    openauto::modern::Logger::getInstance().debug( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().debug( \
+        ::openauto::modern::LogCategory::category, \
         component, __FUNCTION__, __FILE__, __LINE__, message)
 
 #define SLOG_INFO(category, component, message) \
-    openauto::modern::Logger::getInstance().info( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().info( \
+        ::openauto::modern::LogCategory::category, \
         component, __FUNCTION__, __FILE__, __LINE__, message)
 
 #define SLOG_WARN(category, component, message) \
-    openauto::modern::Logger::getInstance().warn( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().warn( \
+        ::openauto::modern::LogCategory::category, \
         component, __FUNCTION__, __FILE__, __LINE__, message)
 
 #define SLOG_ERROR(category, component, message) \
-    openauto::modern::Logger::getInstance().error( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().error( \
+        ::openauto::modern::LogCategory::category, \
         component, __FUNCTION__, __FILE__, __LINE__, message)
 
 #define SLOG_FATAL(category, component, message) \
-    openauto::modern::Logger::getInstance().fatal( \
-        openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().fatal( \
+        ::openauto::modern::LogCategory::category, \
         component, __FUNCTION__, __FILE__, __LINE__, message)
 
 // Stream-based logging macros (for use with << operators)
@@ -345,52 +345,52 @@ private:
         oss_ << stream; \
         openauto::modern::Logger::getInstance().trace( \
             openauto::modern::LogCategory::category, \
-            typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
+            "Component", __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
 #define LOG_DEBUG_STREAM(category, stream) \
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().debug( \
-            openauto::modern::LogCategory::category, \
-            typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
+        ::openauto::modern::Logger::getInstance().debug( \
+            ::openauto::modern::LogCategory::category, \
+            "Component", __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
 #define LOG_INFO_STREAM(category, stream) \
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().info( \
-            openauto::modern::LogCategory::category, \
-            typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
+        ::openauto::modern::Logger::getInstance().info( \
+            ::openauto::modern::LogCategory::category, \
+            "Component", __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
 #define LOG_WARN_STREAM(category, stream) \
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().warn( \
-            openauto::modern::LogCategory::category, \
-            typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
+        ::openauto::modern::Logger::getInstance().warn( \
+            ::openauto::modern::LogCategory::category, \
+            "Component", __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
 #define LOG_ERROR_STREAM(category, stream) \
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().error( \
-            openauto::modern::LogCategory::category, \
-            typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
+        ::openauto::modern::Logger::getInstance().error( \
+            ::openauto::modern::LogCategory::category, \
+            "Component", __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
 #define LOG_FATAL_STREAM(category, stream) \
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().fatal( \
-            openauto::modern::LogCategory::category, \
-            typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
+        ::openauto::modern::Logger::getInstance().fatal( \
+            ::openauto::modern::LogCategory::category, \
+            "Component", __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
 // Static stream-based logging macros (for use in static functions or C-style code)
@@ -398,8 +398,8 @@ private:
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().trace( \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::Logger::getInstance().trace( \
+            ::openauto::modern::LogCategory::category, \
             component, __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
@@ -407,8 +407,8 @@ private:
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().debug( \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::Logger::getInstance().debug( \
+            ::openauto::modern::LogCategory::category, \
             component, __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
@@ -416,8 +416,8 @@ private:
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().info( \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::Logger::getInstance().info( \
+            ::openauto::modern::LogCategory::category, \
             component, __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
@@ -425,8 +425,8 @@ private:
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().warn( \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::Logger::getInstance().warn( \
+            ::openauto::modern::LogCategory::category, \
             component, __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
@@ -434,8 +434,8 @@ private:
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().error( \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::Logger::getInstance().error( \
+            ::openauto::modern::LogCategory::category, \
             component, __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
@@ -443,20 +443,20 @@ private:
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().fatal( \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::Logger::getInstance().fatal( \
+            ::openauto::modern::LogCategory::category, \
             component, __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
 // Context logging macros
 #define LOG_INFO_CTX(category, message, context) \
-    openauto::modern::Logger::getInstance().logWithContext( \
-        openauto::modern::LogLevel::INFO, openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().logWithContext( \
+        ::openauto::modern::LogLevel::INFO, ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message, context)
 
 #define LOG_ERROR_CTX(category, message, context) \
-    openauto::modern::Logger::getInstance().logWithContext( \
-        openauto::modern::LogLevel::ERROR, openauto::modern::LogCategory::category, \
+    ::openauto::modern::Logger::getInstance().logWithContext( \
+        ::openauto::modern::LogLevel::ERROR, ::openauto::modern::LogCategory::category, \
         typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message, context)
 
 // Performance logging macros
@@ -477,13 +477,13 @@ private:
 #ifdef ENABLE_MODERN_API
     // Replace old OPENAUTO_LOG with modern equivalent
     #define OPENAUTO_LOG(severity) \
-        openauto::modern::Logger::getInstance().info( \
-            openauto::modern::LogCategory::GENERAL, "OpenAuto", __FUNCTION__, __FILE__, __LINE__, "")
+        ::openauto::modern::Logger::getInstance().info( \
+            ::openauto::modern::LogCategory::GENERAL, "OpenAuto", __FUNCTION__, __FILE__, __LINE__, "")
     
     // Add stream operator support for backward compatibility
     class LogStream {
     public:
-        LogStream(openauto::modern::LogLevel level, openauto::modern::LogCategory category,
+        LogStream(::openauto::modern::LogLevel level, ::openauto::modern::LogCategory category,
                  const std::string& component, const std::string& function,
                  const std::string& file, int line)
             : level_(level), category_(category), component_(component),
@@ -501,8 +501,8 @@ private:
         }
         
     private:
-        openauto::modern::LogLevel level_;
-        openauto::modern::LogCategory category_;
+        ::openauto::modern::LogLevel level_;
+        ::openauto::modern::LogCategory category_;
         std::string component_;
         std::string function_;
         std::string file_;
@@ -511,9 +511,9 @@ private:
     };
     
     #define OPENAUTO_LOG_STREAM(severity, category) \
-        openauto::modern::LogStream( \
-            openauto::modern::LogLevel::severity, \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::LogStream( \
+            ::openauto::modern::LogLevel::severity, \
+            ::openauto::modern::LogCategory::category, \
             "OpenAuto", __FUNCTION__, __FILE__, __LINE__)
 
 #else
