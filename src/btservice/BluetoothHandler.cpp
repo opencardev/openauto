@@ -71,28 +71,28 @@ namespace f1x::openauto::btservice {
   }
 
   void BluetoothHandler::onPairingDisplayPinCode(const QBluetoothAddress &address, QString pin) {
-    LOG_DEBUG(BLUETOOTH, ""[BluetoothHandler::onPairingDisplayPinCode] Pairing display PIN code: " << pin.toStdString()");
+    LOG_DEBUG(BLUETOOTH, "[BluetoothHandler::onPairingDisplayPinCode] Pairing display PIN code: " << pin.toStdString()");
   }
 
   void BluetoothHandler::onPairingDisplayConfirmation(const QBluetoothAddress &address, QString pin) {
-    LOG_DEBUG(BLUETOOTH, ""[BluetoothHandler::onPairingDisplayConfirmation] Pairing display confirmation: " << pin.toStdString()");
+    LOG_DEBUG(BLUETOOTH, "[BluetoothHandler::onPairingDisplayConfirmation] Pairing display confirmation: " << pin.toStdString()");
 
     // Here you can implement logic to show this PIN to the user or automatically accept if you trust all devices
     localDevice_->pairingConfirmation(true); // Confirm pairing (for security, you might want to verify the PIN)
   }
 
   void BluetoothHandler::onPairingFinished(const QBluetoothAddress &address, QBluetoothLocalDevice::Pairing pairing) {
-    LOG_INFO(BLUETOOTH, ""[BluetoothHandler::onPairingFinished] pairingFinished, address: " << address.toString().toStdString()
+    LOG_INFO(BLUETOOTH, "[BluetoothHandler::onPairingFinished] pairingFinished, address: " << address.toString().toStdString()
                        << ", pairing: " << pairing");
   }
 
   void BluetoothHandler::onError(QBluetoothLocalDevice::Error error) {
-    LOG_WARN(BLUETOOTH, ""[BluetoothHandler::onError] Bluetooth error: " << error");
+    LOG_WARN(BLUETOOTH, "[BluetoothHandler::onError] Bluetooth error: " << error");
     // ... your logic to handle the error ...
   }
 
   void BluetoothHandler::onHostModeStateChanged(QBluetoothLocalDevice::HostMode state) {
-    LOG_INFO(BLUETOOTH, ""[BluetoothHandler::onHostModeStateChanged] Host mode state changed: " << state");
+    LOG_INFO(BLUETOOTH, "[BluetoothHandler::onHostModeStateChanged] Host mode state changed: " << state");
     // ... your logic to handle the state change ...
   }
 }

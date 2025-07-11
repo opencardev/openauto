@@ -259,7 +259,7 @@ int main(int argc, char* argv[])
             app->resume();
             app->waitForUSBDevice();
         } catch (...) {
-            LOG_ERROR(GENERAL, ""[AutoApp] TriggerAppStart: app->waitForUSBDevice()");";
+            LOG_ERROR(GENERAL, "[AutoApp] TriggerAppStart: app->waitForUSBDevice()");
         }
     });
 
@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
                     app->stop();
                     //app->pause();
                 } catch (...) {
-                    LOG_ERROR(GENERAL, ""[AutoApp] TriggerAppStop: stop()");";
+                    LOG_ERROR(GENERAL, "[AutoApp] TriggerAppStop: stop()");
                 }
 
             } else {
@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
                     app->onAndroidAutoQuit();
                     //app->pause();
                 } catch (...) {
-                    LOG_ERROR(GENERAL, ""[Autoapp] TriggerAppStop: stop()");";
+                    LOG_ERROR(GENERAL, "[Autoapp] TriggerAppStop: stop()");
                 }
 
             }

@@ -4,11 +4,15 @@
 *
 *  openauto is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 3 of the License, or
+*  the Free Soft              LOG_INFO(CONFIG, "[Touchdev] Device " << i <<
+                                  ": " << touchdevs[i]->name().toStdString() <<
+                                  ", type " << touchdevs[i]->type());       LOG_INFO(CONFIG, "[Touchdev] Device " << i <<
+                                  ": " << touchdevs[i]->name().toStdString() <<
+                                  ", type " << touchdevs[i]->type());e Foundation; either version 3 of the License, or
 *  (at your option) any later version.
 
 *  openauto is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  but                    LOG_DEBUG(CONFIG, "[Configur    LOG_DEBUG(CONFIG,                     LOG_DEBUG(CONFIG, "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString());[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString());tion] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());                   LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());            LOG_WARN(CONFIG, "[Configuration] unable to find cs param: " << searchString.toStdString());              LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString());WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *
@@ -255,9 +259,9 @@ bool Configuration::hasTouchScreen() const
 
     for (int i = 0; i < touchdevs.length(); i++) {
         if (touchdevs[i]->type() == QTouchDevice::TouchScreen) {
-            LOG_INFO(CONFIG, ""[Touchdev] Device " << i <<
+            LOG_INFO(CONFIG, "[Touchdev] Device " << i <<
                                   ": " << touchdevs[i]->name().toStdString() <<
-                                  ", type " << touchdevs[i]->type()");
+                                  ", type " << touchdevs[i]->type());
             return true;
         }
     }
@@ -625,12 +629,12 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, ""[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()");
+                    LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()");
                     return value;
                 }
             }
         }
-        LOG_WARN(CONFIG, ""[Configuration] unable to find cs param: " << searchString.toStdString()");
+        LOG_WARN(CONFIG, "[Configuration] unable to find cs param: " << searchString.toStdString()");
         LOG_WARN(CONFIG, "[Configuration] Fallback to /opt/crankshaft/crankshaft_default_env.sh)");
         while(inFile2.good())
         {
@@ -642,7 +646,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, ""[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()");
+                    LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()");
                     return value;
                 }
             }
@@ -662,7 +666,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, ""[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()");
+                    LOG_DEBUG(CONFIG, "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()");
                     return value;
                 }
             }
@@ -673,7 +677,7 @@ QString Configuration::getCSValue(QString searchString) const
 
 QString Configuration::getParamFromFile(QString fileName, QString searchString) const
 {
-    LOG_DEBUG(CONFIG, ""[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString()");
+    LOG_DEBUG(CONFIG, "[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString()");
     using namespace std;
     ifstream inFile;
     string line;
@@ -695,7 +699,7 @@ QString Configuration::getParamFromFile(QString fileName, QString searchString) 
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    LOG_DEBUG(CONFIG, ""[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString()");
+                    LOG_DEBUG(CONFIG, "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString()");
                     return value;
                 }
             }

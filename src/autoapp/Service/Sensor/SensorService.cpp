@@ -97,7 +97,7 @@ namespace f1x::openauto::autoapp::service::sensor {
 
   void SensorService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[SensorService] onChannelOpenRequest()");
-    LOG_DEBUG(ANDROID_AUTO, ""[SensorService] Channel Id: " << request.service_id() << ", Priority: "
+    LOG_DEBUG(ANDROID_AUTO, "[SensorService] Channel Id: " << request.service_id() << ", Priority: "
                         << request.priority()");
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
@@ -115,7 +115,7 @@ namespace f1x::openauto::autoapp::service::sensor {
   void SensorService::onSensorStartRequest(
       const aap_protobuf::service::sensorsource::message::SensorRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[SensorService] onSensorStartRequest()");
-    LOG_DEBUG(ANDROID_AUTO, ""[SensorService] Request Type: " << request.type()");
+    LOG_DEBUG(ANDROID_AUTO, "[SensorService] Request Type: " << request.type()");
 
     aap_protobuf::service::sensorsource::message::SensorStartResponseMessage response;
     response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
@@ -255,7 +255,7 @@ namespace f1x::openauto::autoapp::service::sensor {
   }
 
   void SensorService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR(ANDROID_AUTO, ""[SensorService] onChannelError(): " << e.what()");
+    LOG_ERROR(ANDROID_AUTO, "[SensorService] onChannelError(): " << e.what()");
   }
 }
 

@@ -68,7 +68,7 @@ namespace f1x::openauto::autoapp::service::radio {
 
   void RadioService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[RadioService] onChannelOpenRequest()");
-    LOG_DEBUG(ANDROID_AUTO, ""[RadioService] Channel Id: " << request.service_id() << ", Priority: "
+    LOG_DEBUG(ANDROID_AUTO, "[RadioService] Channel Id: " << request.service_id() << ", Priority: "
                         << request.priority()");
 
 
@@ -85,7 +85,7 @@ namespace f1x::openauto::autoapp::service::radio {
   }
 
   void RadioService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR(ANDROID_AUTO, ""[RadioService] onChannelError(): " << e.what()");
+    LOG_ERROR(ANDROID_AUTO, "[RadioService] onChannelError(): " << e.what()");
   }
 
 

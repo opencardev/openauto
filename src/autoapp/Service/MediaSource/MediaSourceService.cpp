@@ -91,14 +91,14 @@ namespace f1x::openauto::autoapp::service::mediasource {
   void
   MediaSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[MediaSourceService] onChannelOpenRequest()");
-    LOG_INFO(ANDROID_AUTO, ""[MediaSourceService] Channel Id: " << request.service_id() << ", Priority: "
+    LOG_INFO(ANDROID_AUTO, "[MediaSourceService] Channel Id: " << request.service_id() << ", Priority: "
                        << request.priority()");
 
     const aap_protobuf::shared::MessageStatus status = audioInput_->open()
                                                        ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
                                                        : aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR;
 
-    LOG_INFO(ANDROID_AUTO, ""[MediaSourceService] Status determined: "
+    LOG_INFO(ANDROID_AUTO, "[MediaSourceService] Status determined: "
                        << aap_protobuf::shared::MessageStatus_Name(status)");
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
@@ -118,7 +118,7 @@ namespace f1x::openauto::autoapp::service::mediasource {
    * @param e
    */
   void MediaSourceService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR(ANDROID_AUTO, ""[MediaSourceService] onChannelError(): " << e.what()");
+    LOG_ERROR(ANDROID_AUTO, "[MediaSourceService] onChannelError(): " << e.what()");
   }
 
   /*
@@ -133,7 +133,7 @@ namespace f1x::openauto::autoapp::service::mediasource {
   MediaSourceService::onMediaChannelSetupRequest(const aap_protobuf::service::media::shared::message::Setup &request) {
 
     LOG_INFO(ANDROID_AUTO, "[MediaSourceService] onMediaChannelSetupRequest()");
-    LOG_INFO(ANDROID_AUTO, ""[MediaSourceService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId())
+    LOG_INFO(ANDROID_AUTO, "[MediaSourceService] Channel Id: " << aasdk::messenger::channelIdToString(channel_->getId())
                        << ", Codec: " << MediaCodecType_Name(request.type())");
 
     aap_protobuf::service::media::shared::message::Config response;
@@ -170,7 +170,7 @@ namespace f1x::openauto::autoapp::service::mediasource {
   void MediaSourceService::onMediaSourceOpenRequest(
       const aap_protobuf::service::media::source::message::MicrophoneRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[MediaSourceService] onMediaSourceOpenRequest()");
-    LOG_INFO(ANDROID_AUTO, ""[MediaSourceService] Request to Open?: " << request.open() << ", anc: "
+    LOG_INFO(ANDROID_AUTO, "[MediaSourceService] Request to Open?: " << request.open() << ", anc: "
                        << request.anc_enabled() << ", ec: " << request.ec_enabled() << ", max unacked: "
                        << request.max_unacked()");
 

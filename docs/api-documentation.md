@@ -1,29 +1,40 @@
-# OpenAuto REST API Documentation
+# OpenAuto API Documentation
 
 ## Overview
 
-The OpenAuto REST API provides remote access to the system's event bus, state machine, and configuration management. All endpoints use JSON for data exchange.
+OpenAuto's modern architecture provides a comprehensive REST API for managing and monitoring the system. This API follows OpenAPI 3.0 standards and provides access to configuration, events, state management, and logging functionality.
 
-**Base URL**: `http://localhost:8080/api`
+## Base Information
+
+- **Base URL**: `http://localhost:8080/api/v1`
+- **Authentication**: Optional (configurable)
+- **Content Type**: `application/json`
+- **API Version**: 1.0
+- **Protocol**: HTTP/HTTPS
 
 ## Authentication
 
-Currently, the API does not require authentication. In production deployments, consider implementing proper authentication and authorization.
+### API Key Authentication (Optional)
+```bash
+# Configure API key in openauto.conf
+[rest_api]
+auth_required = true
+api_key = "your-secure-api-key-here"
 
-## Content Type
+# Use API key in requests
+curl -H "X-API-Key: your-secure-api-key-here" http://localhost:8080/api/v1/status
+```
 
-All requests and responses use `application/json` content type unless otherwise specified.
+### Basic Authentication (Optional)
+```bash
+# Configure basic auth
+[rest_api]
+auth_type = basic
+auth_username = admin
+auth_password = secure_password
 
-## Error Responses
-
-Error responses follow this format:
-```json
-{
-  "error": true,
-  "message": "Error description",
-  "code": "ERROR_CODE",
-  "timestamp": 1641234567890
-}
+# Use basic auth
+curl -u admin:secure_password http://localhost:8080/api/v1/status
 ```
 
 ## Events API
@@ -31,54 +42,68 @@ Error responses follow this format:
 ### Get Event History
 Get a list of recent events from the event bus.
 
-**Endpoint**: `GET /api/events`
+**Endpoint**: `GET /api/v1/events`
 
 **Query Parameters**:
-- `limit` (optional): Maximum number of events to return (default: 100)
+- `limit` (optional, default: 50): Maximum number of events to return
+- `offset` (optional, default: 0): Offset for pagination
 - `type` (optional): Filter events by type
-- `since` (optional): Unix timestamp to get events since a specific time
+- `category` (optional): Filter by event category
+- `since` (optional): ISO timestamp to get events since a specific time
 
 **Response**:
 ```json
 {
+  "status": "success",
   "events": [
     {
+      "id": "event_12345",
       "type": "ANDROID_AUTO_CONNECTED",
-      "source": "projection_service",
-      "timestamp": 1641234567890,
+      "category": "ANDROID_AUTO",
+      "timestamp": "2025-07-12T10:30:15Z",
+      "source": "AndroidAutoManager",
       "data": {
-        "device_name": "Samsung Galaxy S21"
-      }
+        "device_id": "ABC123",
+        "vendor": "Google",
+        "connection_type": "usb"
+      },
+      "priority": "HIGH"
     }
   ],
-  "total": 1,
-  "filtered": false
+  "pagination": {
+    "total": 150,
+    "limit": 50,
+    "offset": 0,
+    "has_more": true
+  }
 }
 ```
 
 ### Publish Event
 Publish a new event to the event bus.
 
-**Endpoint**: `POST /api/events`
+**Endpoint**: `POST /api/v1/events`
 
 **Request Body**:
 ```json
 {
-  "type": "UI_BUTTON_PRESSED",
-  "source": "external_api",
+  "type": "CUSTOM_EVENT",
+  "category": "USER",
   "data": {
-    "button": "settings",
-    "screen": "main"
-  }
+    "button_id": "home_button",
+    "user_action": "press",
+    "screen": "main_menu"
+  },
+  "priority": "MEDIUM"
 }
 ```
 
 **Response**:
 ```json
 {
-  "success": true,
-  "event_id": "event_12345",
-  "timestamp": 1641234567890
+  "status": "success",
+  "event_id": "event_12347",
+  "message": "Event published successfully"
 }
 ```
 
