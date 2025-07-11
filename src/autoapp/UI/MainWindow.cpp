@@ -2113,9 +2113,9 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
         ui_->pushButtonToggleGUI2->show();
     }
 
-    // hide brightness button if eanbled in settings
+    // hide brightness button if enabled in settings
     if (configuration_->hideBrightnessControl()) {
-        if ((ui_->pushButtonBrightness->isVisible() == true) || (ui_->pushButtonBrightness->isVisible() == true) || (ui_->BrightnessSliderControl->isVisible() == true)) {
+        if ((ui_->pushButtonBrightness->isVisible() == true) || (ui_->pushButtonBrightness2->isVisible() == true) || (ui_->BrightnessSliderControl->isVisible() == true)) {
             ui_->pushButtonBrightness->hide();
             ui_->pushButtonBrightness2->hide();
             ui_->BrightnessSliderControl->hide();
@@ -2127,8 +2127,9 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
             }
         }
     } else {
+        // Only show brightness buttons if not hidden in config AND not using light sensor
         if (!this->lightsensor) {
-            if ((ui_->pushButtonBrightness->isVisible() == false) || (ui_->pushButtonBrightness->isVisible() == false)) {
+            if ((ui_->pushButtonBrightness->isVisible() == false) || (ui_->pushButtonBrightness2->isVisible() == false)) {
                 ui_->pushButtonBrightness->show();
                 ui_->pushButtonBrightness2->show();
                 // also show volume button if brightness visible
