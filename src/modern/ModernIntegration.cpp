@@ -19,6 +19,7 @@
 #ifdef ENABLE_MODERN_API
 
 #include "modern/ModernIntegration.hpp"
+#include "modern/Logger.hpp"
 #include <iostream>
 #include <stdexcept>
 
@@ -38,6 +39,7 @@ bool ModernIntegration::initialize() {
     try {
         std::cout << "Initializing Modern OpenAuto Architecture..." << std::endl;
         
+        setupLogger();
         setupEventBus();
         setupStateMachine();
         setupConfigManager();
@@ -337,6 +339,33 @@ void ModernIntegration::setupIntegrationCallbacks() {
     eventBus_->subscribe(EventType::SYSTEM_ERROR, [this](const Event::Pointer& event) {
         stateMachine_->transitionTo("error");
     });
+}
+
+void ModernIntegration::setupLogger() {
+    auto& logger = Logger::getInstance();
+    
+    // Configure logger based on configuration
+    logger.setLevel(LogLevel::INFO);
+    logger.setAsync(true);
+    logger.setMaxQueueSize(5000);
+    
+    // Add file sink for persistent logging
+    auto fileSink = std::make_shared<FileSink>("openauto.log", 10 * 1024 * 1024, 5);
+    logger.addSink(fileSink);
+    
+    // Use JSON formatter for file logging
+    auto jsonFormatter = std::make_shared<JsonFormatter>(false);
+    logger.setFormatter(jsonFormatter);
+    
+    // Set category-specific log levels
+    logger.setCategoryLevel(LogCategory::SYSTEM, LogLevel::DEBUG);
+    logger.setCategoryLevel(LogCategory::ANDROID_AUTO, LogLevel::INFO);
+    logger.setCategoryLevel(LogCategory::UI, LogLevel::INFO);
+    logger.setCategoryLevel(LogCategory::API, LogLevel::DEBUG);
+    logger.setCategoryLevel(LogCategory::EVENT, LogLevel::DEBUG);
+    logger.setCategoryLevel(LogCategory::STATE, LogLevel::DEBUG);
+    
+    SLOG_INFO(SYSTEM, "ModernIntegration", "Modern logger initialized successfully");
 }
 
 } // namespace modern

@@ -18,7 +18,7 @@
 
 #include <QCoreApplication>
 #include <QtBluetooth>
-#include <f1x/openauto/Common/Log.hpp>
+#include <modern/Logger.hpp>
 #include <f1x/openauto/autoapp/Configuration/Configuration.hpp>
 #include <f1x/openauto/btservice/BluetoothHandler.hpp>
 #include <f1x/openauto/btservice/AndroidBluetoothService.hpp>
@@ -29,6 +29,10 @@ int main(int argc, char *argv[]) {
   QLoggingCategory::setFilterRules(QStringLiteral("qt.bluetooth*=true"));
   QCoreApplication qApplication(argc, argv);
 
+  // Initialize modern logger for btservice
+  auto& logger = OpenAutoLogger::getInstance();
+  logger.initialize("btservice", "info", true, true);
+  
   auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
 
   try {
@@ -39,7 +43,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Exception caught: " << e.what() << std::endl;
   }
 
-  OPENAUTO_LOG(info) << "stop";
+  LOG_INFO("Bluetooth service stopping", "");
 
   return 0;
 }

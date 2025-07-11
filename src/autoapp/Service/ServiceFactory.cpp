@@ -47,6 +47,8 @@
 #include <f1x/openauto/autoapp/Projection/LocalBluetoothDevice.hpp>
 #include <f1x/openauto/autoapp/Projection/DummyBluetoothDevice.hpp>
 
+#include <modern/Logger.hpp>
+
 namespace f1x::openauto::autoapp::service {
 
   ServiceFactory::ServiceFactory(boost::asio::io_service &ioService,
@@ -56,7 +58,7 @@ namespace f1x::openauto::autoapp::service {
   }
 
   ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messenger) {
-    OPENAUTO_LOG(info) << "[ServiceFactory] create()";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] create()");
     ServiceList serviceList;
 
     this->createMediaSinkServices(serviceList, messenger);
@@ -78,13 +80,13 @@ namespace f1x::openauto::autoapp::service {
   }
 
   IService::Pointer ServiceFactory::createBluetoothService(aasdk::messenger::IMessenger::Pointer messenger) {
-    OPENAUTO_LOG(info) << "[ServiceFactory] createBluetoothService()";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] createBluetoothService()");
     projection::IBluetoothDevice::Pointer bluetoothDevice;
     if (configuration_->getBluetoothAdapterAddress() == "") {
-      OPENAUTO_LOG(debug) << "[ServiceFactory] Using Dummy Bluetooth";
+      LOG_DEBUG(ANDROID_AUTO, "[ServiceFactory] Using Dummy Bluetooth");
       bluetoothDevice = std::make_shared<projection::DummyBluetoothDevice>();
     } else {
-      OPENAUTO_LOG(info) << "[ServiceFactory] Using Local Bluetooth Adapter";
+      LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Using Local Bluetooth Adapter");
       bluetoothDevice = projection::IBluetoothDevice::Pointer(new projection::LocalBluetoothDevice(),
                                                               std::bind(&QObject::deleteLater,
                                                                         std::placeholders::_1));
@@ -94,19 +96,19 @@ namespace f1x::openauto::autoapp::service {
   }
 
   IService::Pointer ServiceFactory::createInputService(aasdk::messenger::IMessenger::Pointer messenger) {
-    OPENAUTO_LOG(info) << "[ServiceFactory] createInputService()";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] createInputService()");
     QRect videoGeometry;
     switch (configuration_->getVideoResolution()) {
       case aap_protobuf::service::media::sink::message::VideoCodecResolutionType::VIDEO_1280x720:
-        OPENAUTO_LOG(info) << "[ServiceFactory] Resolution 1280x720";
+        LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Resolution 1280x720");
         videoGeometry = QRect(0, 0, 1280, 720);
         break;
       case aap_protobuf::service::media::sink::message::VideoCodecResolutionType::VIDEO_1920x1080:
-        OPENAUTO_LOG(info) << "[ServiceFactory] Resolution 1920x1080";
+        LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Resolution 1920x1080");
         videoGeometry = QRect(0, 0, 1920, 1080);
         break;
       default:
-        OPENAUTO_LOG(info) << "[ServiceFactory] Resolution 800x480";
+        LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Resolution 800x480");
         videoGeometry = QRect(0, 0, 800, 480);
         break;
     }
@@ -122,9 +124,9 @@ namespace f1x::openauto::autoapp::service {
 
   void ServiceFactory::createMediaSinkServices(ServiceList &serviceList,
                                                aasdk::messenger::IMessenger::Pointer messenger) {
-    OPENAUTO_LOG(info) << "[ServiceFactory] createMediaSinkServices()";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] createMediaSinkServices()");
     if (configuration_->musicAudioChannelEnabled()) {
-      OPENAUTO_LOG(info) << "[ServiceFactory] Media Audio Channel enabled";
+      LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Media Audio Channel enabled");
       auto mediaAudioOutput =
           configuration_->getAudioOutputBackendType() == configuration::AudioOutputBackendType::RTAUDIO ?
           std::make_shared<projection::RtAudioOutput>(2, 16, 48000) :
@@ -136,7 +138,7 @@ namespace f1x::openauto::autoapp::service {
     }
 
     if (configuration_->guidanceAudioChannelEnabled()) {
-      OPENAUTO_LOG(info) << "[ServiceFactory] Guidance Audio Channel enabled";
+      LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Guidance Audio Channel enabled");
       auto guidanceAudioOutput =
           configuration_->getAudioOutputBackendType() == configuration::AudioOutputBackendType::RTAUDIO ?
           std::make_shared<projection::RtAudioOutput>(1, 16, 16000) :
@@ -150,7 +152,7 @@ namespace f1x::openauto::autoapp::service {
 
     /* TODO: This also causes a problem - suspect not actually enabled yet in AA, or removed due to preference of Bluetooth.
     if (configuration_->telephonyAudioChannelEnabled()) {
-      OPENAUTO_LOG(info) << "[ServiceFactory] Telephony Audio Channel enabled";
+      LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Telephony Audio Channel enabled");
       auto telephonyAudioOutput =
           configuration_->getAudioOutputBackendType() == configuration::AudioOutputBackendType::RTAUDIO ?
           std::make_shared<projection::RtAudioOutput>(1, 16, 16000) :
@@ -166,7 +168,7 @@ namespace f1x::openauto::autoapp::service {
      * No Need to Check for systemAudioChannelEnabled - MUST be enabled by default.
      */
 
-    OPENAUTO_LOG(info) << "[ServiceFactory] System Audio Channel enabled";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] System Audio Channel enabled");
     auto systemAudioOutput =
         configuration_->getAudioOutputBackendType() == configuration::AudioOutputBackendType::RTAUDIO ?
         std::make_shared<projection::RtAudioOutput>(1, 16, 16000) :
@@ -183,14 +185,14 @@ namespace f1x::openauto::autoapp::service {
                                                   std::bind(&QObject::deleteLater, std::placeholders::_1));
 #endif
 
-    OPENAUTO_LOG(info) << "[ServiceFactory] Video Channel enabled";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] Video Channel enabled");
     serviceList.emplace_back(
         std::make_shared<mediasink::VideoService>(ioService_, messenger, std::move(videoOutput)));
   }
 
   void ServiceFactory::createMediaSourceServices(f1x::openauto::autoapp::service::ServiceList &serviceList,
                                                  aasdk::messenger::IMessenger::Pointer messenger) {
-    OPENAUTO_LOG(info) << "[ServiceFactory] createMediaSourceServices()";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] createMediaSourceServices()");
     projection::IAudioInput::Pointer audioInput(new projection::QtAudioInput(1, 16, 16000),
                                                 std::bind(&QObject::deleteLater, std::placeholders::_1));
     serviceList.emplace_back(std::make_shared<mediasource::MicrophoneMediaSourceService>(ioService_, messenger,
@@ -198,12 +200,12 @@ namespace f1x::openauto::autoapp::service {
   }
 
   IService::Pointer ServiceFactory::createSensorService(aasdk::messenger::IMessenger::Pointer messenger) {
-    OPENAUTO_LOG(info) << "[ServiceFactory] createSensorService()";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] createSensorService()");
     return std::make_shared<sensor::SensorService>(ioService_, messenger);
   }
 
   IService::Pointer ServiceFactory::createWifiProjectionService(aasdk::messenger::IMessenger::Pointer messenger) {
-    OPENAUTO_LOG(info) << "[ServiceFactory] createWifiProjectionService()";
+    LOG_INFO(ANDROID_AUTO, "[ServiceFactory] createWifiProjectionService()");
     return std::make_shared<wifiprojection::WifiProjectionService>(ioService_, messenger, configuration_);
   }
 

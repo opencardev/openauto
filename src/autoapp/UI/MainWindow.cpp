@@ -28,6 +28,7 @@
 #include <QFontDatabase>
 #include <QFont>
 #include <QScreen>
+#include <modern/Logger.hpp>
 #include <QRect>
 #include <QVideoWidget>
 #include <QNetworkInterface>
@@ -36,7 +37,6 @@
 #include <fstream>
 #include <cstdio>
 #include <unistd.h>
-#include <f1x/openauto/Common/Log.hpp>
 
 namespace f1x
 {
@@ -1756,7 +1756,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
             std::remove("/tmp/entityexit");
         }
     } catch (...) {
-        OPENAUTO_LOG(error) << "[OpenAuto] Error in entityexit";
+        LOG_ERROR("ui.mainwindow") << "Error in entityexit";
     }
 
     // check if system is in display off mode (tap2wake)

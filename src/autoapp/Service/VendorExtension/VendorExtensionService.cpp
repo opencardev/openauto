@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/openauto/Common/Log.hpp>
+#include <modern/Logger.hpp>
 #include <f1x/openauto/autoapp/Service/VendorExtension/VendorExtensionService.hpp>
 #include <fstream>
 #include <QString>
@@ -34,31 +34,31 @@ namespace f1x::openauto::autoapp::service::vendorextension {
 
   void VendorExtensionService::start() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] start()";
+      LOG_INFO("vendor.extension.service") << "start()";
     });
   }
 
   void VendorExtensionService::stop() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] stop()";
+      LOG_INFO("vendor.extension.service") << "stop()";
     });
   }
 
   void VendorExtensionService::pause() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] pause()";
+      LOG_INFO("vendor.extension.service") << "pause()";
     });
   }
 
   void VendorExtensionService::resume() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] resume()";
+      LOG_INFO("vendor.extension.service") << "resume()";
     });
   }
 
   void VendorExtensionService::fillFeatures(
       aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-    OPENAUTO_LOG(info) << "[VendorExtensionService] fillFeatures()";
+    LOG_INFO("vendor.extension.service") << "fillFeatures();";
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -68,13 +68,13 @@ namespace f1x::openauto::autoapp::service::vendorextension {
   }
 
   void VendorExtensionService::onChannelError(const aasdk::error::Error &e) {
-    OPENAUTO_LOG(error) << "[VendorExtensionService] onChannelError(): " << e.what();
+    LOG_ERROR("vendor.extension.service") << "onChannelError(): " << e.what();
   }
 
   void VendorExtensionService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-    OPENAUTO_LOG(info) << "[VendorExtensionService] onChannelOpenRequest()";
-    OPENAUTO_LOG(info) << "[VendorExtensionService] Channel Id: " << request.service_id() << ", Priority: "
+    LOG_INFO("vendor.extension.service") << "onChannelOpenRequest()";
+    LOG_INFO("vendor.extension.service") << "Channel Id: " << request.service_id() << ", Priority: "
                        << request.priority();
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;

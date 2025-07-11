@@ -124,6 +124,10 @@ set(autoapp_include_directory ${include_directory}/f1x/openauto/autoapp)
 
 file(GLOB_RECURSE autoapp_source_files ${autoapp_sources_directory}/*.ui ${autoapp_sources_directory}/*.cpp ${autoapp_include_directory}/*.hpp ${autoapp_include_directory}/*.h ${common_include_directory}/*.hpp ${resources_directory}/*.qrc)
 
+# Remove any legacy EventBus files to prevent conflicts with modern implementation
+list(FILTER autoapp_source_files EXCLUDE REGEX ".*/EventBus/.*")
+list(FILTER autoapp_source_files EXCLUDE REGEX ".*EventBus.*")
+
 add_executable(autoapp ${autoapp_source_files})
 
 target_include_directories(autoapp PUBLIC ${AAP_PROTOBUF_INCLUDE_DIR} ${AASDK_INCLUDE_DIR})
@@ -219,6 +223,27 @@ if(ENABLE_MODERN_API)
     # Add threading support for REST API
     find_package(Threads REQUIRED)
     target_link_libraries(autoapp PUBLIC Threads::Threads)
+    
+    # Add filesystem support for modern logger
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
+        target_link_libraries(autoapp PUBLIC stdc++fs)
+    endif()
+    
+    # Optional logger demo executable
+    option(BUILD_LOGGER_DEMO "Build logger demonstration" OFF)
+    if(BUILD_LOGGER_DEMO)
+        add_executable(logger_demo src/modern/LoggerDemo.cpp src/modern/Logger.cpp)
+        target_include_directories(logger_demo PRIVATE ${include_directory} ${NLOHMANN_JSON_INCLUDE_DIRS})
+        target_link_libraries(logger_demo PRIVATE Threads::Threads)
+        
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
+            target_link_libraries(logger_demo PRIVATE stdc++fs)
+        endif()
+        
+        set_target_properties(logger_demo PROPERTIES
+            CXX_STANDARD 17
+            COMPILE_FLAGS "-DENABLE_MODERN_API")
+    endif()
     
     message(STATUS "Modern API components added to build")
 endif()

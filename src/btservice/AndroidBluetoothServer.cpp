@@ -18,7 +18,7 @@
 
 
 #include <boost/algorithm/hex.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <modern/Logger.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/btservice/AndroidBluetoothServer.hpp>
 #include <QString>
@@ -39,7 +39,7 @@ namespace f1x::openauto::btservice {
   AndroidBluetoothServer::AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration)
       : rfcommServer_(std::make_unique<QBluetoothServer>(QBluetoothServiceInfo::RfcommProtocol, this)),
         configuration_(std::move(configuration)) {
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::AndroidBluetoothServer] Initialising";
+    LOG_INFO("Initialising Android Bluetooth Server", "bt.server");
 
     connect(rfcommServer_.get(), &QBluetoothServer::newConnection, this,
             &AndroidBluetoothServer::onClientConnected);
@@ -48,7 +48,7 @@ namespace f1x::openauto::btservice {
 
   /// Start Server listening on Address
   uint16_t AndroidBluetoothServer::start(const QBluetoothAddress &address) {
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::start]";
+    LOG_DEBUG("Starting Bluetooth server", "bt.server");
     rfcommServer_->close(); // Close should always be called before listen.
     if (rfcommServer_->listen(address)) {
 
@@ -58,12 +58,12 @@ namespace f1x::openauto::btservice {
   }
 
   void AndroidBluetoothServer::onError(QBluetoothServer::Error error) {
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::onError]";
+    LOG_DEBUG("Bluetooth server error occurred", "bt.server");
   }
 
   /// Call-Back for when Client Connected
   void AndroidBluetoothServer::onClientConnected() {
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::onClientConnected]";
+    LOG_DEBUG("Client connected to Bluetooth server", "bt.server");
     if (socket != nullptr) {
       socket->deleteLater();
     }
@@ -71,8 +71,10 @@ namespace f1x::openauto::btservice {
     socket = rfcommServer_->nextPendingConnection();
 
     if (socket != nullptr) {
-      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer] rfcomm client connected, peer name: "
-                         << socket->peerName().toStdString();
+      std::map<std::string, std::string> context = {
+          {"peer_name", socket->peerName().toStdString()}
+      };
+      LOG_DEBUG_CTX("RFCOMM client connected", "bt.server", context);
 
       connect(socket, &QBluetoothSocket::readyRead, this, &AndroidBluetoothServer::readSocket);
 
@@ -84,7 +86,7 @@ namespace f1x::openauto::btservice {
       sendMessage(versionRequest, aap_protobuf::aaw::MessageId::WIFI_VERSION_REQUEST);
       sendMessage(startRequest, aap_protobuf::aaw::MessageId::WIFI_START_REQUEST);
     } else {
-      OPENAUTO_LOG(error) << "[AndroidBluetoothServer] received null socket during client connection.";
+      LOG_ERROR("Received null socket during client connection", "bt.server");
     }
   }
 
@@ -92,10 +94,10 @@ namespace f1x::openauto::btservice {
   void AndroidBluetoothServer::readSocket() {
     buffer += socket->readAll();
 
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Reading from socket.";
+    LOG_DEBUG("Reading from socket", "bt.server");
 
     if (buffer.length() < 4) {
-      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Not enough data, waiting for more.";
+      LOG_DEBUG("Not enough data, waiting for more", "bt.server");
       return;
     }
 
@@ -104,7 +106,10 @@ namespace f1x::openauto::btservice {
     stream >> length;
 
     if (buffer.length() < length + 4) {
-      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Not enough data, waiting for more: " << buffer.length();
+      std::map<std::string, std::string> context = {
+          {"buffer_length", std::to_string(buffer.length())}
+      };
+      LOG_DEBUG_CTX("Not enough data, waiting for more", "bt.server", context);
       return;
     }
 
@@ -114,7 +119,11 @@ namespace f1x::openauto::btservice {
     aap_protobuf::aaw::MessageId messageId;
     messageId = static_cast<aap_protobuf::aaw::MessageId>(rawMessageId);
 
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Message length: " << length << " MessageId: " << messageId;
+    std::map<std::string, std::string> context = {
+        {"message_length", std::to_string(length)},
+        {"message_id", std::to_string(messageId)}
+    };
+    LOG_DEBUG_CTX("Processing message", "bt.server", context);
 
     switch (messageId) {
 
@@ -147,8 +156,11 @@ namespace f1x::openauto::btservice {
         for (auto &&val: buffer) {
           ss << std::setw(2) << static_cast<unsigned>(val);
         }
-        OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Unknown message: " << messageId;
-        OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::readSocket] Data " << ss.str();
+        std::map<std::string, std::string> context = {
+            {"message_id", std::to_string(messageId)},
+            {"data", ss.str()}
+        };
+        LOG_DEBUG_CTX("Unknown message received", "bt.server", context);
 
         break;
     }
@@ -160,7 +172,7 @@ namespace f1x::openauto::btservice {
   /// \param buffer
   /// \param length
   void AndroidBluetoothServer::handleWifiInfoRequest(QByteArray &buffer, uint16_t length) {
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiInfoRequest] Handling wifi info request";
+    LOG_INFO("Handling WiFi info request", "bt.server");
 
     aap_protobuf::aaw::WifiInfoResponse response;
 
@@ -180,22 +192,31 @@ namespace f1x::openauto::btservice {
   /// \param buffer
   /// \param length
   void AndroidBluetoothServer::handleWifiVersionResponse(QByteArray &buffer, uint16_t length) {
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiVersionResponse] Handling wifi version response";
+    LOG_INFO("Handling WiFi version response", "bt.server");
 
     aap_protobuf::aaw::WifiVersionResponse response;
     response.ParseFromArray(buffer.data() + 4, length);
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::handleWifiVersionResponse] Unknown Param 1: " << response.unknown_value_a() << " Unknown Param 2: " << response.unknown_value_b();
+    std::map<std::string, std::string> context = {
+        {"unknown_param_1", std::to_string(response.unknown_value_a())},
+        {"unknown_param_2", std::to_string(response.unknown_value_b())}
+    };
+    LOG_DEBUG_CTX("WiFi version response parameters", "bt.server", context);
   }
 
   /// Listens for WifiStartResponse from MD - usually just a notification with a status
   /// \param buffer
   /// \param length
   void AndroidBluetoothServer::handleWifiStartResponse(QByteArray &buffer, uint16_t length) {
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiStartResponse] Handling wifi start response";
+    LOG_INFO("Handling WiFi start response", "bt.server");
 
     aap_protobuf::aaw::WifiStartResponse response;
     response.ParseFromArray(buffer.data() + 4, length);
-    OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::handleWifiStartResponse] " << response.ip_address() << " port " << response.port() << " status " << Status_Name(response.status());
+    std::map<std::string, std::string> context = {
+        {"ip_address", response.ip_address()},
+        {"port", std::to_string(response.port())},
+        {"status", Status_Name(response.status())}
+    };
+    LOG_DEBUG_CTX("WiFi start response details", "bt.server", context);
   }
 
   /// Handles request for WifiStartRequest by sending a WifiStartResponse
@@ -204,11 +225,14 @@ namespace f1x::openauto::btservice {
   void AndroidBluetoothServer::handleWifiConnectionStatus(QByteArray &buffer, uint16_t length) {
     aap_protobuf::aaw::WifiConnectionStatus status;
     status.ParseFromArray(buffer.data() + 4, length);
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::handleWifiConnectionStatus] Handle wifi connection status, received: " << Status_Name(status.status());
+    std::map<std::string, std::string> context = {
+        {"status", Status_Name(status.status())}
+    };
+    LOG_INFO_CTX("Handle WiFi connection status", "bt.server", context);
   }
 
   void AndroidBluetoothServer::sendMessage(const google::protobuf::Message &message, uint16_t type) {
-    OPENAUTO_LOG(info) << "[AndroidBluetoothServer::sendMessage] Sending message to connected device";
+    LOG_INFO("Sending message to connected device", "bt.server");
 
     int byteSize = message.ByteSizeLong();
     QByteArray out(byteSize + 4, 0);
@@ -223,13 +247,20 @@ namespace f1x::openauto::btservice {
       ss << std::setw(2) << static_cast<unsigned>(val);
     }
 
-    OPENAUTO_LOG(debug) << message.GetTypeName() << " - " + message.DebugString();
+    std::map<std::string, std::string> context = {
+        {"message_type", message.GetTypeName()},
+        {"debug_string", message.DebugString()}
+    };
+    LOG_DEBUG_CTX("Sending protobuf message", "bt.server", context);
 
     auto written = socket->write(out);
     if (written > -1) {
-      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::sendMessage] Bytes written: " << written;
+      std::map<std::string, std::string> context = {
+          {"bytes_written", std::to_string(written)}
+      };
+      LOG_DEBUG_CTX("Bytes written to socket", "bt.server", context);
     } else {
-      OPENAUTO_LOG(debug) << "[AndroidBluetoothServer::sendMessage] Could not write data";
+      LOG_DEBUG("Could not write data to socket", "bt.server");
     }
   }
 

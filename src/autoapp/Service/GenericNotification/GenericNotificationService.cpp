@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/openauto/Common/Log.hpp>
+#include <modern/Logger.hpp>
 #include <f1x/openauto/autoapp/Service/GenericNotification/GenericNotificationService.hpp>
 #include <fstream>
 #include <QString>
@@ -34,31 +34,31 @@ namespace f1x::openauto::autoapp::service::genericnotification {
 
   void GenericNotificationService::start() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[GenericNotificationService] start()";
+      LOG_INFO(ANDROID_AUTO, "[GenericNotificationService] start()");
     });
   }
 
   void GenericNotificationService::stop() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[GenericNotificationService] stop()";
+      LOG_INFO(ANDROID_AUTO, "[GenericNotificationService] stop()");
     });
   }
 
   void GenericNotificationService::pause() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[GenericNotificationService] pause()";
+      LOG_INFO(ANDROID_AUTO, "[GenericNotificationService] pause()");
     });
   }
 
   void GenericNotificationService::resume() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[GenericNotificationService] resume()";
+      LOG_INFO(ANDROID_AUTO, "[GenericNotificationService] resume()");
     });
   }
 
   void GenericNotificationService::fillFeatures(
       aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-    OPENAUTO_LOG(info) << "[GenericNotificationService] fillFeatures()";
+    LOG_INFO(ANDROID_AUTO, "[GenericNotificationService] fillFeatures()");
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -69,9 +69,9 @@ namespace f1x::openauto::autoapp::service::genericnotification {
 
   void GenericNotificationService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-    OPENAUTO_LOG(info) << "[GenericNotificationService] onChannelOpenRequest()";
-    OPENAUTO_LOG(debug) << "[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: "
-                        << request.priority();
+    LOG_INFO(ANDROID_AUTO, "[GenericNotificationService] onChannelOpenRequest()");
+    LOG_DEBUG(ANDROID_AUTO, ""[GenericNotificationService] Channel Id: " << request.service_id() << ", Priority: "
+                        << request.priority()");
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -86,7 +86,7 @@ namespace f1x::openauto::autoapp::service::genericnotification {
   }
 
   void GenericNotificationService::onChannelError(const aasdk::error::Error &e) {
-    OPENAUTO_LOG(error) << "[GenericNotificationService] onChannelError(): " << e.what();
+    LOG_ERROR(ANDROID_AUTO, ""[GenericNotificationService] onChannelError(): " << e.what()");
   }
 }
 

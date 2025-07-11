@@ -18,7 +18,7 @@
 
 #include <QApplication>
 #include <f1x/openauto/autoapp/Projection/QtAudioInput.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <modern/Logger.hpp>
 
 namespace f1x
 {
@@ -49,7 +49,7 @@ QtAudioInput::QtAudioInput(uint32_t channelCount, uint32_t sampleSize, uint32_t 
 
 void QtAudioInput::createAudioInput()
 {
-    OPENAUTO_LOG(info) << "[AudioInput] createAudioInput()";
+    LOG_INFO(AUDIO, "[AudioInput] createAudioInput()");
     audioInput_ = (std::make_unique<QAudioInput>(QAudioDeviceInfo::defaultInputDevice(), audioFormat_));
 }
 

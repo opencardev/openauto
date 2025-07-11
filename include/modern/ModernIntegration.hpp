@@ -71,6 +71,7 @@ private:
     void setupConfigManager();
     void setupApiServer();
     void setupIntegrationCallbacks();
+    void setupLogger();
     
     bool initialized_ = false;
     int apiPort_ = 8080;
