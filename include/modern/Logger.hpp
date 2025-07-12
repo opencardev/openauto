@@ -449,6 +449,11 @@ private:
     } while(0)
 
 // Context logging macros
+#define LOG_DEBUG_CTX(category, message, context) \
+    ::openauto::modern::Logger::getInstance().logWithContext( \
+        ::openauto::modern::LogLevel::DEBUG, ::openauto::modern::LogCategory::category, \
+        typeid(*this).name(), __FUNCTION__, __FILE__, __LINE__, message, context)
+
 #define LOG_INFO_CTX(category, message, context) \
     ::openauto::modern::Logger::getInstance().logWithContext( \
         ::openauto::modern::LogLevel::INFO, ::openauto::modern::LogCategory::category, \
@@ -535,6 +540,7 @@ private:
     #define SLOG_WARN(category, component, message)
     #define SLOG_ERROR(category, component, message)
     #define SLOG_FATAL(category, component, message)
+    #define LOG_DEBUG_CTX(category, message, context)
     #define LOG_INFO_CTX(category, message, context)
     #define LOG_ERROR_CTX(category, message, context)
     #define LOG_PERF_START(name)

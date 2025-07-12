@@ -3,7 +3,8 @@
 *  Copyright (C) 2018 f1x.studio (Michal Szwaj)
 *
 *  openauto is free software: you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
+*  it under the terms of the GNU General Public License as publis  void AndroidBluetoothServer::sendMessage(const google::protobuf::Message &msg, uint16_t msgId) {
+    LOG_INFO(BLUETOOTH, "Sending message to connected device");d by
 *  the Free Software Foundation; either version 3 of the License, or
 *  (at your option) any later version.
 
@@ -39,7 +40,7 @@ namespace f1x::openauto::btservice {
   AndroidBluetoothServer::AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration)
       : rfcommServer_(std::make_unique<QBluetoothServer>(QBluetoothServiceInfo::RfcommProtocol, this)),
         configuration_(std::move(configuration)) {
-    LOG_INFO("Initialising Android Bluetooth Server", "bt.server");
+    LOG_INFO(BLUETOOTH, "Initialising Android Bluetooth Server");
 
     connect(rfcommServer_.get(), &QBluetoothServer::newConnection, this,
             &AndroidBluetoothServer::onClientConnected);
@@ -48,7 +49,7 @@ namespace f1x::openauto::btservice {
 
   /// Start Server listening on Address
   uint16_t AndroidBluetoothServer::start(const QBluetoothAddress &address) {
-    LOG_DEBUG("Starting Bluetooth server", "bt.server");
+    LOG_DEBUG(BLUETOOTH, "Starting Bluetooth server");
     rfcommServer_->close(); // Close should always be called before listen.
     if (rfcommServer_->listen(address)) {
 
@@ -58,12 +59,12 @@ namespace f1x::openauto::btservice {
   }
 
   void AndroidBluetoothServer::onError(QBluetoothServer::Error error) {
-    LOG_DEBUG("Bluetooth server error occurred", "bt.server");
+    LOG_DEBUG(BLUETOOTH, "Bluetooth server error occurred");
   }
 
   /// Call-Back for when Client Connected
   void AndroidBluetoothServer::onClientConnected() {
-    LOG_DEBUG("Client connected to Bluetooth server", "bt.server");
+    LOG_DEBUG(BLUETOOTH, "Client connected to Bluetooth server");
     if (socket != nullptr) {
       socket->deleteLater();
     }
@@ -74,7 +75,7 @@ namespace f1x::openauto::btservice {
       std::map<std::string, std::string> context = {
           {"peer_name", socket->peerName().toStdString()}
       };
-      LOG_DEBUG_CTX("RFCOMM client connected", "bt.server", context);
+      LOG_DEBUG_CTX(BLUETOOTH, "RFCOMM client connected", context);
 
       connect(socket, &QBluetoothSocket::readyRead, this, &AndroidBluetoothServer::readSocket);
 
@@ -86,7 +87,7 @@ namespace f1x::openauto::btservice {
       sendMessage(versionRequest, aap_protobuf::aaw::MessageId::WIFI_VERSION_REQUEST);
       sendMessage(startRequest, aap_protobuf::aaw::MessageId::WIFI_START_REQUEST);
     } else {
-      LOG_ERROR("Received null socket during client connection", "bt.server");
+      LOG_ERROR(BLUETOOTH, "Received null socket during client connection");
     }
   }
 
@@ -94,10 +95,10 @@ namespace f1x::openauto::btservice {
   void AndroidBluetoothServer::readSocket() {
     buffer += socket->readAll();
 
-    LOG_DEBUG("Reading from socket", "bt.server");
+    LOG_DEBUG(BLUETOOTH, "Reading from socket");
 
     if (buffer.length() < 4) {
-      LOG_DEBUG("Not enough data, waiting for more", "bt.server");
+      LOG_DEBUG(BLUETOOTH, "Not enough data, waiting for more");
       return;
     }
 
@@ -109,7 +110,7 @@ namespace f1x::openauto::btservice {
       std::map<std::string, std::string> context = {
           {"buffer_length", std::to_string(buffer.length())}
       };
-      LOG_DEBUG_CTX("Not enough data, waiting for more", "bt.server", context);
+      LOG_DEBUG_CTX(BLUETOOTH, "Not enough data, waiting for more", context);
       return;
     }
 
@@ -123,7 +124,7 @@ namespace f1x::openauto::btservice {
         {"message_length", std::to_string(length)},
         {"message_id", std::to_string(messageId)}
     };
-    LOG_DEBUG_CTX("Processing message", "bt.server", context);
+    LOG_DEBUG_CTX(BLUETOOTH, "Processing message", context);
 
     switch (messageId) {
 
@@ -160,7 +161,7 @@ namespace f1x::openauto::btservice {
             {"message_id", std::to_string(messageId)},
             {"data", ss.str()}
         };
-        LOG_DEBUG_CTX("Unknown message received", "bt.server", context);
+        LOG_DEBUG_CTX(BLUETOOTH, "Unknown message received", context);
 
         break;
     }
@@ -172,7 +173,7 @@ namespace f1x::openauto::btservice {
   /// \param buffer
   /// \param length
   void AndroidBluetoothServer::handleWifiInfoRequest(QByteArray &buffer, uint16_t length) {
-    LOG_INFO("Handling WiFi info request", "bt.server");
+    LOG_INFO(BLUETOOTH, "Handling WiFi info request");
 
     aap_protobuf::aaw::WifiInfoResponse response;
 
@@ -192,7 +193,7 @@ namespace f1x::openauto::btservice {
   /// \param buffer
   /// \param length
   void AndroidBluetoothServer::handleWifiVersionResponse(QByteArray &buffer, uint16_t length) {
-    LOG_INFO("Handling WiFi version response", "bt.server");
+    LOG_INFO(BLUETOOTH, "Handling WiFi version response");
 
     aap_protobuf::aaw::WifiVersionResponse response;
     response.ParseFromArray(buffer.data() + 4, length);
@@ -200,14 +201,14 @@ namespace f1x::openauto::btservice {
         {"unknown_param_1", std::to_string(response.unknown_value_a())},
         {"unknown_param_2", std::to_string(response.unknown_value_b())}
     };
-    LOG_DEBUG_CTX("WiFi version response parameters", "bt.server", context);
+    LOG_DEBUG_CTX(BLUETOOTH, "WiFi version response parameters", context);
   }
 
   /// Listens for WifiStartResponse from MD - usually just a notification with a status
   /// \param buffer
   /// \param length
   void AndroidBluetoothServer::handleWifiStartResponse(QByteArray &buffer, uint16_t length) {
-    LOG_INFO("Handling WiFi start response", "bt.server");
+    LOG_INFO(BLUETOOTH, "Handling WiFi start response");
 
     aap_protobuf::aaw::WifiStartResponse response;
     response.ParseFromArray(buffer.data() + 4, length);
@@ -216,7 +217,7 @@ namespace f1x::openauto::btservice {
         {"port", std::to_string(response.port())},
         {"status", Status_Name(response.status())}
     };
-    LOG_DEBUG_CTX("WiFi start response details", "bt.server", context);
+    LOG_DEBUG_CTX(BLUETOOTH, "WiFi start response details", context);
   }
 
   /// Handles request for WifiStartRequest by sending a WifiStartResponse
@@ -228,11 +229,11 @@ namespace f1x::openauto::btservice {
     std::map<std::string, std::string> context = {
         {"status", Status_Name(status.status())}
     };
-    LOG_INFO_CTX("Handle WiFi connection status", "bt.server", context);
+    LOG_INFO_CTX(BLUETOOTH, "Handle WiFi connection status", context);
   }
 
   void AndroidBluetoothServer::sendMessage(const google::protobuf::Message &message, uint16_t type) {
-    LOG_INFO("Sending message to connected device", "bt.server");
+    LOG_INFO(BLUETOOTH, "Sending message to connected device");
 
     int byteSize = message.ByteSizeLong();
     QByteArray out(byteSize + 4, 0);
@@ -251,16 +252,16 @@ namespace f1x::openauto::btservice {
         {"message_type", message.GetTypeName()},
         {"debug_string", message.DebugString()}
     };
-    LOG_DEBUG_CTX("Sending protobuf message", "bt.server", context);
+    LOG_DEBUG_CTX(BLUETOOTH, "Sending protobuf message", context);
 
     auto written = socket->write(out);
     if (written > -1) {
       std::map<std::string, std::string> context = {
           {"bytes_written", std::to_string(written)}
       };
-      LOG_DEBUG_CTX("Bytes written to socket", "bt.server", context);
+      LOG_DEBUG_CTX(BLUETOOTH, "Bytes written to socket", context);
     } else {
-      LOG_DEBUG("Could not write data to socket", "bt.server");
+      LOG_DEBUG(BLUETOOTH, "Could not write data to socket");
     }
   }
 
