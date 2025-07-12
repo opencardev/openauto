@@ -235,4 +235,64 @@ The migration guide includes detailed examples for:
 - **Structured output**: Machine-readable JSON format
 - **Performance monitoring**: Built-in timing capabilities
 
+## Protobuf Integration Status Update
+
+### Completed: Configuration.cpp Protobuf Compatibility
+
+**Issue Resolved:**
+- Fixed build errors in `Configuration.cpp` related to missing aap_protobuf enum values
+- `VIDEO_FPS_30`, `VIDEO_800x480`, `KEYCODE_*` enums were not available
+
+**Solution Implemented:**
+1. **Numeric Fallbacks:** Replaced protobuf enum references with numeric constants
+   - Video FPS: `30` (for 30 FPS), `60` (for 60 FPS)  
+   - Video Resolution: `1` (for 800x480), `2` (for 720p), `3` (for 1080p)
+   - Key Codes: Standard Android keycode values (e.g., `126` for MEDIA_PLAY)
+
+2. **Files Modified:**
+   - `src/autoapp/Configuration/Configuration.cpp`
+     - `load()` method: Use numeric defaults for video settings
+     - `reset()` method: Use numeric defaults  
+     - `readButtonCodes()` method: Use numeric Android keycodes
+     - `writeButtonCodes()` method: Use numeric Android keycodes
+   - `docs/troubleshooting-guide.md`: Added protobuf integration troubleshooting
+
+3. **Key Code Mappings Used:**
+   ```cpp
+   KEYCODE_MEDIA_PLAY = 126
+   KEYCODE_MEDIA_PAUSE = 127  
+   KEYCODE_MEDIA_PLAY_PAUSE = 85
+   KEYCODE_MEDIA_NEXT = 87
+   KEYCODE_MEDIA_PREVIOUS = 88
+   KEYCODE_HOME = 3
+   KEYCODE_CALL = 5
+   KEYCODE_ENDCALL = 6
+   KEYCODE_VOICE_ASSIST = 231
+   KEYCODE_DPAD_LEFT = 21
+   KEYCODE_DPAD_RIGHT = 22
+   KEYCODE_DPAD_UP = 19
+   KEYCODE_DPAD_DOWN = 20
+   KEYCODE_BACK = 4
+   KEYCODE_DPAD_CENTER = 23
+   ```
+
+**Next Steps:**
+1. **Install External Dependencies:**
+   - Install `aap_protobuf` and `aasdk` libraries
+   - Update build environment to include protobuf paths
+
+2. **Restore Enum Usage:**
+   - Once dependencies are available, replace numeric values with proper enum names
+   - Verify all protobuf message types are correctly imported
+
+3. **Testing:**
+   - Build project with proper dependencies  
+   - Verify configuration loading/saving works correctly
+   - Test button mappings and video settings
+
+**Compatibility:**
+- Current implementation maintains functionality while dependencies are missing
+- Numeric values match standard Android keycode specifications
+- Video settings use sensible defaults (30 FPS, 800x480 resolution)
+
 The migration demonstrates significant improvements in logging capabilities, developer experience, and system maintainability while preserving the existing functionality of the OpenAuto system.

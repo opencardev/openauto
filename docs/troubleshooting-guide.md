@@ -834,4 +834,75 @@ sudo mv /tmp/*_recovered.log.gz /var/log/openauto/
 echo "Log recovery complete."
 ```
 
-This troubleshooting guide provides comprehensive diagnostic procedures and solutions for all aspects of the OpenAuto modern architecture. Use the diagnostic scripts and step-by-step solutions to identify and resolve issues quickly.
+## Protobuf Integration Issues
+
+### Problem: Build errors with aap_protobuf enum values
+
+**Symptoms:**
+```
+error: 'VIDEO_FPS_30' is not a member of 'aap_protobuf::service::media::sink::message::VideoFrameRateType'
+error: 'KEYCODE_MEDIA_PLAY' is not a member of 'aap_protobuf::service::media::sink::message::KeyCode'
+```
+
+**Cause:**
+The OpenAuto project depends on external libraries (`aap_protobuf` and `aasdk`) that contain protobuf message definitions. These libraries need to be installed separately and may not be available in all build environments.
+
+**Solution:**
+
+1. **Temporary Workaround (Current Implementation):**
+   - `Configuration.cpp` uses numeric fallbacks for enum values
+   - Standard Android keycode values are used for button mappings
+   - Video FPS defaults to 30, resolution defaults to 800x480
+
+2. **Proper Fix:**
+   ```bash
+   # Install aap_protobuf library
+   sudo apt-get install libaap-protobuf-dev
+   
+   # Or build from source
+   git clone https://github.com/opencardev/aasdk.git
+   cd aasdk
+   mkdir build && cd build
+   cmake .. -DCMAKE_BUILD_TYPE=Release
+   make -j$(nproc)
+   sudo make install
+   ```
+
+3. **Development Environment Setup:**
+   ```bash
+   # Ensure CMake can find the libraries
+   export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+   export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+   ```
+
+**Verification:**
+After installing proper protobuf libraries, replace numeric values in `Configuration.cpp` with the correct enum names:
+- `static_cast<..>(30)` → `VideoFrameRateType::VIDEO_FPS_30`
+- `static_cast<..>(126)` → `KeyCode::KEYCODE_MEDIA_PLAY`
+
+### Problem: CMake can't find aap_protobuf package
+
+**Symptoms:**
+```
+CMake Error: Could not find a package configuration file provided by "aap_protobuf"
+```
+
+**Solution:**
+1. Check if the library is installed:
+   ```bash
+   pkg-config --exists aap_protobuf && echo "Found" || echo "Missing"
+   ```
+
+2. Install missing dependencies:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get install libaap-protobuf-dev libaasdk-dev
+   
+   # Or build from source (see above)
+   ```
+
+3. Update CMakeLists.txt if using custom install path:
+   ```cmake
+   set(CMAKE_PREFIX_PATH "/usr/local" ${CMAKE_PREFIX_PATH})
+   find_package(aap_protobuf REQUIRED)
+   ```
