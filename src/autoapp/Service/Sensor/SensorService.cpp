@@ -2,7 +2,11 @@
 *  This file is part of openauto project.
 *  Copyright (C) 2018 f1x.studio (Michal Szwaj)
 *
-*  openauto is free software: you can redistribute it and/or modify
+*   void SensorService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+    LOG_INFO(ANDROID_AUTO, "[SensorService] onChannelOpenRequest()");
+    LOG_DEBUG(ANDROID_AUTO, "[SensorService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
+
+    aap_protobuf::service::control::message::ChannelOpenResponse response;uto is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation; either version 3 of the License, or
 *  (at your option) any later version.
@@ -97,8 +101,7 @@ namespace f1x::openauto::autoapp::service::sensor {
 
   void SensorService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[SensorService] onChannelOpenRequest()");
-    LOG_DEBUG(ANDROID_AUTO, "[SensorService] Channel Id: " << request.service_id() << ", Priority: "
-                        << request.priority()");
+    LOG_DEBUG(ANDROID_AUTO, "[SensorService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -115,7 +118,7 @@ namespace f1x::openauto::autoapp::service::sensor {
   void SensorService::onSensorStartRequest(
       const aap_protobuf::service::sensorsource::message::SensorRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[SensorService] onSensorStartRequest()");
-    LOG_DEBUG(ANDROID_AUTO, "[SensorService] Request Type: " << request.type()");
+    LOG_DEBUG(ANDROID_AUTO, "[SensorService] Request Type: " + std::to_string(request.type()));
 
     aap_protobuf::service::sensorsource::message::SensorStartResponseMessage response;
     response.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
@@ -255,7 +258,7 @@ namespace f1x::openauto::autoapp::service::sensor {
   }
 
   void SensorService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR(ANDROID_AUTO, "[SensorService] onChannelError(): " << e.what()");
+    LOG_ERROR(ANDROID_AUTO, "[SensorService] onChannelError(): " + std::string(e.what()));
   }
 }
 

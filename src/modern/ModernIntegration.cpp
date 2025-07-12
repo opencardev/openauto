@@ -124,7 +124,23 @@ void ModernIntegration::updateLegacyState(const std::string& newState) {
     }
     
     try {
-        stateMachine_->transitionTo(newState);
+        // Map string state to appropriate trigger - this is a simplified mapping
+        if (newState == "connected") {
+            stateMachine_->transition(openauto::modern::Trigger::ANDROID_AUTO_CONNECT);
+        } else if (newState == "idle") {
+            stateMachine_->transition(openauto::modern::Trigger::ANDROID_AUTO_DISCONNECT);
+        } else if (newState == "projection") {
+            stateMachine_->transition(openauto::modern::Trigger::ANDROID_AUTO_CONNECT);
+        } else if (newState == "camera") {
+            stateMachine_->transition(openauto::modern::Trigger::CAMERA_BUTTON_PRESS);
+        } else if (newState == "settings") {
+            stateMachine_->transition(openauto::modern::Trigger::SETTINGS_BUTTON_PRESS);
+        } else if (newState == "error") {
+            stateMachine_->transition(openauto::modern::Trigger::ERROR_OCCURRED);
+        } else if (newState == "shutdown") {
+            stateMachine_->transition(openauto::modern::Trigger::SHUTDOWN_REQUEST);
+        }
+        // Add more state mappings as needed
     } catch (const std::exception& e) {
         std::cerr << "Failed to update legacy state: " << e.what() << std::endl;
     }
@@ -136,7 +152,7 @@ void ModernIntegration::setLegacyConfig(const std::string& key, const std::strin
     }
     
     try {
-        configManager_->set(key, value);
+        configManager_->setValue(key, openauto::modern::ConfigValue(value));
     } catch (const std::exception& e) {
         std::cerr << "Failed to set legacy config: " << e.what() << std::endl;
     }
@@ -148,17 +164,7 @@ std::string ModernIntegration::getLegacyConfig(const std::string& key, const std
     }
     
     try {
-        auto value = configManager_->get(key);
-        if (value.is_null()) {
-            return defaultValue;
-        }
-        
-        if (value.is_string()) {
-            return value.get<std::string>();
-        } else {
-            return value.dump();
-        }
-        
+        return configManager_->getValue<std::string>(key, defaultValue);
     } catch (const std::exception& e) {
         std::cerr << "Failed to get legacy config: " << e.what() << std::endl;
         return defaultValue;
@@ -166,122 +172,84 @@ std::string ModernIntegration::getLegacyConfig(const std::string& key, const std
 }
 
 void ModernIntegration::setupEventBus() {
-    eventBus_ = std::make_shared<EventBus>();
-    
-    // Subscribe to all events for logging
-    eventBus_->subscribeToAll([](const Event::Pointer& event) {
-        std::cout << "Event: " << event->toString() << std::endl;
+    // Use the singleton EventBus instance
+    auto& eventBusInstance = openauto::modern::EventBus::getInstance();
+    eventBus_ = std::shared_ptr<openauto::modern::EventBus>(&eventBusInstance, [](openauto::modern::EventBus*) {
+        // Custom no-op deleter since it's a singleton
     });
+    
+    // Note: subscribeToAll method doesn't exist in the current EventBus interface
+    // This would need to be implemented if required
 }
 
 void ModernIntegration::setupStateMachine() {
-    stateMachine_ = std::make_shared<StateMachine>();
+    stateMachine_ = std::make_shared<openauto::modern::StateMachine>();
     
-    // Define common OpenAuto states
-    stateMachine_->addState("initializing", "System is initializing");
-    stateMachine_->addState("idle", "Waiting for device connection");
-    stateMachine_->addState("connected", "Device connected, ready for projection");
-    stateMachine_->addState("projection", "Android Auto projection active");
-    stateMachine_->addState("camera", "Camera view active");
-    stateMachine_->addState("settings", "Settings menu open");
-    stateMachine_->addState("media", "Media player active");
-    stateMachine_->addState("navigation", "Navigation active");
-    stateMachine_->addState("error", "Error state");
-    stateMachine_->addState("shutdown", "System shutting down");
-    
-    // Define transitions
-    stateMachine_->addTransition("initializing", "idle", "init_complete");
-    stateMachine_->addTransition("idle", "connected", "device_connected");
-    stateMachine_->addTransition("connected", "projection", "start_projection");
-    stateMachine_->addTransition("projection", "connected", "stop_projection");
-    stateMachine_->addTransition("connected", "idle", "device_disconnected");
-    
-    // Camera can be accessed from any state
-    stateMachine_->addTransition("*", "camera", "camera_requested");
-    stateMachine_->addTransition("camera", "*", "camera_exit");
-    
-    // Settings can be accessed from any state except error
-    stateMachine_->addTransition("idle", "settings", "settings_opened");
-    stateMachine_->addTransition("connected", "settings", "settings_opened");
-    stateMachine_->addTransition("projection", "settings", "settings_opened");
-    stateMachine_->addTransition("settings", "*", "settings_closed");
-    
-    // Media and navigation states during projection
-    stateMachine_->addTransition("projection", "media", "media_started");
-    stateMachine_->addTransition("projection", "navigation", "navigation_started");
-    stateMachine_->addTransition("media", "projection", "media_stopped");
-    stateMachine_->addTransition("navigation", "projection", "navigation_stopped");
-    
-    // Error state can be reached from anywhere
-    stateMachine_->addTransition("*", "error", "error_occurred");
-    stateMachine_->addTransition("error", "idle", "error_recovered");
-    
-    // Shutdown from any state
-    stateMachine_->addTransition("*", "shutdown", "shutdown_requested");
-    
-    // Set initial state
-    stateMachine_->transitionTo("initializing");
-    
-    // Listen for state changes and publish events
-    stateMachine_->onStateChanged([this](const std::string& from, const std::string& to) {
-        auto event = std::make_shared<Event>(EventType::CUSTOM_EVENT, "state_machine");
+    // The StateMachine uses built-in states and triggers
+    // Set up state change callback to publish events
+    stateMachine_->setStateChangeCallback([this](openauto::modern::SystemState oldState, openauto::modern::SystemState newState, openauto::modern::Trigger trigger) {
+        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CUSTOM_EVENT, "state_machine");
         event->setData("event_type", std::string("STATE_CHANGED"));
-        event->setData("from_state", from);
-        event->setData("to_state", to);
+        event->setData("from_state", stateMachine_->stateToString(oldState));
+        event->setData("to_state", stateMachine_->stateToString(newState));
+        event->setData("trigger", stateMachine_->triggerToString(trigger));
         eventBus_->publish(event);
     });
+    
+    // Note: The actual StateMachine has predefined states and transitions
+    // No need to manually add states or transitions
 }
 
 void ModernIntegration::setupConfigManager() {
-    configManager_ = std::make_shared<ConfigurationManager>();
+    configManager_ = std::make_shared<openauto::modern::ConfigurationManager>();
     configManager_->setConfigPath(configPath_);
     
-    // Set default configuration values
-    configManager_->setDefault("ui.brightness", 75);
-    configManager_->setDefault("ui.volume", 50);
-    configManager_->setDefault("ui.theme", "dark");
-    configManager_->setDefault("ui.language", "en");
-    configManager_->setDefault("ui.auto_launch", true);
+    // Load default configuration values (use setValue since setDefault doesn't exist)
+    configManager_->setValue("ui.brightness", openauto::modern::ConfigValue(75));
+    configManager_->setValue("ui.volume", openauto::modern::ConfigValue(50));
+    configManager_->setValue("ui.theme", openauto::modern::ConfigValue(std::string("dark")));
+    configManager_->setValue("ui.language", openauto::modern::ConfigValue(std::string("en")));
+    configManager_->setValue("ui.auto_launch", openauto::modern::ConfigValue(true));
     
-    configManager_->setDefault("audio.enabled", true);
-    configManager_->setDefault("audio.sample_rate", 48000);
-    configManager_->setDefault("audio.channels", 2);
+    configManager_->setValue("audio.enabled", openauto::modern::ConfigValue(true));
+    configManager_->setValue("audio.sample_rate", openauto::modern::ConfigValue(48000));
+    configManager_->setValue("audio.channels", openauto::modern::ConfigValue(2));
     
-    configManager_->setDefault("video.enabled", true);
-    configManager_->setDefault("video.width", 1920);
-    configManager_->setDefault("video.height", 1080);
-    configManager_->setDefault("video.fps", 60);
+    configManager_->setValue("video.enabled", openauto::modern::ConfigValue(true));
+    configManager_->setValue("video.width", openauto::modern::ConfigValue(1920));
+    configManager_->setValue("video.height", openauto::modern::ConfigValue(1080));
+    configManager_->setValue("video.fps", openauto::modern::ConfigValue(60));
     
-    configManager_->setDefault("network.wifi.enabled", true);
-    configManager_->setDefault("network.bluetooth.enabled", true);
-    configManager_->setDefault("network.hotspot.enabled", false);
+    configManager_->setValue("network.wifi.enabled", openauto::modern::ConfigValue(true));
+    configManager_->setValue("network.bluetooth.enabled", openauto::modern::ConfigValue(true));
+    configManager_->setValue("network.hotspot.enabled", openauto::modern::ConfigValue(false));
     
-    configManager_->setDefault("camera.enabled", true);
-    configManager_->setDefault("camera.rear.device", "/dev/video0");
-    configManager_->setDefault("camera.front.device", "/dev/video1");
+    configManager_->setValue("camera.enabled", openauto::modern::ConfigValue(true));
+    configManager_->setValue("camera.rear.device", openauto::modern::ConfigValue(std::string("/dev/video0")));
+    configManager_->setValue("camera.front.device", openauto::modern::ConfigValue(std::string("/dev/video1")));
     
-    configManager_->setDefault("api.enabled", true);
-    configManager_->setDefault("api.port", apiPort_);
-    configManager_->setDefault("api.cors.enabled", true);
+    configManager_->setValue("api.enabled", openauto::modern::ConfigValue(true));
+    configManager_->setValue("api.port", openauto::modern::ConfigValue(apiPort_));
+    configManager_->setValue("api.cors.enabled", openauto::modern::ConfigValue(true));
     
     // Load existing configuration
     configManager_->load();
     
     // Update API port from configuration
-    apiPort_ = configManager_->get("api.port").get<int>();
+    apiPort_ = configManager_->getValue<int>("api.port", apiPort_);
 }
 
 void ModernIntegration::setupApiServer() {
-    apiServer_ = std::make_shared<RestApiServer>(
+    apiServer_ = std::make_shared<openauto::modern::RestApiServer>(
         apiPort_, eventBus_, stateMachine_, configManager_);
     
     // Start the API server if enabled
-    if (configManager_->get("api.enabled").get<bool>()) {
+    if (configManager_->getValue<bool>("api.enabled", true)) {
         if (apiServer_->start()) {
             std::cout << "REST API server started on port " << apiPort_ << std::endl;
             
             // Publish API started event
-            auto event = std::make_shared<Event>(EventType::CUSTOM_EVENT, "api_server");
+            auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CUSTOM_EVENT, "api_server");
             event->setData("event_type", std::string("API_STARTED"));
             event->setData("port", apiPort_);
             eventBus_->publish(event);
@@ -293,77 +261,74 @@ void ModernIntegration::setupApiServer() {
 
 void ModernIntegration::setupIntegrationCallbacks() {
     // Subscribe to configuration change events and save automatically
-    eventBus_->subscribe(EventType::CONFIG_CHANGED, [this](const Event::Pointer& event) {
+    eventBus_->subscribe(openauto::modern::EventType::CONFIG_CHANGED, "ModernIntegration_ConfigChanged", [this](const openauto::modern::Event::Pointer& event) {
         configManager_->save();
     });
     
     // Subscribe to Android Auto events and update state machine
-    eventBus_->subscribe(EventType::ANDROID_AUTO_CONNECTED, [this](const Event::Pointer& event) {
-        stateMachine_->transitionTo("connected");
+    eventBus_->subscribe(openauto::modern::EventType::ANDROID_AUTO_CONNECTED, "ModernIntegration_AAConnected", [this](const openauto::modern::Event::Pointer& event) {
+        stateMachine_->transition(openauto::modern::Trigger::ANDROID_AUTO_CONNECT);
     });
     
-    eventBus_->subscribe(EventType::ANDROID_AUTO_DISCONNECTED, [this](const Event::Pointer& event) {
-        stateMachine_->transitionTo("idle");
+    eventBus_->subscribe(openauto::modern::EventType::ANDROID_AUTO_DISCONNECTED, "ModernIntegration_AADisconnected", [this](const openauto::modern::Event::Pointer& event) {
+        stateMachine_->transition(openauto::modern::Trigger::ANDROID_AUTO_DISCONNECT);
     });
     
-    eventBus_->subscribe(EventType::ANDROID_AUTO_START, [this](const Event::Pointer& event) {
-        stateMachine_->transitionTo("projection");
+    eventBus_->subscribe(openauto::modern::EventType::ANDROID_AUTO_START, "ModernIntegration_AAStart", [this](const openauto::modern::Event::Pointer& event) {
+        stateMachine_->transition(openauto::modern::Trigger::ANDROID_AUTO_CONNECT);
     });
     
-    eventBus_->subscribe(EventType::ANDROID_AUTO_STOP, [this](const Event::Pointer& event) {
-        if (stateMachine_->getCurrentStateName() == "projection") {
-            stateMachine_->transitionTo("connected");
+    eventBus_->subscribe(openauto::modern::EventType::ANDROID_AUTO_STOP, "ModernIntegration_AAStop", [this](const openauto::modern::Event::Pointer& event) {
+        // Transition back if currently in Android Auto state
+        auto currentState = stateMachine_->getCurrentState();
+        if (currentState == openauto::modern::SystemState::ANDROID_AUTO_ACTIVE) {
+            stateMachine_->transition(openauto::modern::Trigger::ANDROID_AUTO_DISCONNECT);
         }
     });
     
     // Subscribe to camera events
-    eventBus_->subscribe(EventType::CAMERA_SHOW, [this](const Event::Pointer& event) {
-        stateMachine_->transitionTo("camera");
+    eventBus_->subscribe(openauto::modern::EventType::CAMERA_SHOW, "ModernIntegration_CameraShow", [this](const openauto::modern::Event::Pointer& event) {
+        stateMachine_->transition(openauto::modern::Trigger::CAMERA_BUTTON_PRESS);
     });
     
-    eventBus_->subscribe(EventType::CAMERA_HIDE, [this](const Event::Pointer& event) {
-        // Return to previous state before camera
-        auto previousState = stateMachine_->getPreviousStateName();
-        if (!previousState.empty() && previousState != "camera") {
-            stateMachine_->transitionTo(previousState);
-        } else {
-            stateMachine_->transitionTo("idle");
-        }
+    eventBus_->subscribe(openauto::modern::EventType::CAMERA_HIDE, "ModernIntegration_CameraHide", [this](const openauto::modern::Event::Pointer& event) {
+        // Return to previous appropriate state (simplified)
+        stateMachine_->transition(openauto::modern::Trigger::BACK_BUTTON_PRESS);
     });
     
     // Subscribe to system events
-    eventBus_->subscribe(EventType::SYSTEM_SHUTDOWN, [this](const Event::Pointer& event) {
-        stateMachine_->transitionTo("shutdown");
+    eventBus_->subscribe(openauto::modern::EventType::SYSTEM_SHUTDOWN, "ModernIntegration_Shutdown", [this](const openauto::modern::Event::Pointer& event) {
+        stateMachine_->transition(openauto::modern::Trigger::SHUTDOWN_REQUEST);
     });
     
-    eventBus_->subscribe(EventType::SYSTEM_ERROR, [this](const Event::Pointer& event) {
-        stateMachine_->transitionTo("error");
+    eventBus_->subscribe(openauto::modern::EventType::SYSTEM_ERROR, "ModernIntegration_Error", [this](const openauto::modern::Event::Pointer& event) {
+        stateMachine_->transition(openauto::modern::Trigger::ERROR_OCCURRED);
     });
 }
 
 void ModernIntegration::setupLogger() {
-    auto& logger = Logger::getInstance();
+    auto& logger = openauto::modern::Logger::getInstance();
     
     // Configure logger based on configuration
-    logger.setLevel(LogLevel::INFO);
+    logger.setLevel(openauto::modern::LogLevel::INFO);
     logger.setAsync(true);
     logger.setMaxQueueSize(5000);
     
     // Add file sink for persistent logging
-    auto fileSink = std::make_shared<FileSink>("openauto.log", 10 * 1024 * 1024, 5);
+    auto fileSink = std::make_shared<openauto::modern::FileSink>("openauto.log", 10 * 1024 * 1024, 5);
     logger.addSink(fileSink);
     
     // Use JSON formatter for file logging
-    auto jsonFormatter = std::make_shared<JsonFormatter>(false);
+    auto jsonFormatter = std::make_shared<openauto::modern::JsonFormatter>(false);
     logger.setFormatter(jsonFormatter);
     
     // Set category-specific log levels
-    logger.setCategoryLevel(LogCategory::SYSTEM, LogLevel::DEBUG);
-    logger.setCategoryLevel(LogCategory::ANDROID_AUTO, LogLevel::INFO);
-    logger.setCategoryLevel(LogCategory::UI, LogLevel::INFO);
-    logger.setCategoryLevel(LogCategory::API, LogLevel::DEBUG);
-    logger.setCategoryLevel(LogCategory::EVENT, LogLevel::DEBUG);
-    logger.setCategoryLevel(LogCategory::STATE, LogLevel::DEBUG);
+    logger.setCategoryLevel(openauto::modern::LogCategory::SYSTEM, openauto::modern::LogLevel::DEBUG);
+    logger.setCategoryLevel(openauto::modern::LogCategory::ANDROID_AUTO, openauto::modern::LogLevel::INFO);
+    logger.setCategoryLevel(openauto::modern::LogCategory::UI, openauto::modern::LogLevel::INFO);
+    logger.setCategoryLevel(openauto::modern::LogCategory::API, openauto::modern::LogLevel::DEBUG);
+    logger.setCategoryLevel(openauto::modern::LogCategory::EVENT, openauto::modern::LogLevel::DEBUG);
+    logger.setCategoryLevel(openauto::modern::LogCategory::STATE, openauto::modern::LogLevel::DEBUG);
     
     SLOG_INFO(SYSTEM, "ModernIntegration", "Modern logger initialized successfully");
 }

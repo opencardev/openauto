@@ -34,7 +34,7 @@ namespace f1x::openauto::autoapp::service {
         promise_->reject(aasdk::error::Error(aasdk::error::ErrorCode::OPERATION_IN_PROGRESS));
       } else {
         ++pingsCount_;
-        LOG_DEBUG(ANDROID_AUTO, "[Pinger] Ping counter: " << pingsCount_");
+        LOG_DEBUG(ANDROID_AUTO, "[Pinger] Ping counter: " + std::to_string(pingsCount_));
 
         promise_ = std::move(promise);
         timer_.expires_from_now(boost::posix_time::milliseconds(duration_));
@@ -47,7 +47,7 @@ namespace f1x::openauto::autoapp::service {
   void Pinger::pong() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
       ++pongsCount_;
-      LOG_DEBUG(ANDROID_AUTO, "[Pinger] Pong counter: " << pongsCount_");
+      LOG_DEBUG(ANDROID_AUTO, "[Pinger] Pong counter: " + std::to_string(pongsCount_));
     });
   }
 

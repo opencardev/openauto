@@ -16,6 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <modern/Logger.hpp>
 #include <fstream>
 #include <f1x/openauto/autoapp/Service/MediaSink/VideoMediaSinkService.hpp>
 
@@ -34,8 +35,7 @@ namespace f1x {
           void VideoMediaSinkService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
               LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] start()");
-              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel "
-                                 << aasdk::messenger::channelIdToString(channel_->getId())");
+              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel " + aasdk::messenger::channelIdToString(channel_->getId()));
               channel_->receive(this->shared_from_this());
             });
           }
@@ -43,8 +43,7 @@ namespace f1x {
           void VideoMediaSinkService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
               LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] stop()");
-              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel "
-                                 << aasdk::messenger::channelIdToString(channel_->getId())");
+              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel " + aasdk::messenger::channelIdToString(channel_->getId()));
               videoOutput_->stop();
             });
           }
@@ -52,16 +51,14 @@ namespace f1x {
           void VideoMediaSinkService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
               LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] pause()");
-              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel "
-                                 << aasdk::messenger::channelIdToString(channel_->getId())");
+              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel " + aasdk::messenger::channelIdToString(channel_->getId()));
             });
           }
 
           void VideoMediaSinkService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
               LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] resume()");
-              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel "
-                                 << aasdk::messenger::channelIdToString(channel_->getId())");
+              LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel " + aasdk::messenger::channelIdToString(channel_->getId()));
 
             });
           }
@@ -69,8 +66,7 @@ namespace f1x {
           void VideoMediaSinkService::fillFeatures(
               aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
             LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] fillFeatures()");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel "
-                               << aasdk::messenger::channelIdToString(channel_->getId())");
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel " + aasdk::messenger::channelIdToString(channel_->getId()));
 
             auto *service = response.add_channels();
             service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -91,26 +87,24 @@ namespace f1x {
             videoConfig1->set_width_margin(videoMargins.width());
             videoConfig1->set_density(videoOutput_->getScreenDPI());
 
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] getVideoResolution " << VideoCodecResolutionType_Name(videoOutput_->getVideoResolution())");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] getVideoFPS " << VideoFrameRateType_Name(videoOutput_->getVideoFPS())");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] width " << videoMargins.width()");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] height " << videoMargins.height()");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] getScreenDPI " << videoOutput_->getScreenDPI()");
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] getVideoResolution " + VideoCodecResolutionType_Name(videoOutput_->getVideoResolution()));
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] getVideoFPS " + VideoFrameRateType_Name(videoOutput_->getVideoFPS()));
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] width " + std::to_string(videoMargins.width()));
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] height " + std::to_string(videoMargins.height()));
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] getScreenDPI " + std::to_string(videoOutput_->getScreenDPI()));
           }
 
           void
           VideoMediaSinkService::onMediaChannelSetupRequest(const aap_protobuf::service::media::shared::message::Setup &request) {
             LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] onMediaChannelSetupRequest()");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: "
-                               << aasdk::messenger::channelIdToString(channel_->getId()) << ", Codec: "
-                               << MediaCodecType_Name(request.type())");
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: " + aasdk::messenger::channelIdToString(channel_->getId()) + ", Codec: " + MediaCodecType_Name(request.type()));
 
 
             auto status = videoOutput_->init()
                           ? aap_protobuf::service::media::shared::message::Config::STATUS_READY
                           : aap_protobuf::service::media::shared::message::Config::STATUS_WAIT;
 
-            LOG_DEBUG(ANDROID_AUTO, "[VideoMediaSinkService] setup status: " << Config_Status_Name(status)");
+            LOG_DEBUG(ANDROID_AUTO, "[VideoMediaSinkService] setup status: " + Config_Status_Name(status));
 
             aap_protobuf::service::media::shared::message::Config response;
             response.set_status(status);
@@ -128,15 +122,13 @@ namespace f1x {
 
           void VideoMediaSinkService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] onChannelOpenRequest()");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: " << request.service_id() << ", Priority: "
-                               << request.priority()");
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
 
             const aap_protobuf::shared::MessageStatus status = videoOutput_->open()
                                                                ? aap_protobuf::shared::MessageStatus::STATUS_SUCCESS
                                                                : aap_protobuf::shared::MessageStatus::STATUS_INTERNAL_ERROR;
 
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Status determined: "
-                               << aap_protobuf::shared::MessageStatus_Name(status)");
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Status determined: " + std::string(aap_protobuf::shared::MessageStatus_Name(status)));
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             response.set_status(status);
@@ -151,9 +143,7 @@ namespace f1x {
           void VideoMediaSinkService::onMediaChannelStartIndication(
               const aap_protobuf::service::media::shared::message::Start &indication) {
             LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] onMediaChannelStartIndication()");
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: "
-                               << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: "
-                               << indication.session_id()");
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: " + aasdk::messenger::channelIdToString(channel_->getId()) + ", session: " + std::to_string(indication.session_id()));
 
             session_ = indication.session_id();
             channel_->receive(this->shared_from_this());
@@ -162,8 +152,7 @@ namespace f1x {
           void VideoMediaSinkService::onMediaChannelStopIndication(
               const aap_protobuf::service::media::shared::message::Stop &indication) {
             LOG_INFO(ANDROID_AUTO, "[onMediaChannelStopIndication] onMediaChannelStopIndication()");
-            LOG_INFO(ANDROID_AUTO, "[onMediaChannelStopIndication] Channel Id: "
-                               << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_");
+            LOG_INFO(ANDROID_AUTO, "[onMediaChannelStopIndication] Channel Id: " + aasdk::messenger::channelIdToString(channel_->getId()) + ", session: " + std::to_string(session_));
 
             channel_->receive(this->shared_from_this());
           }
@@ -171,8 +160,7 @@ namespace f1x {
           void VideoMediaSinkService::onMediaWithTimestampIndication(aasdk::messenger::Timestamp::ValueType timestamp,
                                                                      const aasdk::common::DataConstBuffer &buffer) {
             LOG_DEBUG(ANDROID_AUTO, "[VideoMediaSinkService] onMediaWithTimestampIndication()");
-            LOG_DEBUG(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: "
-                               << aasdk::messenger::channelIdToString(channel_->getId()) << ", session: " << session_");
+            LOG_DEBUG(ANDROID_AUTO, "[VideoMediaSinkService] Channel Id: " + aasdk::messenger::channelIdToString(channel_->getId()) + ", session: " + std::to_string(session_));
 
             videoOutput_->write(timestamp, buffer);
 
@@ -193,8 +181,7 @@ namespace f1x {
           }
 
           void VideoMediaSinkService::onChannelError(const aasdk::error::Error &e) {
-            LOG_ERROR(ANDROID_AUTO, "[VideoMediaSinkService] onChannelError(): " << e.what()
-                                << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId())");
+            LOG_ERROR(ANDROID_AUTO, "[VideoMediaSinkService] onChannelError(): " + std::string(e.what()) + ", channel: " + aasdk::messenger::channelIdToString(channel_->getId()));
           }
 
           void VideoMediaSinkService::onVideoFocusRequest(
@@ -203,7 +190,7 @@ namespace f1x {
             // Note: disp_channel_id() is deprecated but still used for logging compatibility
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Display index: " << request.disp_channel_id() << ", focus mode: " << VideoFocusMode_Name(request.mode()) << ", focus reason: " << VideoFocusReason_Name(request.reason())");
+            LOG_INFO(ANDROID_AUTO, "[VideoMediaSinkService] Display index: " + std::to_string(request.disp_channel_id()) + ", focus mode: " + VideoFocusMode_Name(request.mode()) + ", focus reason: " + VideoFocusReason_Name(request.reason()));
             #pragma GCC diagnostic pop
 
             if (request.mode() ==

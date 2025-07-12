@@ -25,6 +25,7 @@
 #include <chrono>
 #include <nlohmann/json.hpp>
 
+namespace openauto {
 namespace modern {
 
 using EventValue = std::variant<std::string, int, double, bool>;
@@ -106,6 +107,10 @@ enum class EventType {
     STATE_EXITED,
     STATE_TRANSITION_FAILED,
     
+    // UI Mode Events
+    DAY_MODE_ENABLED,
+    NIGHT_MODE_ENABLED,
+    
     // Custom Events
     CUSTOM_BUTTON_1,
     CUSTOM_BUTTON_2,
@@ -159,3 +164,4 @@ private:
 };
 
 } // namespace modern
+} // namespace openauto

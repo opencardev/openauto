@@ -70,8 +70,7 @@ namespace f1x::openauto::autoapp::service::navigationstatus {
   void NavigationStatusService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] onChannelOpenRequest()");
-    LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] Channel Id: " << request.service_id() << ", Priority: "
-                       << request.priority()");
+    LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -103,7 +102,7 @@ namespace f1x::openauto::autoapp::service::navigationstatus {
 
 
   void NavigationStatusService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR(ANDROID_AUTO, "[NavigationStatusService] onChannelError(): " << e.what()");
+    LOG_ERROR(ANDROID_AUTO, "[NavigationStatusService] onChannelError(): " + std::string(e.what()));
   }
 }
 

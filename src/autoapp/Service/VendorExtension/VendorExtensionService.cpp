@@ -68,14 +68,13 @@ namespace f1x::openauto::autoapp::service::vendorextension {
   }
 
   void VendorExtensionService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR_STREAM(GENERAL, "onChannelError(): " << e.what());
+    LOG_ERROR_STREAM(GENERAL, "onChannelError(): " + std::string(e.what()));
   }
 
   void VendorExtensionService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO_STREAM(GENERAL, "onChannelOpenRequest()");
-    LOG_INFO_STREAM(GENERAL, "Channel Id: " << request.service_id() << ", Priority: "
-                       << request.priority());
+    LOG_INFO_STREAM(GENERAL, "Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;

@@ -85,7 +85,7 @@ namespace f1x {
 
           void InputSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             LOG_INFO(ANDROID_AUTO, "[InputSourceService] onChannelOpenRequest()");
-            LOG_DEBUG(ANDROID_AUTO, "[InputSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority()");
+            LOG_DEBUG(ANDROID_AUTO, ("[InputSourceService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority())).c_str());
 
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
@@ -101,7 +101,7 @@ namespace f1x {
 
           void InputSourceService::onKeyBindingRequest(const aap_protobuf::service::media::sink::message::KeyBindingRequest &request) {
             LOG_DEBUG(ANDROID_AUTO, "[InputSourceService] onKeyBindingRequest()");
-            LOG_DEBUG(ANDROID_AUTO, "[InputSourceService] KeyCodes Count: " << request.keycodes_size()");
+            LOG_DEBUG(ANDROID_AUTO, ("[InputSourceService] KeyCodes Count: " + std::to_string(request.keycodes_size())).c_str());
 
             aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             const auto &supportedButtonCodes = inputDevice_->getSupportedButtonCodes();
@@ -109,7 +109,7 @@ namespace f1x {
             for (int i = 0; i < request.keycodes_size(); ++i) {
               if (std::find(supportedButtonCodes.begin(), supportedButtonCodes.end(), request.keycodes(i)) ==
                   supportedButtonCodes.end()) {
-                LOG_ERROR(ANDROID_AUTO, "[InputSourceService] onKeyBindingRequest is not supported for KeyCode: " << request.keycodes(i)");
+                LOG_ERROR(ANDROID_AUTO, ("[InputSourceService] onKeyBindingRequest is not supported for KeyCode: " + std::to_string(request.keycodes(i))).c_str());
                 status = aap_protobuf::shared::MessageStatus::STATUS_KEYCODE_NOT_BOUND;
                 break;
               }
@@ -122,7 +122,7 @@ namespace f1x {
               inputDevice_->start(*this);
             }
 
-            LOG_DEBUG(ANDROID_AUTO, "[InputSourceService] Sending KeyBindingResponse with Status: " << status");
+            LOG_DEBUG(ANDROID_AUTO, ("[InputSourceService] Sending KeyBindingResponse with Status: " + std::to_string(static_cast<int>(status))).c_str());
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
             promise->then([]() {},
@@ -132,7 +132,7 @@ namespace f1x {
           }
 
           void InputSourceService::onChannelError(const aasdk::error::Error &e) {
-            LOG_ERROR(ANDROID_AUTO, "[InputSourceService] onChannelError(): " << e.what()");
+            LOG_ERROR(ANDROID_AUTO, ("[InputSourceService] onChannelError(): " + std::string(e.what())).c_str());
           }
 
           void InputSourceService::onButtonEvent(const projection::ButtonEvent &event) {

@@ -2,8 +2,14 @@
 *  This file is part of openauto project.
 *  Copyright (C) 2025 OpenCarDev Team
 *
-*  openauto is free software: you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
+*  openauto is free software: you can redistribute it and/or mod                    const std::string& description = "");
+    void addApiRoute(HttpMethod method, const std::string& path, RouteHandler handler,
+                     const std::string& summary = "", const std::string& description = "",
+                     const std::map<std::string, std::string>& parameters = {});
+    
+    // Configuration
+    void setBindAddress(const std::string& address);
+    std::string getBindAddress() const;under the terms of the GNU General Public License as published by
 *  the Free Software Foundation; either version 3 of the License, or
 *  (at your option) any later version.
 
@@ -27,8 +33,15 @@
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include <nlohmann/json.hpp>
 #include <modern/Event.hpp>
 #include <modern/EventBus.hpp>
+#include <modern/StateMachine.hpp>
+#include <modern/ConfigurationManager.hpp>
+
+// Dummy classes to replace httplib when disabled
+class DummyRequest {};
+class DummyServer {};
 
 namespace openauto {
 namespace modern {
@@ -101,12 +114,17 @@ public:
     using Pointer = std::shared_ptr<RestApiServer>;
     
     explicit RestApiServer(int port = 8080);
+    RestApiServer(int port, std::shared_ptr<EventBus> eventBus,
+                  std::shared_ptr<StateMachine> stateMachine,
+                  std::shared_ptr<ConfigurationManager> configManager);
     ~RestApiServer();
     
     // Server control
     bool start();
     void stop();
     bool isRunning() const;
+    void setPort(int port);
+    int getPort() const;
     
     // Route registration
     void addRoute(HttpMethod method, const std::string& path, RouteHandler handler);
@@ -138,8 +156,6 @@ public:
                      const std::map<std::string, std::string>& parameters = {});
     
     // Configuration
-    void setPort(int port);
-    int getPort() const;
     void setBindAddress(const std::string& address);
     std::string getBindAddress() const;
     
@@ -148,10 +164,38 @@ public:
     size_t getTotalRequests() const;
     std::map<int, size_t> getStatusCodeStats() const;
 
+    // Setup methods
+    void setupRoutes();
+    void setupCorsHeaders();
+    void setupOpenApiRoutes();
+    void setupInfoRoutes();
+    void setupEventRoutes();
+    void setupStateRoutes();
+    void setupConfigRoutes();
+    
+    // Utility methods
+    nlohmann::json generateOpenApiSpec();
+    nlohmann::json getEventSchema();
+    nlohmann::json getStateSchema();
+    nlohmann::json getConfigSchema();
+    nlohmann::json getErrorSchema();
+    nlohmann::json createErrorResponse(const std::string& message, int code = 400, const std::string& detail = "");
+    nlohmann::json createSuccessResponse(const nlohmann::json& data = nlohmann::json::object(), const std::string& message = "Success");
+    nlohmann::json createPaginatedResponse(const nlohmann::json& data, int page, int limit, int total);
+    
+    // Validation methods
+    bool validateEventData(const nlohmann::json& json);
+    bool validateConfigData(const nlohmann::json& json);
+    
+    // Authentication methods
+    std::string extractBearerToken(const DummyRequest& req);
+    bool isAuthenticated(const DummyRequest& req);
+
 private:
     // Internal server implementation
     class ServerImpl;
     std::unique_ptr<ServerImpl> impl_;
+    std::unique_ptr<DummyServer> server_;
     
     // Configuration
     int port_;
@@ -172,6 +216,8 @@ private:
     
     // Event system integration
     std::shared_ptr<EventBus> eventBus_;
+    std::shared_ptr<StateMachine> stateMachine_;
+    std::shared_ptr<ConfigurationManager> configManager_;
     
     // Server state
     std::atomic<bool> running_;

@@ -82,14 +82,14 @@ void demonstrateModernLogging() {
     
     // Demonstrate performance logging
     std::cout << "\n--- Performance Logging ---" << std::endl;
-    
-    LOG_PERF_START(initialization);
+    // Performance measurement example (simplified)
+    SLOG_INFO(SYSTEM, "LoggerDemo", "Starting performance measurement");
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Simulate work
-    LOG_PERF_END(SYSTEM, initialization);
+    SLOG_INFO(SYSTEM, "LoggerDemo", "Initialization complete");
     
-    LOG_PERF_START(data_processing);
+    SLOG_INFO(SYSTEM, "LoggerDemo", "Starting data processing");
     std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Simulate work
-    LOG_PERF_END(SYSTEM, data_processing);
+    SLOG_INFO(SYSTEM, "LoggerDemo", "Data processing complete");
     
     // Demonstrate different formatters
     std::cout << "\n--- JSON Formatter ---" << std::endl;
@@ -184,6 +184,7 @@ private:
     }
 };
 
+#ifdef LOGGER_DEMO_STANDALONE
 int main() {
     // Initialize modern logger
     demonstrateModernLogging();
@@ -198,3 +199,4 @@ int main() {
     
     return 0;
 }
+#endif

@@ -20,9 +20,7 @@
 
 extern "C"
 {
-#ifdef USE_OMX
 #include <bcm_host.h>
-#endif
 }
 
 #include <aasdk/Common/Data.hpp>
@@ -106,7 +104,7 @@ bool OMXVideoOutput::init()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    LOG_DEBUG_STREAM(VIDEO, "[OMXVideoOutput] init, state: " << isActive_);
+    LOG_DEBUG_STREAM(VIDEO, "[OMXVideoOutput] init, state: " + std::string(isActive_ ? "true" : "false"));
     ilclient_change_component_state(components_[VideoComponent::DECODER], OMX_StateExecuting);
     
     return this->setupDisplayRegion();

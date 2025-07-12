@@ -82,7 +82,7 @@ void configureLogging() {
     const std::string logIni = "openauto-logs.ini";
     std::ifstream logSettings(logIni);
     if (logSettings.good()) {
-        LOG_WARN(CONFIG, "Legacy log configuration file found - consider migrating to modern logger config");
+        SLOG_WARN(CONFIG, "autoapp", "Legacy log configuration file found - consider migrating to modern logger config");
     }
 }
 
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
     libusb_context* usbContext;
     if(libusb_init(&usbContext) != 0)
     {
-        LOG_ERROR(SYSTEM, "libusb_init failed");
+        SLOG_ERROR(SYSTEM, "autoapp", "libusb_init failed");
         return 1;
     }
 
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
           {"screen_width", std::to_string(screen->geometry().width())},
           {"physical_width", std::to_string(screen->physicalSize().width())}
       };
-      LOG_INFO_CTX(UI, "Screen detected", context);
+      SLOG_INFO(UI, "autoapp", "Screen detected: " + screen->name().toStdString());
     }
 
     QScreen *primaryScreen = QGuiApplication::primaryScreen();
@@ -124,16 +124,16 @@ int main(int argc, char* argv[])
       QRect screenGeometry = primaryScreen->geometry();
       width = screenGeometry.width();
       height = screenGeometry.height();
-      LOG_INFO(UI, "Using geometry from primary screen");
+      SLOG_INFO(UI, "autoapp", "Using geometry from primary screen");
     } else {
-      LOG_INFO(UI, "Unable to find primary screen, using default values");
+      SLOG_INFO(UI, "autoapp", "Unable to find primary screen, using default values");
     }
 
     std::map<std::string, std::string> context = {
         {"display_width", std::to_string(width)},
         {"display_height", std::to_string(height)}
     };
-    LOG_INFO_CTX(UI, "Display configuration", context);
+    SLOG_INFO(UI, "autoapp", "Display configuration: " + std::to_string(width) + "x" + std::to_string(height));
 
     auto configuration = std::make_shared<autoapp::configuration::Configuration>();
 
@@ -181,57 +181,57 @@ int main(int argc, char* argv[])
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraHide, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Background &");
-        LOG_DEBUG(CAMERA, "Camera background mode activated");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera background mode activated");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraShow, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Foreground &");
-        LOG_DEBUG(CAMERA, "Camera foreground mode activated");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera foreground mode activated");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraPosYUp, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py PosYUp &");
-        LOG_DEBUG(CAMERA, "Camera position Y up");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera position Y up");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraPosYDown, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py PosYDown &");
-        LOG_DEBUG(CAMERA, "Camera position Y down");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera position Y down");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraZoomPlus, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py ZoomPlus &");
-        LOG_DEBUG(CAMERA, "Camera zoom plus");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera zoom plus");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraZoomMinus, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py ZoomMinus &");
-        LOG_DEBUG(CAMERA, "Camera zoom minus");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera zoom minus");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraRecord, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Record &");
-        LOG_DEBUG(CAMERA, "Camera recording started");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera recording started");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraStop, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Stop &");
-        LOG_DEBUG(CAMERA, "Camera recording stopped");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera recording stopped");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraSave, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Save &");
-        LOG_DEBUG(CAMERA, "Camera save triggered");
+        SLOG_DEBUG(CAMERA, "autoapp", "Camera save triggered");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerScriptNight, [&qApplication]() {
         system("/opt/crankshaft/service_daynight.sh app night");
-        LOG_DEBUG(UI, "Night mode activated");
+        SLOG_DEBUG(UI, "autoapp", "Night mode activated");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerScriptDay, [&qApplication]() {
         system("/opt/crankshaft/service_daynight.sh app day");
-        LOG_DEBUG(UI, "Day mode activated");
+        SLOG_DEBUG(UI, "autoapp", "Day mode activated");
     });
 
     mainWindow.showFullScreen();
@@ -253,20 +253,20 @@ int main(int argc, char* argv[])
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerAppStart, [&app]() {
-        LOG_DEBUG(ANDROID_AUTO, "Manual Android Auto start triggered");
+        SLOG_DEBUG(ANDROID_AUTO, "autoapp", "Manual Android Auto start triggered");
         try {
             app->disableAutostartEntity = false;
             app->resume();
             app->waitForUSBDevice();
         } catch (...) {
-            LOG_ERROR(GENERAL, "[AutoApp] TriggerAppStart: app->waitForUSBDevice()");
+            SLOG_ERROR(GENERAL, "autoapp", "[AutoApp] TriggerAppStart: app->waitForUSBDevice()");
         }
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerAppStop, [&app]() {
         try {
             if (std::ifstream("/tmp/android_device")) {
-                LOG_DEBUG(GENERAL, "[AutoApp] TriggerAppStop: Manual stop usb android auto.");
+                SLOG_DEBUG(GENERAL, "autoapp", "[AutoApp] TriggerAppStop: Manual stop usb android auto.");
                 app->disableAutostartEntity = true;
                 system("/usr/local/bin/autoapp_helper usbreset");
                 usleep(500000);
@@ -274,21 +274,21 @@ int main(int argc, char* argv[])
                     app->stop();
                     //app->pause();
                 } catch (...) {
-                    LOG_ERROR(GENERAL, "[AutoApp] TriggerAppStop: stop()");
+                    SLOG_ERROR(GENERAL, "autoapp", "[AutoApp] TriggerAppStop: stop()");
                 }
 
             } else {
-                LOG_DEBUG(NETWORK, "[AutoApp] TriggerAppStop: Manual stop wifi android auto.");
+                SLOG_DEBUG(NETWORK, "autoapp", "[AutoApp] TriggerAppStop: Manual stop wifi android auto.");
                 try {
                     app->onAndroidAutoQuit();
                     //app->pause();
                 } catch (...) {
-                    LOG_ERROR(GENERAL, "[Autoapp] TriggerAppStop: stop()");
+                    SLOG_ERROR(GENERAL, "autoapp", "[Autoapp] TriggerAppStop: stop()");
                 }
 
             }
         } catch (...) {
-            LOG_ERROR(GENERAL, "[AutoApp] Exception in manual stop android auto.");
+            SLOG_ERROR(GENERAL, "autoapp", "[AutoApp] Exception in manual stop android auto.");
         }
     });
 
@@ -297,7 +297,7 @@ int main(int argc, char* argv[])
         connectdialog.close();
         warningdialog.close();
         updatedialog.close();
-        LOG_DEBUG(GENERAL, "[AutoApp] Close all possible open dialogs.");
+        SLOG_DEBUG(GENERAL, "autoapp", "[AutoApp] Close all possible open dialogs.");
     });
 
     if (configuration->hideWarning() == false) {

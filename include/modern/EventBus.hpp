@@ -31,6 +31,7 @@
 #include <nlohmann/json.hpp>
 #include "Event.hpp"
 
+namespace openauto {
 namespace modern {
 
 class EventSubscriber {
@@ -58,6 +59,8 @@ public:
     void publish(EventType type, const EventData& data, const std::string& source = "system");
     
     // Async event processing
+    void start();
+    void stop();
     void startEventProcessing();
     void stopEventProcessing();
     
@@ -71,7 +74,7 @@ public:
     nlohmann::json getEventQueueStatus() const;
     
 private:
-    EventBus() = default;
+    EventBus();
     ~EventBus();
     
     void processEvents();
@@ -100,7 +103,8 @@ private:
 };
 
 // Convenience macros for event publishing
-#define PUBLISH_EVENT(type) modern::EventBus::getInstance().publish(type, __FUNCTION__)
-#define PUBLISH_EVENT_WITH_DATA(type, data) modern::EventBus::getInstance().publish(type, data, __FUNCTION__)
+#define PUBLISH_EVENT(type) openauto::modern::EventBus::getInstance().publish(type, __FUNCTION__)
+#define PUBLISH_EVENT_WITH_DATA(type, data) openauto::modern::EventBus::getInstance().publish(type, data, __FUNCTION__)
 
 } // namespace modern
+} // namespace openauto

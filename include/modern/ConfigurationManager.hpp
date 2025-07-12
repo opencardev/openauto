@@ -58,9 +58,6 @@ public:
     nlohmann::json toJson() const;
     void fromJson(const nlohmann::json& json);
     
-    // Event integration
-    void setEventBus(std::shared_ptr<openauto::modern::EventBus> eventBus);
-    
     // Path management
     void setConfigPath(const std::string& path);
     std::string getConfigPath() const;
@@ -76,12 +73,11 @@ private:
     mutable std::mutex mutex_;
     std::string configPath_;
     std::unordered_map<std::string, ConfigValue> values_;
-    std::shared_ptr<openauto::modern::EventBus> eventBus_;
     
     // Helper methods
     void notifyConfigChanged(const std::string& key, const ConfigValue& value);
     ConfigValue jsonToConfigValue(const nlohmann::json& value);
-    nlohmann::json configValueToJson(const ConfigValue& value);
+    nlohmann::json configValueToJson(const ConfigValue& value) const;
     
     // Default values
     void setDefaultValues();

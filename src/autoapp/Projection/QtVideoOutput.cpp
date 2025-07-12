@@ -84,7 +84,7 @@ void QtVideoOutput::onStartPlayback()
     mediaPlayer_->play();
 
     // TODO: This only outputs a line if there's an error - FIXME - Output a proper status instead
-    LOG_DEBUG_STREAM(VIDEO, "Player error state -> " << mediaPlayer_->errorString().toStdString());
+    LOG_DEBUG_STREAM(VIDEO, "Player error state -> " + mediaPlayer_->errorString().toStdString());
 }
 
 void QtVideoOutput::onStopPlayback()

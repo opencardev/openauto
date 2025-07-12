@@ -91,11 +91,10 @@ void ConfigurationManager::reset() {
     values_.clear();
     setDefaultValues();
     
-    if (eventBus_) {
-        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
-        event->setData("action", std::string("reset"));
-        eventBus_->publish(event);
-    }
+    // Publish event using EventBus singleton
+    auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
+    event->setData("action", std::string("reset"));
+    EventBus::getInstance().publish(event);
 }
 
 void ConfigurationManager::setValue(const std::string& key, const ConfigValue& value) {
@@ -118,12 +117,11 @@ void ConfigurationManager::removeValue(const std::string& key) {
         values_.erase(key);
     }
     
-    if (eventBus_) {
-        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
-        event->setData("key", key);
-        event->setData("action", std::string("removed"));
-        eventBus_->publish(event);
-    }
+    // Publish event using EventBus singleton
+    auto event = std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
+    event->setData("key", key);
+    event->setData("action", std::string("removed"));
+    EventBus::getInstance().publish(event);
 }
 
 std::unordered_map<std::string, ConfigValue> ConfigurationManager::getAllValues() const {
@@ -137,12 +135,11 @@ void ConfigurationManager::setValues(const std::unordered_map<std::string, Confi
         values_ = values;
     }
     
-    if (eventBus_) {
-        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
-        event->setData("action", std::string("bulk_update"));
-        event->setData("count", static_cast<int>(values.size()));
-        eventBus_->publish(event);
-    }
+    // Publish event using EventBus singleton
+    auto event = std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
+    event->setData("action", std::string("bulk_update"));
+    event->setData("count", static_cast<int>(values.size()));
+    EventBus::getInstance().publish(event);
 }
 
 nlohmann::json ConfigurationManager::toJson() const {
@@ -166,9 +163,6 @@ void ConfigurationManager::fromJson(const nlohmann::json& json) {
     setValues(newValues);
 }
 
-void ConfigurationManager::setEventBus(std::shared_ptr<openauto::modern::EventBus> eventBus) {
-    eventBus_ = eventBus;
-}
 
 void ConfigurationManager::setConfigPath(const std::string& path) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -211,18 +205,16 @@ void ConfigurationManager::loadDefaults() {
 }
 
 void ConfigurationManager::notifyConfigChanged(const std::string& key, const ConfigValue& value) {
-    if (eventBus_) {
-        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
-        event->setData("key", key);
-        event->setData("action", std::string("changed"));
-        
-        // Add the actual value based on its type
-        std::visit([&event](const auto& v) {
-            event->setData("value", openauto::modern::EventValue(v));
-        }, value);
-        
-        eventBus_->publish(event);
-    }
+    auto event = std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
+    event->setData("key", key);
+    event->setData("action", std::string("changed"));
+    
+    // Add the actual value based on its type
+    std::visit([event](const auto& v) {
+        event->setData("value", modern::EventValue(v));
+    }, value);
+    
+    EventBus::getInstance().publish(event);
 }
 
 ConfigValue ConfigurationManager::jsonToConfigValue(const nlohmann::json& value) {
@@ -240,7 +232,7 @@ ConfigValue ConfigurationManager::jsonToConfigValue(const nlohmann::json& value)
     }
 }
 
-nlohmann::json ConfigurationManager::configValueToJson(const ConfigValue& value) {
+nlohmann::json ConfigurationManager::configValueToJson(const ConfigValue& value) const {
     return std::visit([](const auto& v) -> nlohmann::json {
         return v;
     }, value);

@@ -229,6 +229,10 @@ if(ENABLE_MODERN_API)
     target_link_libraries(autoapp PUBLIC Threads::Threads)
     target_link_libraries(btservice PUBLIC Threads::Threads)
     
+    # Add httplib compilation flags (header-only library)
+    target_compile_definitions(autoapp PRIVATE HTTPLIB_USE_POLL)
+    target_compile_definitions(btservice PRIVATE HTTPLIB_USE_POLL)
+    
     # Add filesystem support for modern logger
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
         target_link_libraries(autoapp PUBLIC stdc++fs)

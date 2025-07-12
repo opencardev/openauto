@@ -72,7 +72,7 @@ namespace f1x {
 
           void MediaBrowserService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
             LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] onChannelOpenRequest()");
-            LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] Channel Id: " << request.service_id() << ", Priority: " << request.priority()");
+            LOG_INFO(ANDROID_AUTO, ("[MediaBrowserService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority())).c_str());
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -87,7 +87,7 @@ namespace f1x {
           }
 
           void MediaBrowserService::onChannelError(const aasdk::error::Error &e) {
-            LOG_ERROR(ANDROID_AUTO, "[MediaBrowserService] onChannelError(): " << e.what()");
+            LOG_ERROR(ANDROID_AUTO, ("[MediaBrowserService] onChannelError(): " + std::string(e.what())).c_str());
           }
         }
       }
