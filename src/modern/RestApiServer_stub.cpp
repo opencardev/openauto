@@ -46,7 +46,7 @@ RestApiServer::RestApiServer(
     stateMachine_(stateMachine),
     configManager_(configManager) {
     
-    Logger::getInstance().info(LogCategory::GENERAL, "RestApiServer", __FUNCTION__, __FILE__, __LINE__, "RestApiServer created on port " + std::to_string(port));
+    Logger::getInstance().info("RestApiServer created on port " + std::to_string(port));
 }
 
 RestApiServer::~RestApiServer() {
@@ -54,13 +54,13 @@ RestApiServer::~RestApiServer() {
 }
 
 bool RestApiServer::start() {
-    Logger::getInstance().info(LogCategory::GENERAL, "RestApiServer", __FUNCTION__, __FILE__, __LINE__, "RestApiServer start() called - stub implementation");
+    Logger::getInstance().info("RestApiServer start() called - stub implementation");
     running_ = true;
     return true;
 }
 
 void RestApiServer::stop() {
-    Logger::getInstance().info(LogCategory::GENERAL, "RestApiServer", __FUNCTION__, __FILE__, __LINE__, "RestApiServer stop() called - stub implementation");
+    Logger::getInstance().info("RestApiServer stop() called - stub implementation");
     running_ = false;
 }
 
@@ -88,7 +88,7 @@ void RestApiServer::setApiInfo(const ApiInfo& info) {
     apiInfo_ = info;
 }
 
-ApiInfo RestApiServer::getApiInfo() const {
+RestApiServer::ApiInfo RestApiServer::getApiInfo() const {
     return apiInfo_;
 }
 
@@ -137,11 +137,11 @@ std::string RestApiServer::getOpenApiSpec() const {
 }
 
 void RestApiServer::enableSwaggerUI(const std::string& path) {
-    Logger::getInstance().info(LogCategory::GENERAL, "RestApiServer", __FUNCTION__, __FILE__, __LINE__, "SwaggerUI enabled at: " + path);
+    Logger::getInstance().info("SwaggerUI enabled at: " + path);
 }
 
 void RestApiServer::enableReDoc(const std::string& path) {
-    Logger::getInstance().info(LogCategory::GENERAL, "RestApiServer", __FUNCTION__, __FILE__, __LINE__, "ReDoc enabled at: " + path);
+    Logger::getInstance().info("ReDoc enabled at: " + path);
 }
 
 void RestApiServer::setAuthenticationHandler(std::function<bool(const HttpRequest&)> handler) {

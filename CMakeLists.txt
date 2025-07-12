@@ -188,23 +188,20 @@ if(ENABLE_MODERN_API)
     
     # Find required packages for modern components
     find_package(PkgConfig REQUIRED)
+    find_package(NlohmannJson REQUIRED)
+    find_package(Httplib REQUIRED)
+    find_package(Threads REQUIRED)
     
-    # Check for nlohmann/json
-    find_path(NLOHMANN_JSON_INCLUDE_DIRS nlohmann/json.hpp
-        PATHS /usr/include /usr/local/include /opt/homebrew/include
-        PATH_SUFFIXES nlohmann)
-    
-    if(NOT NLOHMANN_JSON_INCLUDE_DIRS)
+    if(NOT NlohmannJson_FOUND)
         message(FATAL_ERROR "nlohmann/json not found. Please install nlohmann-json-dev package.")
     endif()
     
-    # Check for httplib
-    find_path(HTTPLIB_INCLUDE_DIRS httplib.h
-        PATHS /usr/include /usr/local/include /opt/homebrew/include)
-    
-    if(NOT HTTPLIB_INCLUDE_DIRS)
-        message(WARNING "httplib.h not found. You may need to install cpp-httplib manually.")
+    if(NOT Httplib_FOUND)
+        message(FATAL_ERROR "cpp-httplib not found. Please install cpp-httplib or download httplib.h manually.")
     endif()
+    
+    message(STATUS "Found nlohmann/json: ${NLOHMANN_JSON_VERSION}")
+    message(STATUS "Found cpp-httplib: ${HTTPLIB_VERSION}")
     
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_MODERN_API")
     
@@ -218,20 +215,17 @@ if(ENABLE_MODERN_API)
     
     # Add modern components to autoapp
     target_sources(autoapp PRIVATE ${modern_source_files})
-    target_include_directories(autoapp PRIVATE ${NLOHMANN_JSON_INCLUDE_DIRS} ${HTTPLIB_INCLUDE_DIRS})
+    target_link_libraries(autoapp PUBLIC 
+        nlohmann_json::nlohmann_json 
+        httplib::httplib 
+        Threads::Threads)
     
     # Add modern components to btservice (for logger support)
     target_sources(btservice PRIVATE ${modern_source_files})
-    target_include_directories(btservice PRIVATE ${NLOHMANN_JSON_INCLUDE_DIRS} ${HTTPLIB_INCLUDE_DIRS})
-    
-    # Add threading support for REST API
-    find_package(Threads REQUIRED)
-    target_link_libraries(autoapp PUBLIC Threads::Threads)
-    target_link_libraries(btservice PUBLIC Threads::Threads)
-    
-    # Add httplib compilation flags (header-only library)
-    target_compile_definitions(autoapp PRIVATE HTTPLIB_USE_POLL)
-    target_compile_definitions(btservice PRIVATE HTTPLIB_USE_POLL)
+    target_link_libraries(btservice PUBLIC 
+        nlohmann_json::nlohmann_json 
+        httplib::httplib 
+        Threads::Threads)
     
     # Add filesystem support for modern logger
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
@@ -243,8 +237,10 @@ if(ENABLE_MODERN_API)
     option(BUILD_LOGGER_DEMO "Build logger demonstration" OFF)
     if(BUILD_LOGGER_DEMO)
         add_executable(logger_demo src/modern/LoggerDemo.cpp src/modern/Logger.cpp)
-        target_include_directories(logger_demo PRIVATE ${include_directory} ${NLOHMANN_JSON_INCLUDE_DIRS})
-        target_link_libraries(logger_demo PRIVATE Threads::Threads)
+        target_include_directories(logger_demo PRIVATE ${include_directory})
+        target_link_libraries(logger_demo PRIVATE 
+            nlohmann_json::nlohmann_json 
+            Threads::Threads)
         
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
             target_link_libraries(logger_demo PRIVATE stdc++fs)
@@ -255,5 +251,5 @@ if(ENABLE_MODERN_API)
             COMPILE_FLAGS "-DENABLE_MODERN_API")
     endif()
     
-    message(STATUS "Modern API components added to build")
+    message(STATUS "Modern API components added to build with OpenAPI support")
 endif()

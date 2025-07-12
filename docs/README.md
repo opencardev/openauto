@@ -93,6 +93,60 @@ This document provides a comprehensive index of all documentation for OpenAuto's
 
 **Target Audience**: Application developers, integration partners
 
+#### [REST API Comprehensive Guide](rest-api-comprehensive.md)
+**Purpose**: Complete OpenAPI-compliant REST API documentation
+**Key Topics**:
+- OpenAPI 3.0 specification and Swagger UI
+- Route registration and middleware
+- Authentication and authorization
+- JSON request/response handling
+- Integration with modern components
+
+**Target Audience**: API developers, system integrators
+
+#### [REST API Implementation Guide](rest-api-implementation.md)
+**Purpose**: Step-by-step guide for implementing REST API endpoints
+**Key Topics**:
+- Endpoint implementation patterns
+- OpenAPI documentation generation
+- Middleware development
+- Best practices and testing strategies
+- Deployment considerations
+
+**Target Audience**: Software developers
+
+#### [REST API Debugging Guide](rest-api-debugging.md)
+**Purpose**: Comprehensive debugging and troubleshooting for REST API
+**Key Topics**:
+- Build-time and runtime debugging
+- Network connectivity issues
+- Authentication and authorization debugging
+- Performance optimization
+- Production monitoring
+
+**Target Audience**: Software developers, system administrators
+
+#### [REST API Testing Guide](rest-api-testing.md)
+**Purpose**: Complete testing strategies and validation procedures
+**Key Topics**:
+- Manual testing procedures
+- Automated testing suites (Python, JavaScript, Bash)
+- Performance and load testing
+- Security testing
+- Integration testing with OpenAuto components
+
+**Target Audience**: QA engineers, developers, DevOps engineers
+
+#### [REST API Quick Reference](rest-api-quick-reference.md)
+**Purpose**: Fast reference for common API operations and debugging
+**Key Topics**:
+- Essential API endpoints and examples
+- Authentication and error handling
+- Testing commands and debugging tips
+- Configuration examples and status codes
+
+**Target Audience**: All developers and users
+
 #### [Troubleshooting Guide](troubleshooting-guide.md)
 **Purpose**: Comprehensive problem-solving resource
 **Key Topics**:
@@ -126,8 +180,19 @@ This document provides a comprehensive index of all documentation for OpenAuto's
 | **Modern Logger** | High-performance, categorized logging | [Logger Migration Guide](logger-migration.md) |
 | **Event Bus** | Decoupled inter-component communication | [Integration Guide](integration-guide.md) |
 | **State Machine** | Centralized state management | [Integration Guide](integration-guide.md) |
-| **REST API** | Remote control and monitoring | [API Documentation](api-documentation.md) |
+| **REST API** | Remote control and monitoring | [REST API Comprehensive Guide](rest-api-comprehensive.md) |
 | **Configuration Manager** | Dynamic configuration management | [Integration Guide](integration-guide.md) |
+
+### REST API Quick Start
+
+| Task | Command | Documentation |
+|------|---------|---------------|
+| **Start API Server** | `./autoapp --enable-api` | [REST API Comprehensive Guide](rest-api-comprehensive.md) |
+| **Test Health** | `curl http://localhost:8080/api/health` | [REST API Testing Guide](rest-api-testing.md) |
+| **View API Docs** | Open `http://localhost:8080/docs` | [REST API Implementation Guide](rest-api-implementation.md) |
+| **Run API Tests** | `./test_rest_api.sh` | [REST API Testing Guide](rest-api-testing.md) |
+| **Debug API Issues** | Check logs + network | [REST API Debugging Guide](rest-api-debugging.md) |
+| **Quick Reference** | All common commands | [REST API Quick Reference](rest-api-quick-reference.md) |
 
 ### Build Targets
 
