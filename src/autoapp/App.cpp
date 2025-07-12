@@ -81,7 +81,7 @@ namespace f1x::openauto::autoapp {
         androidAutoEntity_->start(*this);
       }
       catch (const aasdk::error::Error &error) {
-        LOG_ERROR(GENERAL, "[App] TCP AndroidAutoEntity create error: " << error.what()");
+        LOG_ERROR_STREAM(GENERAL, "[App] TCP AndroidAutoEntity create error: " << error.what());
 
         //androidAutoEntity_.reset();
         this->waitForDevice();
@@ -141,7 +141,7 @@ namespace f1x::openauto::autoapp {
       }
     }
     catch (const aasdk::error::Error &error) {
-      LOG_ERROR(GENERAL, "[App] USB AndroidAutoEntity create error: " << error.what()");
+      LOG_ERROR_STREAM(GENERAL, "[App] USB AndroidAutoEntity create error: " << error.what());
 
       androidAutoEntity_.reset();
       this->waitForDevice();
@@ -151,10 +151,10 @@ namespace f1x::openauto::autoapp {
   void App::enumerateDevices() {
     auto promise = aasdk::usb::IConnectedAccessoriesEnumerator::Promise::defer(strand_);
     promise->then([this, self = this->shared_from_this()](auto result) {
-                    LOG_INFO(GENERAL, "[App] Devices enumeration result: " << result");
+                    LOG_INFO_STREAM(GENERAL, "[App] Devices enumeration result: " << result);
                   },
                   [this, self = this->shared_from_this()](auto e) {
-                    LOG_ERROR(GENERAL, "[App] Devices enumeration failed: " << e.what()");
+                    LOG_ERROR_STREAM(GENERAL, "[App] Devices enumeration failed: " << e.what());
                   });
 
     connectedAccessoriesEnumerator_->enumerate(std::move(promise));
@@ -237,7 +237,7 @@ namespace f1x::openauto::autoapp {
   }
 
   void App::onUSBHubError(const aasdk::error::Error &error) {
-    LOG_ERROR(GENERAL, "[App] onUSBHubError(): " << error.what()");
+    LOG_ERROR_STREAM(GENERAL, "[App] onUSBHubError(): " << error.what());
 
 //    if(error != aasdk::error::ErrorCode::OPERATION_ABORTED &&
 //       error != aasdk::error::ErrorCode::OPERATION_IN_PROGRESS)

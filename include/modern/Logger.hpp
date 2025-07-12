@@ -343,8 +343,8 @@ private:
     do { \
         std::ostringstream oss_; \
         oss_ << stream; \
-        openauto::modern::Logger::getInstance().trace( \
-            openauto::modern::LogCategory::category, \
+        ::openauto::modern::Logger::getInstance().trace( \
+            ::openauto::modern::LogCategory::category, \
             "Component", __FUNCTION__, __FILE__, __LINE__, oss_.str()); \
     } while(0)
 
