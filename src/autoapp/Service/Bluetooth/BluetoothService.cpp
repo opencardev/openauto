@@ -66,7 +66,7 @@ namespace f1x::openauto::autoapp::service::bluetooth {
     auto bluetooth = service->mutable_bluetooth_service();
 
     if (bluetoothDevice_->isAvailable()) {
-      LOG_INFO(ANDROID_AUTO, "[BluetoothService] Local Address: " << bluetoothDevice_->getAdapterAddress()");
+      LOG_INFO_STREAM(ANDROID_AUTO, "[BluetoothService] Local Address: " << bluetoothDevice_->getAdapterAddress());
 
       // TODO: Also need to re-establish Bluetooth
       // If the HU wants the MD to skip the Bluetooth Pairing and Connection process, the HU can declare its address as SKIP_THIS_BLUETOOTH
@@ -87,8 +87,8 @@ namespace f1x::openauto::autoapp::service::bluetooth {
   void
   BluetoothService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[BluetoothService] onChannelOpenRequest()");
-    LOG_DEBUG(ANDROID_AUTO, "[BluetoothService] Channel Id: " << request.service_id() << ", Priority: "
-                        << request.priority()");
+    LOG_DEBUG_STREAM(ANDROID_AUTO, "[BluetoothService] Channel Id: " << request.service_id() << ", Priority: "
+                        << request.priority());
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -104,7 +104,7 @@ namespace f1x::openauto::autoapp::service::bluetooth {
   void BluetoothService::onBluetoothPairingRequest(
       const aap_protobuf::service::bluetooth::message::BluetoothPairingRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[BluetoothService] onBluetoothPairingRequest()");
-    LOG_INFO(ANDROID_AUTO, "[BluetoothService] Phone Address: " << request.phone_address()");
+    LOG_INFO_STREAM(ANDROID_AUTO, "[BluetoothService] Phone Address: " << request.phone_address());
 
     aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
 
@@ -149,14 +149,14 @@ namespace f1x::openauto::autoapp::service::bluetooth {
   void BluetoothService::onBluetoothAuthenticationResult(
       const aap_protobuf::service::bluetooth::message::BluetoothAuthenticationResult &request) {
     LOG_INFO(ANDROID_AUTO, "[BluetoothService] onBluetoothAuthenticationResult()");
-    LOG_INFO(ANDROID_AUTO, "[BluetoothService] AuthData " << request.status()");
+    LOG_INFO_STREAM(ANDROID_AUTO, "[BluetoothService] AuthData " << request.status());
     aap_protobuf::service::bluetooth::message::BluetoothPairingResponse response;
 
     channel_->receive(this->shared_from_this());
   }
 
   void BluetoothService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR(ANDROID_AUTO, "[BluetoothService] onChannelError(): " << e.what()");
+    LOG_ERROR_STREAM(ANDROID_AUTO, "[BluetoothService] onChannelError(): " << e.what());
   }
 }
 

@@ -220,13 +220,19 @@ if(ENABLE_MODERN_API)
     target_sources(autoapp PRIVATE ${modern_source_files})
     target_include_directories(autoapp PRIVATE ${NLOHMANN_JSON_INCLUDE_DIRS} ${HTTPLIB_INCLUDE_DIRS})
     
+    # Add modern components to btservice (for logger support)
+    target_sources(btservice PRIVATE ${modern_source_files})
+    target_include_directories(btservice PRIVATE ${NLOHMANN_JSON_INCLUDE_DIRS} ${HTTPLIB_INCLUDE_DIRS})
+    
     # Add threading support for REST API
     find_package(Threads REQUIRED)
     target_link_libraries(autoapp PUBLIC Threads::Threads)
+    target_link_libraries(btservice PUBLIC Threads::Threads)
     
     # Add filesystem support for modern logger
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
         target_link_libraries(autoapp PUBLIC stdc++fs)
+        target_link_libraries(btservice PUBLIC stdc++fs)
     endif()
     
     # Optional logger demo executable

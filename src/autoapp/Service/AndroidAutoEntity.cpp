@@ -3,7 +3,14 @@
 *  Copyright (C) 2018 f1x.studio (Michal Szwaj)
 *
 *  openauto is free software: you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
+*  it under the terms of the GNU General Publ        void AndroidAutoEntity::onAudioFocusRequest(
+                void AndroidAutoEntity::onNavigationFocusRequest(
+            const aap_protobuf::service::control::message::NavFocusRequestNotification &request) {
+          LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onNavigationFocusRequest()");
+          LOG_DEBUG_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] NavFocusRequestNotification type received: " << NavFocusType_Name(request.focus_type()));const aap_protobuf::service::control::message::AudioFocusRequest &request) {
+          LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onAudioFocusRequest()");
+          LOG_DEBUG_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] AudioFocusRequestType received: "
+                             << AudioFocusRequestType_Name(request.audio_focus_type()));cense as published by
 *  the Free Software Foundation; either version 3 of the License, or
 *  (at your option) any later version.
 
@@ -107,8 +114,8 @@ namespace f1x {
         void AndroidAutoEntity::onVersionResponse(uint16_t majorCode, uint16_t minorCode,
                                                   aap_protobuf::shared::MessageStatus status) {
           LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onVersionResponse()");
-          LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] Version Received: " << majorCode << "." << minorCode
-                             << ", with status: " << status");
+          LOG_INFO_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] Version Received: " << majorCode << "." << minorCode
+                             << ", with status: " << status);
 
           if (status == aap_protobuf::shared::MessageStatus::STATUS_NO_COMPATIBLE_VERSION) {
             LOG_ERROR(ANDROID_AUTO, "[AndroidAutoEntity] Version mismatch.");
@@ -135,7 +142,7 @@ namespace f1x {
 
         void AndroidAutoEntity::onHandshake(const aasdk::common::DataConstBuffer &payload) {
           LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onHandshake()");
-          LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] Payload size: " << payload.size");
+          LOG_DEBUG_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] Payload size: " << payload.size());
 
           try {
             cryptor_->writeHandshakeBuffer(payload);
@@ -170,8 +177,8 @@ namespace f1x {
         void AndroidAutoEntity::onServiceDiscoveryRequest(
             const aap_protobuf::service::control::message::ServiceDiscoveryRequest &request) {
           LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onServiceDiscoveryRequest()");
-          LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] Type: " << request.label_text() << ", Model: "
-                             << request.device_name()");
+          LOG_DEBUG_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] Type: " << request.label_text() << ", Model: "
+                             << request.device_name());
 
           aap_protobuf::service::control::message::ServiceDiscoveryResponse serviceDiscoveryResponse;
           serviceDiscoveryResponse.mutable_channels()->Reserve(256);
@@ -237,8 +244,8 @@ namespace f1x {
               ? aap_protobuf::service::control::message::AudioFocusStateType::AUDIO_FOCUS_STATE_LOSS
               : aap_protobuf::service::control::message::AudioFocusStateType::AUDIO_FOCUS_STATE_GAIN;
 
-          LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] AudioFocusStateType determined: "
-                             << AudioFocusStateType_Name(audioFocusStateType)");
+          LOG_DEBUG_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] AudioFocusStateType determined: "
+                             << AudioFocusStateType_Name(audioFocusStateType));
 
           aap_protobuf::service::control::message::AudioFocusNotification response;
           response.set_focus_state(audioFocusStateType);
@@ -253,7 +260,7 @@ namespace f1x {
         void AndroidAutoEntity::onByeByeRequest(
             const aap_protobuf::service::control::message::ByeByeRequest &request) {
           LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onByeByeRequest()");
-          LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] Reason received: " << request.reason()");
+          LOG_DEBUG_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] Reason received: " << request.reason());
 
           aap_protobuf::service::control::message::ByeByeResponse response;
           auto promise = aasdk::channel::SendPromise::defer(strand_);
@@ -309,13 +316,13 @@ namespace f1x {
 
         void AndroidAutoEntity::onPingResponse(const aap_protobuf::service::control::message::PingResponse &response) {
           LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onPingResponse()");
-          LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] Timestamp: " << response.timestamp()");
+          LOG_DEBUG_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] Timestamp: " << response.timestamp());
           pinger_->pong();
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
         void AndroidAutoEntity::onChannelError(const aasdk::error::Error &e) {
-          LOG_FATAL(ANDROID_AUTO, "[AndroidAutoEntity] onChannelError(): " << e.what()");
+          LOG_FATAL_STREAM(ANDROID_AUTO, "[AndroidAutoEntity] onChannelError(): " << e.what());
           this->triggerQuit();
         }
 
