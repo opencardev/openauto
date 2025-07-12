@@ -92,7 +92,7 @@ void ConfigurationManager::reset() {
     setDefaultValues();
     
     if (eventBus_) {
-        auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "config_manager");
+        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
         event->setData("action", std::string("reset"));
         eventBus_->publish(event);
     }
@@ -119,7 +119,7 @@ void ConfigurationManager::removeValue(const std::string& key) {
     }
     
     if (eventBus_) {
-        auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "config_manager");
+        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
         event->setData("key", key);
         event->setData("action", std::string("removed"));
         eventBus_->publish(event);
@@ -138,7 +138,7 @@ void ConfigurationManager::setValues(const std::unordered_map<std::string, Confi
     }
     
     if (eventBus_) {
-        auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "config_manager");
+        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
         event->setData("action", std::string("bulk_update"));
         event->setData("count", static_cast<int>(values.size()));
         eventBus_->publish(event);
@@ -166,7 +166,7 @@ void ConfigurationManager::fromJson(const nlohmann::json& json) {
     setValues(newValues);
 }
 
-void ConfigurationManager::setEventBus(std::shared_ptr<EventBus> eventBus) {
+void ConfigurationManager::setEventBus(std::shared_ptr<openauto::modern::EventBus> eventBus) {
     eventBus_ = eventBus;
 }
 
@@ -212,13 +212,13 @@ void ConfigurationManager::loadDefaults() {
 
 void ConfigurationManager::notifyConfigChanged(const std::string& key, const ConfigValue& value) {
     if (eventBus_) {
-        auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "config_manager");
+        auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
         event->setData("key", key);
         event->setData("action", std::string("changed"));
         
         // Add the actual value based on its type
         std::visit([&event](const auto& v) {
-            event->setData("value", EventValue(v));
+            event->setData("value", openauto::modern::EventValue(v));
         }, value);
         
         eventBus_->publish(event);
