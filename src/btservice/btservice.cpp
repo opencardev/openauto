@@ -29,9 +29,10 @@ int main(int argc, char *argv[]) {
   QLoggingCategory::setFilterRules(QStringLiteral("qt.bluetooth*=true"));
   QCoreApplication qApplication(argc, argv);
 
-  // Initialize modern logger for btservice
+  // Configure modern logger for btservice
   auto& logger = openauto::modern::Logger::getInstance();
-  logger.initialize("btservice", "info", true, true);
+  logger.setLevel(openauto::modern::LogLevel::INFO);
+  logger.setAsync(true);
   
   auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
 
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Exception caught: " << e.what() << std::endl;
   }
 
-  LOG_INFO(GENERAL, "Bluetooth service stopping");
+  SLOG_INFO(GENERAL, "btservice", "Bluetooth service stopping");
 
   return 0;
 }

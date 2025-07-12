@@ -73,10 +73,10 @@ void startIOServiceWorkers(boost::asio::io_service& ioService, ThreadPool& threa
 }
 
 void configureLogging() {
-    // Initialize modern logger for autoapp
+    // Configure modern logger for autoapp
     auto& logger = openauto::modern::Logger::getInstance();
-    logger.initialize("autoapp", "info", true, true);
     logger.setLevel(openauto::modern::LogLevel::INFO);
+    logger.setAsync(true);
     
     // Check for legacy log config file and warn about migration
     const std::string logIni = "openauto-logs.ini";
