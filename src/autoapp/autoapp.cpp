@@ -74,7 +74,7 @@ void startIOServiceWorkers(boost::asio::io_service& ioService, ThreadPool& threa
 
 void configureLogging() {
     // Initialize modern logger for autoapp
-    auto& logger = OpenAutoLogger::getInstance();
+    auto& logger = openauto::modern::Logger::getInstance();
     logger.initialize("autoapp", "info", true, true);
     logger.setLevel(openauto::modern::LogLevel::INFO);
     

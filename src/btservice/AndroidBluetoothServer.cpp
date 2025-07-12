@@ -3,8 +3,7 @@
 *  Copyright (C) 2018 f1x.studio (Michal Szwaj)
 *
 *  openauto is free software: you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as publis  void AndroidBluetoothServer::sendMessage(const google::protobuf::Message &msg, uint16_t msgId) {
-    LOG_INFO(BLUETOOTH, "Sending message to connected device");d by
+*  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation; either version 3 of the License, or
 *  (at your option) any later version.
 

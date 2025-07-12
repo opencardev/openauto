@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   QCoreApplication qApplication(argc, argv);
 
   // Initialize modern logger for btservice
-  auto& logger = OpenAutoLogger::getInstance();
+  auto& logger = openauto::modern::Logger::getInstance();
   logger.initialize("btservice", "info", true, true);
   
   auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Exception caught: " << e.what() << std::endl;
   }
 
-  LOG_INFO("Bluetooth service stopping", "");
+  LOG_INFO(GENERAL, "Bluetooth service stopping");
 
   return 0;
 }

@@ -1756,7 +1756,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
             std::remove("/tmp/entityexit");
         }
     } catch (...) {
-        LOG_ERROR("ui.mainwindow") << "Error in entityexit";
+        LOG_ERROR(UI, "Error in entityexit");
     }
 
     // check if system is in display off mode (tap2wake)

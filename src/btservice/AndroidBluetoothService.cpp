@@ -22,7 +22,7 @@
 namespace f1x::openauto::btservice {
 
   AndroidBluetoothService::AndroidBluetoothService() {
-    LOG_INFO("Initialising Android Bluetooth Service", "bt.service");
+    LOG_INFO(BLUETOOTH, "Initialising Android Bluetooth Service");
     const QBluetoothUuid serviceUuid(QLatin1String("4de17a00-52cb-11e6-bdf4-0800200c9a66"));
 
     QBluetoothServiceInfo::Sequence classId;
@@ -41,7 +41,7 @@ namespace f1x::openauto::btservice {
   }
 
   bool AndroidBluetoothService::registerService(int16_t portNumber, const QBluetoothAddress &bluetoothAddress) {
-    LOG_INFO("Registering Bluetooth service", "bt.service");
+    LOG_INFO(BLUETOOTH, "Registering Bluetooth service");
 
     QBluetoothServiceInfo::Sequence protocolDescriptorList;
     QBluetoothServiceInfo::Sequence protocol;
@@ -57,7 +57,7 @@ namespace f1x::openauto::btservice {
   }
 
   bool AndroidBluetoothService::unregisterService() {
-    LOG_INFO("Unregistering Bluetooth service", "bt.service");
+    LOG_INFO(BLUETOOTH, "Unregistering Bluetooth service");
     return serviceInfo_.unregisterService();
   }
 

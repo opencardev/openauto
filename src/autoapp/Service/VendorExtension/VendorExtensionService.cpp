@@ -34,31 +34,31 @@ namespace f1x::openauto::autoapp::service::vendorextension {
 
   void VendorExtensionService::start() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("vendor.extension.service") << "start()";
+      LOG_INFO(GENERAL, "start()");
     });
   }
 
   void VendorExtensionService::stop() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("vendor.extension.service") << "stop()";
+      LOG_INFO(GENERAL, "stop()");
     });
   }
 
   void VendorExtensionService::pause() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("vendor.extension.service") << "pause()";
+      LOG_INFO(GENERAL, "pause()");
     });
   }
 
   void VendorExtensionService::resume() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("vendor.extension.service") << "resume()";
+      LOG_INFO(GENERAL, "resume()");
     });
   }
 
   void VendorExtensionService::fillFeatures(
       aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-    LOG_INFO("vendor.extension.service") << "fillFeatures();";
+    LOG_INFO(GENERAL, "fillFeatures();");
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -68,14 +68,14 @@ namespace f1x::openauto::autoapp::service::vendorextension {
   }
 
   void VendorExtensionService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR("vendor.extension.service") << "onChannelError(): " << e.what();
+    LOG_ERROR_STREAM(GENERAL, "onChannelError(): " << e.what());
   }
 
   void VendorExtensionService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-    LOG_INFO("vendor.extension.service") << "onChannelOpenRequest()";
-    LOG_INFO("vendor.extension.service") << "Channel Id: " << request.service_id() << ", Priority: "
-                       << request.priority();
+    LOG_INFO_STREAM(GENERAL, "onChannelOpenRequest()");
+    LOG_INFO_STREAM(GENERAL, "Channel Id: " << request.service_id() << ", Priority: "
+                       << request.priority());
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;

@@ -37,31 +37,31 @@ namespace f1x::openauto::autoapp::service::wifiprojection {
 
   void WifiProjectionService::start() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("wifi.projection.service") << "start()";
+      LOG_INFO(NETWORK, "start()");
     });
   }
 
   void WifiProjectionService::stop() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("wifi.projection.service") << "stop()";
+      LOG_INFO(NETWORK, "stop()");
     });
   }
 
   void WifiProjectionService::pause() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("wifi.projection.service") << "pause()";
+      LOG_INFO(NETWORK, "pause()");
     });
   }
 
   void WifiProjectionService::resume() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO("wifi.projection.service") << "resume()";
+      LOG_INFO(NETWORK, "resume()");
     });
   }
 
   void WifiProjectionService::fillFeatures(
       aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-    LOG_INFO("wifi.projection.service") << "fillFeatures()";
+    LOG_INFO(NETWORK, "fillFeatures()");
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -73,7 +73,7 @@ namespace f1x::openauto::autoapp::service::wifiprojection {
   void WifiProjectionService::onWifiCredentialsRequest(
       const aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest &request) {
 
-    LOG_INFO("wifi.projection.service") << "onWifiCredentialsRequest()";
+    LOG_INFO(NETWORK, "onWifiCredentialsRequest()");
 
     aap_protobuf::service::wifiprojection::message::WifiCredentialsResponse response;
 
@@ -95,9 +95,9 @@ namespace f1x::openauto::autoapp::service::wifiprojection {
 
   void WifiProjectionService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-    LOG_INFO("wifi.projection.service") << "onChannelOpenRequest()";
-    LOG_DEBUG("wifi.projection.service") << "Channel Id: " << request.service_id() << ", Priority: "
-                        << request.priority();
+    LOG_INFO_STREAM(NETWORK, "onChannelOpenRequest()");
+    LOG_DEBUG_STREAM(NETWORK, "Channel Id: " << request.service_id() << ", Priority: "
+                        << request.priority());
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -112,7 +112,7 @@ namespace f1x::openauto::autoapp::service::wifiprojection {
   }
 
   void WifiProjectionService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR("wifi.projection.service") << "onChannelError(): " << e.what();
+    LOG_ERROR_STREAM(NETWORK, "onChannelError(): " << e.what());
   }
 
 
