@@ -108,7 +108,7 @@ enum class HttpMethod {
     GET,     ///< Retrieve resources (Read operation)
     POST,    ///< Create new resources
     PUT,     ///< Update/replace entire resources
-    DELETE,  ///< Remove resources
+    DEL,     ///< Remove resources (avoiding DELETE keyword conflict)
     PATCH,   ///< Partial resource updates
     OPTIONS  ///< CORS preflight and API discovery
 };
@@ -352,8 +352,8 @@ public:
     void setPathParams(const std::map<std::string, std::string>& params);
 
 private:
-    // Stub implementation
-    std::map<std::string, std::string> pathParams_;
+    const httplib::Request* request_ = nullptr;  ///< Reference to underlying request
+    std::map<std::string, std::string> pathParams_; ///< Extracted path parameters
 };
 
 /**
@@ -781,7 +781,8 @@ private:
     
     // Internal methods
     void setupDefaultRoutes();
-    void setupOpenApiRoutes();
+    void setupApiRoutes();
+    void setupDocumentationRoutes();
     void setupCorsHandling();
     void setupDefaultMiddleware();
     void registerRoute(const Route& route);
@@ -790,6 +791,8 @@ private:
     HttpMethod stringToMethod(const std::string& method);
     std::string methodToString(HttpMethod method) const;
     nlohmann::json generateOpenApiSpec() const;
+    std::string generateSwaggerUI() const;
+    std::string generateReDocUI() const;
     std::string extractBearerToken(const HttpRequest& req);
     bool matchesPath(const std::string& pattern, const std::string& path);
     std::map<std::string, std::string> extractPathParams(const std::string& pattern, const std::string& path);

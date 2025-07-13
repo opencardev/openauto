@@ -1,9 +1,10 @@
 # FindHttplib.cmake
-# Find cpp-httplib header-only library
+# Find cpp-httplib library (both header and compiled library)
 #
 # This module defines:
 # HTTPLIB_FOUND - True if httplib is found
 # HTTPLIB_INCLUDE_DIRS - Include directories for httplib
+# HTTPLIB_LIBRARIES - Libraries to link against
 # HTTPLIB_VERSION - Version of httplib if available
 
 find_path(HTTPLIB_INCLUDE_DIR
@@ -16,7 +17,17 @@ find_path(HTTPLIB_INCLUDE_DIR
     DOC "httplib include directory"
 )
 
-if(HTTPLIB_INCLUDE_DIR)
+find_library(HTTPLIB_LIBRARY
+    NAMES cpp-httplib httplib
+    PATHS
+        /usr/lib
+        /usr/local/lib
+        /opt/homebrew/lib
+        ${CMAKE_PREFIX_PATH}/lib
+    DOC "httplib library"
+)
+
+if(HTTPLIB_INCLUDE_DIR AND HTTPLIB_LIBRARY)
     # Try to extract version from httplib.h
     if(EXISTS "${HTTPLIB_INCLUDE_DIR}/httplib.h")
         file(READ "${HTTPLIB_INCLUDE_DIR}/httplib.h" HTTPLIB_H_CONTENT)
@@ -28,13 +39,15 @@ if(HTTPLIB_INCLUDE_DIR)
     endif()
     
     set(HTTPLIB_INCLUDE_DIRS ${HTTPLIB_INCLUDE_DIR})
+    set(HTTPLIB_LIBRARIES ${HTTPLIB_LIBRARY})
     set(Httplib_FOUND TRUE)
     
     if(NOT TARGET httplib::httplib)
-        add_library(httplib::httplib INTERFACE IMPORTED)
+        add_library(httplib::httplib SHARED IMPORTED)
         set_target_properties(httplib::httplib PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${HTTPLIB_INCLUDE_DIR}"
-            INTERFACE_COMPILE_DEFINITIONS "HTTPLIB_USE_POLL"
+            IMPORTED_LOCATION "${HTTPLIB_LIBRARY}"
+            INTERFACE_COMPILE_DEFINITIONS "CPPHTTPLIB_OPENSSL_SUPPORT;CPPHTTPLIB_ZLIB_SUPPORT;CPPHTTPLIB_BROTLI_SUPPORT"
         )
     endif()
 else()
@@ -44,7 +57,7 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Httplib
     FOUND_VAR Httplib_FOUND
-    REQUIRED_VARS HTTPLIB_INCLUDE_DIR
+    REQUIRED_VARS HTTPLIB_INCLUDE_DIR HTTPLIB_LIBRARY
     VERSION_VAR HTTPLIB_VERSION
 )
 
