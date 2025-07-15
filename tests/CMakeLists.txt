@@ -59,69 +59,21 @@ include_directories(
     ${RTAUDIO_INCLUDE_DIRS}
 )
 
-# Add test executable
-add_executable(unit_tests
-    unit/main.cpp
-    unit/ConnectionTests.cpp
-    unit/ProjectionTests.cpp
-    unit/ServiceTests.cpp
-    unit/ConfigurationTests.cpp
-)
-
-add_executable(integration_tests
-    integration/main.cpp
-    integration/AndroidAutoIntegrationTests.cpp
-    integration/BluetoothIntegrationTests.cpp
-    integration/UIIntegrationTests.cpp
-)
-
-# Link test executable against Google Test and main project libraries
-target_link_libraries(unit_tests
-    ${GTEST_LIBRARIES}
-    ${GTEST_MAIN_LIBRARIES}
-    pthread
-    openauto
-    ${aasdk_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${Qt5Multimedia_LIBRARIES}
-    ${Qt5MultimediaWidgets_LIBRARIES}
-    ${Qt5Bluetooth_LIBRARIES}
-    ${Qt5Network_LIBRARIES}
-    ${PROTOBUF_LIBRARIES}
-    ${LIBUSB_1_LIBRARIES}
-    ${RTAUDIO_LIBRARIES}
-    ${aap_protobuf_LIBRARIES}
-)
-
-target_link_libraries(integration_tests
-    ${GTEST_LIBRARIES}
-    ${GTEST_MAIN_LIBRARIES}
-    pthread
-    openauto
-    ${aasdk_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${Qt5Multimedia_LIBRARIES}
-    ${Qt5MultimediaWidgets_LIBRARIES}
-    ${Qt5Bluetooth_LIBRARIES}
-    ${Qt5Network_LIBRARIES}
-    ${PROTOBUF_LIBRARIES}
-    ${LIBUSB_1_LIBRARIES}
-    ${RTAUDIO_LIBRARIES}
-    ${aap_protobuf_LIBRARIES}
-)
+# Test targets are defined in their respective subdirectories
+# to avoid duplicate target names
 
 # Unit tests subdirectories
 add_subdirectory(unit)
 add_subdirectory(integration)
 add_subdirectory(mocks)
 
-# Test data
+# Test data configuration
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/test_data/test_config.json
     ${CMAKE_CURRENT_BINARY_DIR}/test_data/test_config.json
     COPYONLY
 )
 
-# Test resources
+# Copy test resources to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_data/
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/test_data/)

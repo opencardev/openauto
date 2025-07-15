@@ -39,6 +39,11 @@
 #include <f1x/openauto/autoapp/UI/WarningDialog.hpp>
 #include <f1x/openauto/autoapp/UI/UpdateDialog.hpp>
 #include <modern/Logger.hpp>
+#include <modern/ModernIntegration.hpp>
+#include <modern/ConfigurationManager.hpp>
+#include <modern/EventBus.hpp>
+#include <modern/StateMachine.hpp>
+#include <modern/RestApiServer.hpp>
 
 namespace autoapp = f1x::openauto::autoapp;
 using ThreadPool = std::vector<std::thread>;
@@ -136,6 +141,59 @@ int main(int argc, char* argv[])
     SLOG_INFO(UI, "autoapp", "Display configuration: " + std::to_string(width) + "x" + std::to_string(height));
 
     auto configuration = std::make_shared<autoapp::configuration::Configuration>();
+
+    // Initialize modern architecture components
+    openauto::modern::EventBus* eventBus = nullptr;
+    std::shared_ptr<openauto::modern::ConfigurationManager> configManager;
+    std::shared_ptr<openauto::modern::StateMachine> stateMachine;
+    std::unique_ptr<openauto::modern::RestApiServer> restApiServer;
+    
+    try {
+        // Get EventBus instance (singleton reference)
+        eventBus = &openauto::modern::EventBus::getInstance();
+        SLOG_INFO(SYSTEM, "autoapp", "EventBus initialized");
+        
+        // Create ConfigurationManager
+        configManager = std::make_shared<openauto::modern::ConfigurationManager>();
+        SLOG_INFO(SYSTEM, "autoapp", "ConfigurationManager initialized");
+        
+        // Create StateMachine
+        stateMachine = std::make_shared<openauto::modern::StateMachine>();
+        SLOG_INFO(SYSTEM, "autoapp", "StateMachine initialized");
+        
+        // Create and start REST API Server (if enabled)
+        bool enableRestApi = configManager->getValue<bool>("modern_api.enable_rest_api", true);
+        if (enableRestApi) {
+            int apiPort = configManager->getValue<int>("modern_api.rest_api_port", 8080);
+            
+            // Convert EventBus* to shared_ptr for RestApiServer
+            std::shared_ptr<openauto::modern::EventBus> eventBusPtr(
+                eventBus, [](openauto::modern::EventBus*){} // No-op deleter for singleton
+            );
+            
+            restApiServer = std::make_unique<openauto::modern::RestApiServer>(
+                apiPort, eventBusPtr, stateMachine, configManager);
+            
+            // Start the REST API server in a separate thread
+            std::thread apiThread([&restApiServer]() {
+                try {
+                    restApiServer->start();
+                } catch (const std::exception& e) {
+                    SLOG_ERROR(API, "autoapp", "REST API server error: " + std::string(e.what()));
+                }
+            });
+            apiThread.detach();
+            
+            SLOG_INFO(API, "autoapp", "REST API server started on port " + std::to_string(apiPort));
+        }
+        
+        // Set initial system state using transition
+        stateMachine->transition(openauto::modern::Trigger::SYSTEM_START);
+        SLOG_INFO(STATE, "autoapp", "System state transition to IDLE");
+        
+    } catch (const std::exception& e) {
+        SLOG_ERROR(SYSTEM, "autoapp", "Failed to initialize modern components: " + std::string(e.what()));
+    }
 
     autoapp::ui::MainWindow mainWindow(configuration);
     //mainWindow.setWindowFlags(Qt::WindowStaysOnTopHint);
@@ -307,6 +365,23 @@ int main(int argc, char* argv[])
     app->waitForUSBDevice();
 
     auto result = qApplication.exec();
+
+    // Shutdown modern components gracefully
+    try {
+        if (restApiServer) {
+            restApiServer->stop();
+            SLOG_INFO(API, "autoapp", "REST API server stopped");
+        }
+        
+        if (stateMachine) {
+            stateMachine->transition(openauto::modern::Trigger::SHUTDOWN_REQUEST);
+            SLOG_INFO(STATE, "autoapp", "System state transitioned to SHUTTING_DOWN");
+        }
+        
+        SLOG_INFO(SYSTEM, "autoapp", "Modern components shutdown complete");
+    } catch (const std::exception& e) {
+        SLOG_ERROR(SYSTEM, "autoapp", "Error during modern components shutdown: " + std::string(e.what()));
+    }
 
     std::for_each(threadPool.begin(), threadPool.end(), std::bind(&std::thread::join, std::placeholders::_1));
 

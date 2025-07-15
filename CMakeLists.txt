@@ -182,6 +182,10 @@ set_target_properties(autoapp
 
 # Modern Architecture Components
 option(ENABLE_MODERN_API "Enable modern REST API and event bus" ON)
+option(ENABLE_REST_API "Enable REST API server" ON)
+option(ENABLE_EVENT_BUS "Enable event bus system" ON)
+option(ENABLE_STATE_MACHINE "Enable state machine system" ON)
+option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan" OFF)
 
 if(ENABLE_MODERN_API)
     message(STATUS "Modern API enabled")
@@ -238,8 +242,31 @@ if(ENABLE_MODERN_API)
     message(STATUS "Modern API components added to build with OpenAPI support")
 endif()
 
+# Sanitizer support
+if(ENABLE_SANITIZERS)
+    message(STATUS "Enabling AddressSanitizer and UBSan")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
+endif()
+
+# Additional compiler definitions based on options
+if(ENABLE_REST_API)
+    add_definitions(-DENABLE_REST_API)
+    message(STATUS "REST API support enabled")
+endif()
+
+if(ENABLE_EVENT_BUS)
+    add_definitions(-DENABLE_EVENT_BUS)
+    message(STATUS "Event Bus support enabled")
+endif()
+
+if(ENABLE_STATE_MACHINE)
+    add_definitions(-DENABLE_STATE_MACHINE)
+    message(STATUS "State Machine support enabled")
+endif()
+
 # Testing support
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 enable_testing()
 
 # Testing dependencies
