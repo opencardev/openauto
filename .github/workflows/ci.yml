@@ -1,0 +1,512 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'Release'
+        type: choice
+        options:
+          - Debug
+          - Release
+      run_tests:
+        description: 'Run tests'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  BUILD_TYPE: ${{ github.event.inputs.build_type || 'Release' }}
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code quality and security checks
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup C++ environment
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: gcc
+          vcvarsall: false
+          cmake: true
+          ninja: true
+          cppcheck: true
+          clang-format: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/ccache
+            build/_deps
+          key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=all --std=c++17 --xml --xml-version=2 \
+            --suppress=missingIncludeSystem \
+            --suppress=unmatchedSuppression \
+            --suppress=unusedFunction \
+            src/ include/ 2> cppcheck-report.xml || true
+
+      - name: Upload cppcheck results
+        uses: actions/upload-artifact@v3
+        with:
+          name: cppcheck-report
+          path: cppcheck-report.xml
+
+      - name: Check code formatting
+        run: |
+          find src include tests -name "*.cpp" -o -name "*.hpp" -o -name "*.h" | \
+          xargs clang-format --dry-run --Werror
+
+      - name: Run pre-commit hooks
+        uses: pre-commit/action@v3.0.0
+
+  # Build and test on multiple platforms
+  build-test:
+    name: Build and Test
+    needs: code-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+        build_type: [Debug, Release]
+        compiler: [gcc-9, gcc-11, clang-12]
+        exclude:
+          - os: ubuntu-20.04
+            compiler: gcc-11
+        include:
+          - os: ubuntu-22.04
+            compiler: gcc-9
+            coverage: true
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup compiler
+        run: |
+          if [[ "${{ matrix.compiler }}" == gcc-* ]]; then
+            version=${COMPILER#gcc-}
+            sudo apt-get update
+            sudo apt-get install -y gcc-${version} g++-${version}
+            echo "CC=gcc-${version}" >> $GITHUB_ENV
+            echo "CXX=g++-${version}" >> $GITHUB_ENV
+          elif [[ "${{ matrix.compiler }}" == clang-* ]]; then
+            version=${COMPILER#clang-}
+            sudo apt-get update
+            sudo apt-get install -y clang-${version}
+            echo "CC=clang-${version}" >> $GITHUB_ENV
+            echo "CXX=clang++-${version}" >> $GITHUB_ENV
+          fi
+        env:
+          COMPILER: ${{ matrix.compiler }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libboost-all-dev \
+            libprotobuf-dev \
+            protobuf-compiler \
+            nlohmann-json3-dev \
+            qtbase5-dev \
+            qtmultimedia5-dev \
+            qtdeclarative5-dev \
+            qtquickcontrols2-5-dev \
+            libgtest-dev \
+            libgmock-dev \
+            libusb-1.0-0-dev \
+            libtag1-dev \
+            librtaudio-dev \
+            libasound2-dev \
+            libpulse-dev \
+            ccache
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
+          max-size: 2G
+
+      - name: Build AASDK
+        run: |
+          git clone https://github.com/f1xpl/aasdk.git /tmp/aasdk
+          cd /tmp/aasdk
+          mkdir build && cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -GNinja
+          ninja -j$(nproc)
+          sudo ninja install
+          sudo ldconfig
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DBUILD_TESTS=ON \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            ${{ matrix.coverage && '-DENABLE_COVERAGE=ON' || '' }} \
+            -GNinja
+
+      - name: Build
+        run: |
+          cmake --build build --parallel $(nproc)
+
+      - name: Run tests
+        if: ${{ github.event.inputs.run_tests != 'false' }}
+        run: |
+          cd build
+          ctest --output-on-failure --parallel $(nproc)
+
+      - name: Generate coverage report
+        if: matrix.coverage && matrix.build_type == 'Debug'
+        run: |
+          sudo apt-get install -y lcov
+          cd build
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/build/_deps/*' '*/tests/*' --output-file coverage_filtered.info
+          lcov --list coverage_filtered.info
+
+      - name: Upload coverage to Codecov
+        if: matrix.coverage && matrix.build_type == 'Debug'
+        uses: codecov/codecov-action@v3
+        with:
+          file: build/coverage_filtered.info
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
+          path: |
+            build/Testing/
+            build/test_*.xml
+
+      - name: Upload build artifacts
+        if: matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v3
+        with:
+          name: openauto-${{ matrix.os }}-${{ matrix.compiler }}
+          path: |
+            build/bin/
+            build/lib/
+
+  # Cross-compilation for ARM platforms
+  cross-compile:
+    name: Cross Compile
+    needs: code-quality
+    strategy:
+      matrix:
+        arch: [aarch64, armv7]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup cross-compilation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-${{ matrix.arch }}-linux-gnu \
+            g++-${{ matrix.arch }}-linux-gnu \
+            cmake \
+            ninja-build \
+            pkg-config
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build cross-compilation image
+        run: |
+          docker build -t openauto-cross-${{ matrix.arch }} \
+            --build-arg ARCH=${{ matrix.arch }} \
+            -f .devcontainer/Dockerfile.cross .
+
+      - name: Cross compile
+        run: |
+          docker run --rm -v $PWD:/workspace openauto-cross-${{ matrix.arch }} \
+            bash -c "
+              cmake -B build -S . \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_TOOLCHAIN_FILE=/workspace/cmake/toolchain-${{ matrix.arch }}.cmake \
+                -GNinja
+              cmake --build build --parallel \$(nproc)
+            "
+
+      - name: Upload cross-compiled artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: openauto-cross-${{ matrix.arch }}
+          path: build/bin/
+
+  # Container builds
+  container-build:
+    name: Container Build
+    needs: [build-test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Security scanning
+  security-scan:
+    name: Security Scan
+    needs: container-build
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Performance testing
+  performance-test:
+    name: Performance Test
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: openauto-ubuntu-22.04-gcc-11
+          path: artifacts/
+
+      - name: Setup performance testing environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            valgrind \
+            perf \
+            stress-ng
+
+      - name: Run memory leak detection
+        run: |
+          chmod +x artifacts/bin/autoapp
+          valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
+            --xml=yes --xml-file=valgrind-report.xml \
+            timeout 30s artifacts/bin/autoapp --config config/test.json || true
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: |
+            valgrind-report.xml
+            perf-report.txt
+
+  # Documentation generation
+  documentation:
+    name: Generate Documentation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup documentation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            doxygen \
+            graphviz \
+            plantuml \
+            python3-pip
+          
+          pip3 install \
+            mkdocs \
+            mkdocs-material \
+            mkdocs-mermaid2-plugin
+
+      - name: Generate API documentation
+        run: |
+          doxygen docs/Doxyfile
+
+      - name: Build documentation site
+        run: |
+          mkdocs build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+
+  # Release creation
+  release:
+    name: Create Release
+    needs: [build-test, cross-compile, container-build, security-scan]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Create release archives
+        run: |
+          mkdir -p release
+          
+          # Create archives for each platform
+          for dir in openauto-*/; do
+            if [ -d "$dir" ]; then
+              platform=$(echo $dir | sed 's/openauto-//' | sed 's/\///')
+              tar -czf release/openauto-${platform}.tar.gz -C $dir .
+            fi
+          done
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "## Changes" > release_notes.md
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## Artifacts" >> release_notes.md
+          echo "- Binary packages for multiple platforms" >> release_notes.md
+          echo "- Container images available at \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> release_notes.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          files: release/*.tar.gz
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+
+  # Deployment to staging
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [build-test, container-build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging environment
+        run: |
+          echo "Deploying to staging environment..."
+          # Add your staging deployment logic here
+          # This could involve:
+          # - Updating Kubernetes deployments
+          # - Deploying to cloud services
+          # - Running smoke tests
+
+  # Deployment to production
+  deploy-production:
+    name: Deploy to Production
+    needs: [build-test, container-build, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production environment
+        run: |
+          echo "Deploying to production environment..."
+          # Add your production deployment logic here

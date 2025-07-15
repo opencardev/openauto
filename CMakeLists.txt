@@ -233,23 +233,59 @@ if(ENABLE_MODERN_API)
         target_link_libraries(btservice PUBLIC stdc++fs)
     endif()
     
-    # Optional logger demo executable
-    option(BUILD_LOGGER_DEMO "Build logger demonstration" OFF)
-    if(BUILD_LOGGER_DEMO)
-        add_executable(logger_demo src/modern/LoggerDemo.cpp src/modern/Logger.cpp)
-        target_include_directories(logger_demo PRIVATE ${include_directory})
-        target_link_libraries(logger_demo PRIVATE 
-            nlohmann_json::nlohmann_json 
-            Threads::Threads)
-        
-        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
-            target_link_libraries(logger_demo PRIVATE stdc++fs)
-        endif()
-        
-        set_target_properties(logger_demo PROPERTIES
-            CXX_STANDARD 17
-            COMPILE_FLAGS "-DENABLE_MODERN_API")
-    endif()
+
     
     message(STATUS "Modern API components added to build with OpenAPI support")
+endif()
+
+# Testing support
+option(BUILD_TESTS "Build tests" ON)
+enable_testing()
+
+# Testing dependencies
+if(BUILD_TESTS)
+    # GoogleTest
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.12.1
+    )
+    FetchContent_MakeAvailable(googletest)
+    
+    # Google Mock
+    find_package(GMock QUIET)
+    if(NOT GMock_FOUND)
+        set(gmock_build_tests OFF CACHE BOOL "" FORCE)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    endif()
+    
+    # Testing include directories
+    include_directories(${gtest_SOURCE_DIR}/include)
+    include_directories(${gmock_SOURCE_DIR}/include)
+endif()
+
+# Test targets
+if(BUILD_TESTS)
+    # Unit tests
+    add_subdirectory(tests)
+    
+    # Add custom test target
+    add_custom_target(check
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running all tests"
+    )
+    
+    # Coverage target (optional)
+    option(ENABLE_COVERAGE "Enable test coverage" OFF)
+    if(ENABLE_COVERAGE)
+        include(CodeCoverage)
+        append_coverage_compiler_flags()
+        setup_target_for_coverage_gcovr_html(
+            NAME coverage
+            EXECUTABLE ctest
+            DEPENDENCIES check
+        )
+    endif()
 endif()

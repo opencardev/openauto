@@ -1,0 +1,141 @@
+{
+    "name": "OpenAuto Development Environment",
+    "dockerFile": "Dockerfile",
+    "context": "..",
+    
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true,
+            "upgradePackages": true,
+            "username": "vscode",
+            "userUid": "automatic",
+            "userGid": "automatic"
+        },
+        "ghcr.io/devcontainers/features/git:1": {
+            "ppa": true,
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/github-cli:1": {
+            "installDirectlyFromGitHubRelease": true,
+            "version": "latest"
+        }
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-themes",
+                "twxs.cmake",
+                "ms-python.python",
+                "ms-python.isort",
+                "ms-python.black-formatter",
+                "eamodio.gitlens",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "streetsidesoftware.code-spell-checker",
+                "gruntfuggly.todo-tree",
+                "ms-vscode.test-adapter-converter",
+                "matepek.vscode-catch2-test-adapter",
+                "redhat.vscode-yaml",
+                "ms-kubernetes-tools.vscode-kubernetes-tools",
+                "ms-azuretools.vscode-docker",
+                "formulahendry.code-runner",
+                "christian-kohler.path-intellisense",
+                "vadimcn.vscode-lldb",
+                "Jeff-Hykin.better-cpp-syntax"
+            ],
+            "settings": {
+                "cmake.configureOnOpen": true,
+                "cmake.buildDirectory": "${workspaceFolder}/build",
+                "cmake.sourceDirectory": "${workspaceFolder}",
+                "cmake.generator": "Unix Makefiles",
+                "cmake.buildTask": true,
+                "cmake.debugConfig": {
+                    "name": "Debug OpenAuto",
+                    "type": "cppdbg",
+                    "request": "launch",
+                    "program": "${workspaceFolder}/build/bin/autoapp",
+                    "args": ["--config", "${workspaceFolder}/config/development.json"],
+                    "stopAtEntry": false,
+                    "cwd": "${workspaceFolder}",
+                    "environment": [],
+                    "externalConsole": false,
+                    "MIMode": "gdb",
+                    "setupCommands": [
+                        {
+                            "description": "Enable pretty-printing for gdb",
+                            "text": "-enable-pretty-printing",
+                            "ignoreFailures": true
+                        }
+                    ]
+                },
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+                "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+                "C_Cpp.default.cStandard": "c17",
+                "C_Cpp.default.cppStandard": "c++17",
+                "files.associations": {
+                    "*.hpp": "cpp",
+                    "*.cpp": "cpp",
+                    "*.h": "c",
+                    "*.c": "c"
+                },
+                "editor.formatOnSave": true,
+                "editor.insertSpaces": true,
+                "editor.tabSize": 4,
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "git.enableSmartCommit": true,
+                "git.autofetch": true
+            }
+        }
+    },
+
+    "forwardPorts": [8080, 5555, 3000],
+    "portsAttributes": {
+        "8080": {
+            "label": "OpenAuto REST API",
+            "onAutoForward": "notify"
+        },
+        "5555": {
+            "label": "Android Auto Port",
+            "onAutoForward": "silent"
+        },
+        "3000": {
+            "label": "Development Server",
+            "onAutoForward": "notify"
+        }
+    },
+
+    "mounts": [
+        "source=/dev/bus/usb,target=/dev/bus/usb,type=bind,consistency=cached",
+        "source=${localWorkspaceFolder}/.vscode,target=${containerWorkspaceFolder}/.vscode,type=bind,consistency=cached"
+    ],
+
+    "runArgs": [
+        "--privileged",
+        "--device=/dev/dri:/dev/dri",
+        "--network=host"
+    ],
+
+    "containerEnv": {
+        "DISPLAY": "${localEnv:DISPLAY}",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "OPENAUTO_LOG_LEVEL": "DEBUG",
+        "AASDK_BUILD_TYPE": "Debug"
+    },
+
+    "remoteEnv": {
+        "PATH": "${containerEnv:PATH}:/usr/local/bin:/workspace/build/bin"
+    },
+
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+    "postStartCommand": "bash .devcontainer/post-start.sh",
+
+    "remoteUser": "vscode",
+    "workspaceFolder": "/workspace"
+}

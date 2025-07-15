@@ -10,7 +10,6 @@ Implementation of the modern logger migration for the OpenAuto codebase. This do
 #### Core Infrastructure
 - **`include/modern/Logger.hpp`** - Modern logger implementation with categories, levels, async processing, and multiple sinks
 - **`src/modern/Logger.cpp`** - Logger implementation with performance optimizations
-- **`src/modern/LoggerDemo.cpp`** - Demonstration of logger features
 - **`CMakeLists.txt`** - Updated with modern logger dependencies and compilation options
 
 #### BT Service Components
