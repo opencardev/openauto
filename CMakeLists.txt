@@ -45,6 +45,104 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
+# PNG Profile Check and Fix Function
+function(check_and_fix_png_profiles ASSETS_DIR)
+    message(STATUS "🔧 Checking PNG files for problematic iCCP profiles...")
+    
+    # Find all PNG files
+    file(GLOB PNG_FILES "${ASSETS_DIR}/*.png")
+    
+    # Check if required tools are available
+    find_program(PNGCHECK_EXECUTABLE pngcheck)
+    find_program(PNGCRUSH_EXECUTABLE pngcrush)
+    find_program(CONVERT_EXECUTABLE convert)
+    
+    if(NOT PNGCHECK_EXECUTABLE)
+        message(WARNING "⚠️  pngcheck not found. Install with: sudo apt-get install pngcheck")
+        return()
+    endif()
+    
+    set(PROBLEMATIC_FILES "")
+    set(FIXED_COUNT 0)
+    
+    foreach(PNG_FILE ${PNG_FILES})
+        get_filename_component(FILENAME ${PNG_FILE} NAME)
+        
+        # Check if file has iCCP profile
+        execute_process(
+            COMMAND ${PNGCHECK_EXECUTABLE} -v ${PNG_FILE}
+            OUTPUT_VARIABLE PNGCHECK_OUTPUT
+            ERROR_VARIABLE PNGCHECK_ERROR
+            RESULT_VARIABLE PNGCHECK_RESULT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        
+        if(PNGCHECK_OUTPUT MATCHES "iCCP")
+            list(APPEND PROBLEMATIC_FILES ${PNG_FILE})
+            message(WARNING "🚨 PROBLEMATIC PNG DETECTED:")
+            message(WARNING "   📄 File: ${FILENAME}")
+            message(WARNING "   📁 Path: ${PNG_FILE}")
+            message(WARNING "   ⚠️  This file contains an incorrect sRGB profile that will cause:")
+            message(WARNING "      'libpng warning: iCCP: known incorrect sRGB profile'")
+            message(WARNING "   🔧 Attempting automatic fix...")
+            
+            # Try to fix with pngcrush
+            if(PNGCRUSH_EXECUTABLE)
+                execute_process(
+                    COMMAND ${PNGCRUSH_EXECUTABLE} -rem iCCP ${PNG_FILE} ${PNG_FILE}.tmp
+                    OUTPUT_QUIET
+                    ERROR_QUIET
+                    RESULT_VARIABLE PNGCRUSH_RESULT
+                )
+                
+                if(PNGCRUSH_RESULT EQUAL 0)
+                    file(RENAME ${PNG_FILE}.tmp ${PNG_FILE})
+                    message(STATUS "   ✅ Fixed ${FILENAME} using pngcrush")
+                    math(EXPR FIXED_COUNT "${FIXED_COUNT} + 1")
+                elseif(CONVERT_EXECUTABLE)
+                    # Fallback to ImageMagick
+                    execute_process(
+                        COMMAND ${CONVERT_EXECUTABLE} ${PNG_FILE} -strip ${PNG_FILE}.tmp
+                        OUTPUT_QUIET
+                        ERROR_QUIET
+                        RESULT_VARIABLE CONVERT_RESULT
+                    )
+                    
+                    if(CONVERT_RESULT EQUAL 0)
+                        file(RENAME ${PNG_FILE}.tmp ${PNG_FILE})
+                        message(STATUS "   ✅ Fixed ${FILENAME} using ImageMagick")
+                        math(EXPR FIXED_COUNT "${FIXED_COUNT} + 1")
+                    else()
+                        message(WARNING "   ❌ Failed to fix ${FILENAME}")
+                        file(REMOVE_IF_EXISTS ${PNG_FILE}.tmp)
+                    endif()
+                endif()
+            else()
+                message(WARNING "   ❌ pngcrush not available. Install with: sudo apt-get install pngcrush")
+            endif()
+        endif()
+    endforeach()
+    
+    list(LENGTH PROBLEMATIC_FILES PROBLEMATIC_COUNT)
+    if(PROBLEMATIC_COUNT GREATER 0)
+        message(STATUS "🎯 PNG Profile Check Summary:")
+        message(STATUS "   📊 Problematic files found: ${PROBLEMATIC_COUNT}")
+        message(STATUS "   🔧 Files automatically fixed: ${FIXED_COUNT}")
+        
+        if(FIXED_COUNT LESS PROBLEMATIC_COUNT)
+            message(WARNING "⚠️  Some PNG files still have problematic profiles!")
+            message(WARNING "   Install fixing tools: sudo apt-get install pngcrush imagemagick")
+        else()
+            message(STATUS "✅ All PNG profile issues resolved!")
+        endif()
+    else()
+        message(STATUS "✅ All PNG files are clean - no profile issues found")
+    endif()
+endfunction()
+
+# Run PNG profile check on assets
+check_and_fix_png_profiles(${resources_directory})
+
 # Configure Boost
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)

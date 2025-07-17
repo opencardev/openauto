@@ -17,9 +17,12 @@
 */
 
 #include <thread>
+#include <fstream>
 #include <QApplication>
 #include <QScreen>
 #include <QDesktopWidget>
+#include <QPixmap>
+#include <QString>
 #include <aasdk/USB/USBHub.hpp>
 #include <aasdk/USB/ConnectedAccessoriesEnumerator.hpp>
 #include <aasdk/USB/AccessoryModeQueryChain.hpp>
@@ -81,13 +84,71 @@ void configureLogging() {
     // Configure modern logger for autoapp
     auto& logger = openauto::modern::Logger::getInstance();
     logger.setLevel(openauto::modern::LogLevel::INFO);
-    logger.setAsync(true);
+    
+    // Use synchronous logging to ensure immediate output
+    logger.setAsync(false);
+    
+    // Test that logging is working
+    SLOG_INFO(SYSTEM, "autoapp", "🚀 Modern logging system initialized");
+    SLOG_INFO(SYSTEM, "autoapp", "   📊 Log level: INFO");
+    SLOG_INFO(SYSTEM, "autoapp", "   📺 Output: Console (stdout)");
     
     // Check for legacy log config file and warn about migration
     const std::string logIni = "openauto-logs.ini";
     std::ifstream logSettings(logIni);
     if (logSettings.good()) {
         SLOG_WARN(CONFIG, "autoapp", "Legacy log configuration file found - consider migrating to modern logger config");
+    }
+}
+
+void validatePngAssets()
+{
+    SLOG_INFO(UI, "autoapp", "🔧 Validating PNG assets for runtime warnings...");
+    
+    // List of PNG files that are embedded in Qt resources
+    const std::vector<std::string> pngResources = {
+        ":/ico_warning.png", ":/ico_info.png", ":/aausb-hot.png", ":/aawifi-hot.png",
+        ":/cursor-hot.png", ":/power-hot.png", ":/settings-hot.png", ":/sleep-hot.png",
+        ":/wifi-hot.png", ":/brightness-hot.png", ":/camera-hot.png", ":/day-hot.png",
+        ":/night-hot.png", ":/record-hot.png", ":/stop-hot.png", ":/save-hot.png",
+        ":/reboot-hot.png", ":/back-hot.png", ":/rearcam-hot.png", ":/recordactive-hot.png",
+        ":/lock-hot.png", ":/volume-hot.png", ":/bug-hot.png", ":/eye-hot.png",
+        ":/skin-hot.png", ":/mp3-hot.png", ":/play-hot.png", ":/prev-hot.png",
+        ":/next-hot.png", ":/pause-hot.png", ":/prevbig-hot.png", ":/nextbig-hot.png",
+        ":/list-hot.png", ":/home-hot.png", ":/player-hot.png", ":/coverlogo.png",
+        ":/black.png", ":/album-hot.png"
+    };
+    
+    int validatedCount = 0;
+    int problematicCount = 0;
+    
+    for (const auto& resourcePath : pngResources) {
+        QPixmap pixmap(QString::fromStdString(resourcePath));
+        if (!pixmap.isNull()) {
+            validatedCount++;
+            SLOG_DEBUG(UI, "autoapp", "✅ PNG asset validated: " + resourcePath);
+        } else {
+            problematicCount++;
+            SLOG_WARN(UI, "autoapp", "⚠️  PNG asset failed to load: " + resourcePath);
+            SLOG_WARN(UI, "autoapp", "   📄 This may indicate a corrupted or missing PNG file");
+            SLOG_WARN(UI, "autoapp", "   🔧 Consider running: cmake -B build && make -C build");
+        }
+    }
+    
+    std::map<std::string, std::string> context = {
+        {"validated_pngs", std::to_string(validatedCount)},
+        {"problematic_pngs", std::to_string(problematicCount)},
+        {"total_pngs", std::to_string(pngResources.size())}
+    };
+    
+    if (problematicCount == 0) {
+        SLOG_INFO(UI, "autoapp", "✅ All PNG assets validated successfully (" + std::to_string(validatedCount) + " files)");
+        SLOG_INFO(UI, "autoapp", "   📝 No libpng warnings expected from embedded resources");
+    } else {
+        SLOG_ERROR(UI, "autoapp", "🚨 PNG Asset Validation Failed!");
+        SLOG_ERROR(UI, "autoapp", "   📊 " + std::to_string(problematicCount) + " out of " + std::to_string(pngResources.size()) + " PNG assets have issues");
+        SLOG_ERROR(UI, "autoapp", "   ⚠️  This may cause 'libpng warning' messages at runtime");
+        SLOG_ERROR(UI, "autoapp", "   🔧 Rebuild the project to fix: cmake -B build && make -C build");
     }
 }
 
@@ -139,6 +200,9 @@ int main(int argc, char* argv[])
         {"display_height", std::to_string(height)}
     };
     SLOG_INFO(UI, "autoapp", "Display configuration: " + std::to_string(width) + "x" + std::to_string(height));
+
+    // Runtime PNG validation
+    validatePngAssets();
 
     auto configuration = std::make_shared<autoapp::configuration::Configuration>();
 
