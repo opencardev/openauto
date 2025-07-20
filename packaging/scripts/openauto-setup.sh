@@ -18,7 +18,7 @@ fi
 
 # Add openauto user to required groups
 echo "Adding openauto user to required groups..."
-usermod -a -G audio,video,bluetooth,dialout,input openauto
+usermod -a -G audio,video,bluetooth,dialout,input,plugdev openauto
 
 # Create and set permissions for directories
 echo "Setting up directories and permissions..."

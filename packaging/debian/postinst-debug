@@ -24,7 +24,7 @@ chown openauto-debug:openauto-debug /var/lib/openauto-debug /var/log/openauto-de
 chmod 755 /var/lib/openauto-debug /var/log/openauto-debug
 
 # Add debug user to necessary groups
-usermod -a -G audio,video,input,plugdev,dialout openauto-debug 2>/dev/null || true
+usermod -a -G audio,video,input,plugdev,dialout,bluetooth openauto-debug 2>/dev/null || true
 
 # Reload systemd daemon
 systemctl daemon-reload

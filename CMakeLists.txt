@@ -555,9 +555,6 @@ else()
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "all")
 endif()
 
-# Enable CPack for package generation (must be after setting CPACK variables)
-include(CPack)
-
 # Dependencies (different for debug vs release)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Debug packages include development tools and debugging libraries
@@ -592,6 +589,9 @@ else()
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
         "${CMAKE_SOURCE_DIR}/packaging/debian/preinst;${CMAKE_SOURCE_DIR}/packaging/debian/postinst;${CMAKE_SOURCE_DIR}/packaging/debian/prerm;${CMAKE_SOURCE_DIR}/packaging/debian/postrm")
 endif()
+
+# Enable CPack for package generation (must be after setting all CPACK variables)
+include(CPack)
 
 # =============================================================================
 # INSTALLATION CONFIGURATION
@@ -650,6 +650,16 @@ else()
         DESTINATION ${INSTALL_CONFIG_DIR}
         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 endif()
+
+#Install default legacy ini configuration files
+install(FILES packaging/config/openauto.ini
+    DESTINATION ${INSTALL_CONFIG_DIR}
+    RENAME openauto.ini
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+install(FILES packaging/config/openauto-logs.ini
+    DESTINATION ${INSTALL_CONFIG_DIR}
+    RENAME openauto-logs.ini
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
 # Install systemd service files (build-type specific)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

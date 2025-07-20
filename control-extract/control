@@ -1,0 +1,16 @@
+Architecture: arm64
+Conflicts: openauto-modern-debug
+Depends: libboost-system1.67.0 (>= 1.67), libboost-log1.67.0 (>= 1.67), libprotobuf17 (>= 3.6), libssl1.1 (>= 1.1), libusb-1.0-0 (>= 1.0), libudev1 (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2 (>= 1.1), libpulse0 (>= 12.0), librtaudio6 (>= 5.0), systemd (>= 237)
+Description: Modern Android Auto implementation for automotive systems
+ OpenAuto is a modern Android Auto implementation that allows you to use Android Auto on various automotive systems. This package includes the modernized architecture with REST API, event bus, state machine, and comprehensive logging. This is an optimized production build suitable for automotive deployment. Built for non-Raspberry Pi systems (x86/x64 platforms). Built from commit 877f408 on branch feature/add_packaging.
+Homepage: https://github.com/opencardev/openauto
+Maintainer: OpenCarDev Team <support@opencardev.com>
+Package: openauto-modern-arm64
+Priority: optional
+Provides: openauto-modern
+Recommends: pulseaudio, bluez, bluez-tools
+Section: electronics
+Suggests: hostapd, dnsmasq
+Version: 2025.07.20+877f408
+Installed-Size: 144494
+
