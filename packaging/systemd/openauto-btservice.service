@@ -1,0 +1,19 @@
+[Unit]
+Description=OpenAuto Bluetooth Service
+Documentation=https://github.com/opencardev/openauto
+After=bluetooth.target dbus.service
+Requires=bluetooth.target dbus.service
+PartOf=openauto.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/openauto
+ExecStart=/opt/openauto/btservice --config /etc/openauto/services.conf
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,23 @@
+/var/log/openauto-debug/*.log {
+    daily
+    missingok
+    rotate 60
+    compress
+    delaycompress
+    notifempty
+    create 644 openauto-debug openauto-debug
+    postrotate
+        /bin/systemctl reload openauto-debug 2>/dev/null || true
+    endscript
+}
+
+# Debug core dumps
+/var/lib/openauto-debug/cores/core.* {
+    weekly
+    missingok
+    rotate 4
+    compress
+    delaycompress
+    notifempty
+    create 644 openauto-debug openauto-debug
+}

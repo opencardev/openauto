@@ -18,6 +18,9 @@
 
 #include <thread>
 #include <fstream>
+#include <iomanip>
+#include <ctime>
+#include <cstdlib>  // For std::getenv
 #include <QApplication>
 #include <QScreen>
 #include <QDesktopWidget>
@@ -81,17 +84,83 @@ void startIOServiceWorkers(boost::asio::io_service& ioService, ThreadPool& threa
 }
 
 void configureLogging() {
+    // Check for debug mode from environment or command line
+    bool debugMode = false;
+    const char* envDebug = std::getenv("OPENAUTO_DEBUG_MODE");
+    const char* envLogLevel = std::getenv("OPENAUTO_LOG_LEVEL");
+    
+    if (envDebug && std::string(envDebug) == "1") {
+        debugMode = true;
+    }
+    
+    if (envLogLevel && std::string(envLogLevel) == "DEBUG") {
+        debugMode = true;
+    }
+    
     // Configure modern logger for autoapp
     auto& logger = openauto::modern::Logger::getInstance();
-    logger.setLevel(openauto::modern::LogLevel::INFO);
     
-    // Use synchronous logging to ensure immediate output
-    logger.setAsync(false);
+    // Set log level based on debug mode
+    if (debugMode) {
+        logger.setLevel(openauto::modern::LogLevel::DEBUG);
+        // Enable debug for all categories
+        logger.setCategoryLevel(openauto::modern::LogCategory::ANDROID_AUTO, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::SYSTEM, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::UI, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::CAMERA, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::NETWORK, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::BLUETOOTH, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::AUDIO, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::VIDEO, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::CONFIG, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::API, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::EVENT, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::STATE, openauto::modern::LogLevel::DEBUG);
+    } else {
+        logger.setLevel(openauto::modern::LogLevel::INFO);
+    }
+    
+    // Add file sink for logging
+    const std::string logFile = "/var/log/openauto/openauto.log";
+    try {
+        // Create file sink with rotation
+        auto fileSink = std::make_shared<openauto::modern::FileSink>(logFile);
+        logger.addSink(fileSink);
+        
+        // Add console sink for immediate feedback
+        auto consoleSink = std::make_shared<openauto::modern::ConsoleSink>();
+        logger.addSink(consoleSink);
+        
+        // Use synchronous logging to ensure immediate output
+        logger.setAsync(false);
+        
+        // Test file logging
+        std::ofstream testFile(logFile, std::ios::app);
+        if (testFile.is_open()) {
+            std::time_t now = std::time(nullptr);
+            testFile << "[" << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S") 
+                    << "] [INFO] [SYSTEM] [autoapp] Logger initialized with file output\n";
+            testFile.close();
+        }
+        
+    } catch (const std::exception& e) {
+        // Fall back to console-only logging
+        auto consoleSink = std::make_shared<openauto::modern::ConsoleSink>();
+        logger.addSink(consoleSink);
+        logger.setAsync(false);
+    }
     
     // Test that logging is working
-    SLOG_INFO(SYSTEM, "autoapp", "🚀 Modern logging system initialized");
-    SLOG_INFO(SYSTEM, "autoapp", "   📊 Log level: INFO");
-    SLOG_INFO(SYSTEM, "autoapp", "   📺 Output: Console (stdout)");
+    if (debugMode) {
+        SLOG_DEBUG(SYSTEM, "autoapp", "🔍 DEBUG MODE ENABLED - Verbose logging active");
+        SLOG_DEBUG(SYSTEM, "autoapp", "   📊 Log level: DEBUG (all categories)");
+        SLOG_DEBUG(SYSTEM, "autoapp", "   🔗 AASDK debug: Enabled via build configuration");
+        SLOG_DEBUG(SYSTEM, "autoapp", "   📺 Output: Console + " + logFile);
+    } else {
+        SLOG_INFO(SYSTEM, "autoapp", "🚀 Modern logging system initialized");
+        SLOG_INFO(SYSTEM, "autoapp", "   📊 Log level: INFO");
+        SLOG_INFO(SYSTEM, "autoapp", "   📺 Output: Console + " + logFile);
+    }
     
     // Check for legacy log config file and warn about migration
     const std::string logIni = "openauto-logs.ini";

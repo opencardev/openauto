@@ -1,0 +1,21 @@
+[Unit]
+Description=OpenAuto Bluetooth Service (Debug Build)
+Documentation=https://github.com/opencardev/openauto
+After=bluetooth.target dbus.service
+Requires=bluetooth.target dbus.service
+PartOf=openauto-debug.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/openauto-debug
+ExecStart=/opt/openauto-debug/btservice --config /etc/openauto-debug/services.conf
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=OPENAUTO_DEBUG_MODE=1
+Environment=OPENAUTO_LOG_LEVEL=DEBUG
+
+[Install]
+WantedBy=multi-user.target

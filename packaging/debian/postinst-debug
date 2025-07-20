@@ -1,0 +1,75 @@
+#!/bin/bash
+# Post-installation script for debug package
+
+set -e
+
+echo "🐛 Configuring OpenAuto Debug Build..."
+
+# Create debug user and group
+if ! getent group openauto-debug >/dev/null; then
+    echo "Creating openauto-debug group..."
+    groupadd --system openauto-debug
+fi
+
+if ! getent passwd openauto-debug >/dev/null; then
+    echo "Creating openauto-debug user..."
+    useradd --system --gid openauto-debug --home-dir /var/lib/openauto-debug \
+            --shell /bin/false --comment "OpenAuto Debug Service" openauto-debug
+fi
+
+# Set up directories with proper ownership
+echo "Setting up debug directories..."
+mkdir -p /var/lib/openauto-debug /var/log/openauto-debug
+chown openauto-debug:openauto-debug /var/lib/openauto-debug /var/log/openauto-debug
+chmod 755 /var/lib/openauto-debug /var/log/openauto-debug
+
+# Add debug user to necessary groups
+usermod -a -G audio,video,input,plugdev,dialout openauto-debug 2>/dev/null || true
+
+# Reload systemd daemon
+systemctl daemon-reload
+
+# Enable but don't start debug services (manual start for debugging)
+echo "Enabling debug services (manual start required)..."
+systemctl enable openauto-debug.service
+systemctl enable openauto-btservice-debug.service
+
+# Reload udev rules
+udevadm control --reload-rules
+udevadm trigger
+
+# Set up core dumps for debugging
+echo "Configuring core dumps for debugging..."
+mkdir -p /var/lib/openauto-debug/cores
+chown openauto-debug:openauto-debug /var/lib/openauto-debug/cores
+chmod 750 /var/lib/openauto-debug/cores
+
+# Update core dump pattern if needed
+if [ -w /proc/sys/kernel/core_pattern ]; then
+    echo "/var/lib/openauto-debug/cores/core.%e.%p.%t" > /proc/sys/kernel/core_pattern
+fi
+
+echo ""
+echo "🐛 OpenAuto Debug Installation Complete!"
+echo ""
+echo "🔧 Debug Configuration:"
+echo "   • Main config: /etc/openauto-debug/openauto.conf"
+echo "   • Logger config: /etc/openauto-debug/logger.conf"
+echo "   • Services config: /etc/openauto-debug/services.conf"
+echo ""
+echo "📊 Debug Monitoring:"
+echo "   • Start service: systemctl start openauto-debug"
+echo "   • Service status: systemctl status openauto-debug"
+echo "   • Debug logs: journalctl -u openauto-debug -f"
+echo "   • REST API: http://localhost:8081"
+echo ""
+echo "🔍 Debugging Tools:"
+echo "   • Core dumps: /var/lib/openauto-debug/cores/"
+echo "   • Run with GDB: gdb /opt/openauto-debug/autoapp"
+echo "   • Memory check: valgrind /opt/openauto-debug/autoapp"
+echo "   • System calls: strace /opt/openauto-debug/autoapp"
+echo ""
+echo "⚠️  Debug services are ENABLED but NOT STARTED automatically"
+echo "   Start manually when needed: systemctl start openauto-debug"
+
+exit 0

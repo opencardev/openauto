@@ -173,13 +173,89 @@ export OPENAUTO_VIDEO_DEVICE="/dev/dri/card0"
 export OPENAUTO_USB_DEVICE="auto"
 ```
 
+## Package Building and Testing
+
+### Build Debian Package
+
+#### Prerequisites
+```bash
+# Install build dependencies
+sudo apt update
+sudo apt install \
+    build-essential cmake pkg-config git \
+    libboost-all-dev libprotobuf-dev protobuf-compiler \
+    libssl-dev libusb-1.0-0-dev libudev-dev \
+    qtbase5-dev qtmultimedia5-dev qtconnectivity5-dev \
+    libasound2-dev libpulse-dev librtaudio-dev \
+    nlohmann-json3-dev libevent-dev
+```
+
+#### Build Process
+```bash
+# Clone and build
+git clone https://github.com/opencardev/openauto.git
+cd openauto
+
+# Build package
+./build-package.sh
+
+# Install package
+sudo apt install ./build-package/openauto-modern*.deb
+```
+
+#### Package Testing
+```bash
+# Test installation
+sudo systemctl status openauto
+sudo systemctl status openauto-btservice
+
+# Test configuration
+cat /etc/openauto/openauto.conf
+
+# Test REST API
+curl http://localhost:8080/api/v1/health
+
+# Test logging
+tail -f /var/log/openauto/openauto.log
+
+# Test removal
+sudo apt remove openauto-modern
+
+# Test purge
+sudo apt purge openauto-modern
+```
+
+#### Package Information
+```bash
+# View package details
+dpkg -l | grep openauto
+dpkg -L openauto-modern
+dpkg -s openauto-modern
+
+# Check dependencies
+apt-cache depends openauto-modern
+```
+
 ## Installation Methods
 
 ### 1. Package Installation (Recommended)
 
-#### Debian/Ubuntu Package
+#### Local Debian Package
 ```bash
-# Add repository
+# Build the package from source
+./build-package.sh
+
+# Install the generated package
+sudo apt install ./build-package/openauto-modern*.deb
+
+# Services will start automatically
+sudo systemctl status openauto
+sudo systemctl status openauto-btservice
+```
+
+#### Debian/Ubuntu Package (Future)
+```bash
+# Add repository (when available)
 wget -qO - https://repo.opencardev.com/key.asc | sudo apt-key add -
 echo "deb https://repo.opencardev.com/debian $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/openauto.list
 
@@ -187,9 +263,9 @@ echo "deb https://repo.opencardev.com/debian $(lsb_release -cs) main" | sudo tee
 sudo apt update
 sudo apt install openauto-modern
 
-# Start services
-sudo systemctl enable --now openauto
-sudo systemctl enable --now openauto-btservice
+# Start services (auto-enabled)
+sudo systemctl status openauto
+sudo systemctl status openauto-btservice
 ```
 
 #### RPM Package (Fedora/RHEL)

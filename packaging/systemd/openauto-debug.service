@@ -1,0 +1,40 @@
+[Unit]
+Description=OpenAuto Android Auto Implementation (Debug Build)
+Documentation=https://github.com/opencardev/openauto
+After=network.target sound.target
+Wants=network.target
+RequiredBy=openauto-btservice-debug.service
+
+[Service]
+Type=simple
+User=openauto-debug
+Group=openauto-debug
+WorkingDirectory=/opt/openauto-debug
+ExecStart=/opt/openauto-debug/autoapp --config /etc/openauto-debug/openauto.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=OPENAUTO_HOME=/opt/openauto-debug
+Environment=OPENAUTO_CONFIG=/etc/openauto-debug
+Environment=OPENAUTO_DATA=/var/lib/openauto-debug
+Environment=OPENAUTO_LOGS=/var/log/openauto-debug
+Environment=OPENAUTO_DEBUG_MODE=1
+Environment=OPENAUTO_LOG_LEVEL=DEBUG
+Environment=AASDK_DEBUG=1
+MemoryMax=2G
+TasksMax=200
+
+# Debug-friendly security settings (less restrictive)
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
+ReadWritePaths=/var/lib/openauto-debug /var/log/openauto-debug /tmp /opt/openauto-debug
+PrivateTmp=false
+
+# Enable core dumps for debugging
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,45 @@
+#!/bin/bash
+# Post-installation script
+
+set -e
+
+echo "🚀 Configuring OpenAuto..."
+
+# Run the setup script
+/opt/openauto/scripts/openauto-setup.sh
+
+# Start services
+echo "Starting OpenAuto services..."
+systemctl start openauto.service
+systemctl start openauto-btservice.service
+
+# Check service status
+sleep 2
+if systemctl is-active --quiet openauto; then
+    echo "✅ OpenAuto service started successfully"
+else
+    echo "⚠️  OpenAuto service failed to start - check logs with: journalctl -u openauto"
+fi
+
+if systemctl is-active --quiet openauto-btservice; then
+    echo "✅ OpenAuto Bluetooth service started successfully"
+else
+    echo "⚠️  OpenAuto Bluetooth service failed to start - check logs with: journalctl -u openauto-btservice"
+fi
+
+echo ""
+echo "📋 OpenAuto Installation Complete!"
+echo ""
+echo "🔧 Configuration:"
+echo "   • Main config: /etc/openauto/openauto.conf"
+echo "   • Logger config: /etc/openauto/logger.conf"
+echo "   • Services config: /etc/openauto/services.conf"
+echo ""
+echo "📊 Monitoring:"
+echo "   • Service status: systemctl status openauto"
+echo "   • Logs: journalctl -u openauto -f"
+echo "   • REST API: http://localhost:8080"
+echo ""
+echo "🚗 Ready for Android Auto connections!"
+
+exit 0

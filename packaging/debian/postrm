@@ -1,0 +1,34 @@
+#!/bin/bash
+# Post-removal script
+
+set -e
+
+# Only do complete cleanup on purge
+if [ "$1" = "purge" ]; then
+    echo "🧹 Purging OpenAuto data and configuration..."
+    
+    # Remove user and group
+    if getent passwd openauto >/dev/null; then
+        userdel openauto 2>/dev/null || true
+    fi
+    
+    if getent group openauto >/dev/null; then
+        groupdel openauto 2>/dev/null || true
+    fi
+    
+    # Remove data directories
+    rm -rf /var/lib/openauto
+    rm -rf /var/log/openauto
+    rm -rf /etc/openauto
+    
+    echo "✅ OpenAuto completely removed"
+else
+    echo "ℹ️  OpenAuto removed but configuration preserved"
+    echo "   Use 'apt purge openauto-modern' to remove all data"
+fi
+
+# Reload systemd and udev
+systemctl daemon-reload 2>/dev/null || true
+udevadm control --reload-rules 2>/dev/null || true
+
+exit 0

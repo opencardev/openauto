@@ -13,6 +13,10 @@ For support of other platforms please contact me at f1xstudiopl@gmail.com
 ### Description
 OpenAuto is an AndroidAuto(tm) headunit emulator based on aasdk library and Qt libraries. Main goal is to run this application on the RaspberryPI 3 board computer smoothly.
 
+**🚀 Modern Development Environment**: OpenAuto now features a comprehensive development system with date-based versioning (YYYY.MM.DD+commit), 18 specialized VS Code tasks for complete build/test/deploy automation, and extensive documentation. See **[DEV_ENVIRONMENT_SUMMARY.md](DEV_ENVIRONMENT_SUMMARY.md)** for quick start guide.
+
+**📚 Complete Documentation**: All development resources available in **[docs/README.md](docs/README.md)** including build guides, API documentation, migration guides, and troubleshooting resources.
+
 [See demo video](https://www.youtube.com/watch?v=k9tKRqIkQs8)
 
 ### Supported functionalities
@@ -49,6 +53,42 @@ Copyrights (c) 2018 f1x.studio (Michal Szwaj)
  - Broadcom ilclient from RaspberryPI 3 firmware
  - OpenMAX IL API
 
+## Quick Start
+
+### Installation (Debian Package)
+```bash
+# Build and install package
+./build-package.sh
+sudo apt install ./build-package/openauto-modern*.deb
+
+# Services start automatically
+sudo systemctl status openauto
+```
+
+### Manual Build
+```bash
+# Install dependencies
+sudo apt install build-essential cmake qtbase5-dev libboost-all-dev
+
+# Build
+mkdir build && cd build
+cmake -DENABLE_MODERN_API=ON ..
+make -j$(nproc)
+
+# Run
+./autoapp
+```
+
+### Configuration
+- **Main config**: `/etc/openauto/openauto.conf`
+- **Service logs**: `journalctl -u openauto -f`  
+- **REST API**: `http://localhost:8080`
+
+## Documentation
+- [Build Guide](docs/build-guide.md) - Complete build instructions
+- [Deployment Guide](docs/deployment-guide.md) - Production deployment
+- [Package Guide](packaging/README.md) - Debian package details
+
 ### Building
 #### Amd64
 Install the packages specified in the [prebuilts](https://github.com/opencardev/prebuilts) repository. Qt5 is required, versions packaged in modern Ubuntu and Debian
@@ -70,6 +110,44 @@ However, its easiest to just develop on a more capable `amd64` device.
 
 ### Remarks
 **This software is not certified by Google Inc. It is created for R&D purposes and may not work as expected by the original authors. Do not use while driving. You use this software at your own risk.**
+
+## Development
+
+### Quick Start with VS Code
+
+OpenAuto includes a complete development environment with automated workflows:
+
+```bash
+# Open workspace in VS Code
+code /home/pi/openauto
+
+# Run build task (Ctrl+Shift+P → "Tasks: Run Build Task")
+# Run test task (Ctrl+Shift+P → "Tasks: Run Test Task")
+```
+
+**18 Available VS Code Tasks**:
+- **Build Tasks**: Release/Debug packages, CMake builds, clean
+- **Test Tasks**: Unit tests, package validation, version checks  
+- **Deploy Tasks**: Install packages, service management, log monitoring
+- **Pipeline Task**: Complete CI/CD workflow automation
+
+### Version Information
+
+Current version uses date-based format: `YYYY.MM.DD+commit`
+
+```bash
+# Check current version
+./check-version.sh
+
+# Example output: 2025.07.20+fc4e9d0
+```
+
+### Documentation Resources
+
+- **[DEV_ENVIRONMENT_SUMMARY.md](DEV_ENVIRONMENT_SUMMARY.md)** - Quick development setup
+- **[docs/version-scheme-and-vscode.md](docs/version-scheme-and-vscode.md)** - Complete development guide  
+- **[docs/README.md](docs/README.md)** - Full documentation index
+- **[docs/build-guide.md](docs/build-guide.md)** - Comprehensive build instructions
 
 ## Testing
 

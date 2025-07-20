@@ -1,0 +1,39 @@
+#!/bin/bash
+# Post-removal script for debug package
+
+set -e
+
+# Only do complete cleanup on purge
+if [ "$1" = "purge" ]; then
+    echo "🧹 Purging OpenAuto Debug data and configuration..."
+    
+    # Remove debug user and group
+    if getent passwd openauto-debug >/dev/null; then
+        userdel openauto-debug 2>/dev/null || true
+    fi
+    
+    if getent group openauto-debug >/dev/null; then
+        groupdel openauto-debug 2>/dev/null || true
+    fi
+    
+    # Remove debug data directories
+    rm -rf /var/lib/openauto-debug
+    rm -rf /var/log/openauto-debug
+    rm -rf /etc/openauto-debug
+    
+    # Clean up core dumps
+    rm -rf /var/lib/openauto-debug/cores
+    
+    echo "✅ OpenAuto Debug completely removed"
+else
+    echo "ℹ️  OpenAuto Debug removed but configuration preserved"
+    echo "   Use 'apt purge openauto-modern-debug' to remove all data"
+fi
+
+# Reload systemd and udev
+systemctl daemon-reload 2>/dev/null || true
+udevadm control --reload-rules 2>/dev/null || true
+
+echo "🔄 System configuration reloaded"
+
+exit 0

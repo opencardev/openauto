@@ -2,9 +2,11 @@
 lib/
 bin/
 build/
+build-*/
 .vscode/
 openauto.ini
 CMakeLists.txt.user
 /cmake-build-*/
 .idea/
 **.log
+**.backup

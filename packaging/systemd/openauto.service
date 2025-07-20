@@ -1,0 +1,34 @@
+[Unit]
+Description=OpenAuto Android Auto Implementation
+Documentation=https://github.com/opencardev/openauto
+After=network.target sound.target
+Wants=network.target
+RequiredBy=openauto-btservice.service
+
+[Service]
+Type=simple
+User=openauto
+Group=openauto
+WorkingDirectory=/opt/openauto
+ExecStart=/opt/openauto/autoapp --config /etc/openauto/openauto.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=OPENAUTO_HOME=/opt/openauto
+Environment=OPENAUTO_CONFIG=/etc/openauto
+Environment=OPENAUTO_DATA=/var/lib/openauto
+Environment=OPENAUTO_LOGS=/var/log/openauto
+MemoryMax=1G
+TasksMax=100
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/openauto /var/log/openauto /tmp
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
