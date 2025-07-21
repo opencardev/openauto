@@ -565,8 +565,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq, wireshark, tcpdump")
 else()
     # Production packages only need runtime libraries
+    # Use flexible versioning to support multiple library versions
     set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-        "libboost-system1.67.0 (>= 1.67), libboost-log1.67.0 (>= 1.67), libprotobuf17 (>= 3.6), libssl1.1 (>= 1.1), libusb-1.0-0 (>= 1.0), libudev1 (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2 (>= 1.1), libpulse0 (>= 12.0), librtaudio6 (>= 5.0), systemd (>= 237)")
+        "libboost-system1.81.0 | libboost-system1.74.0 | libboost-system1.67.0, libboost-log1.81.0 | libboost-log1.74.0 | libboost-log1.67.0, libprotobuf32 | libprotobuf17, libssl3 | libssl1.1, libusb-1.0-0 (>= 1.0), libudev1 (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2 (>= 1.1), libpulse0 (>= 12.0), librtaudio6 | librtaudio5 (>= 5.0), systemd (>= 237)")
     
     set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools")
     set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq")
