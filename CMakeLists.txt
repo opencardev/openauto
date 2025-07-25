@@ -533,12 +533,12 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${OPENAUTO_BUILD_MAJOR_RELEASE})
 set(CPACK_PACKAGE_VERSION_MINOR ${OPENAUTO_BUILD_MINOR_RELEASE})
 set(CPACK_PACKAGE_VERSION_PATCH ${OPENAUTO_BUILD_INCREMENTAL})
 set(CPACK_PACKAGE_VERSION "${PROGRAM_VERSION_STRING}")
-set(CPACK_PACKAGE_CONTACT "support@opencardev.com")
+set(CPACK_PACKAGE_CONTACT "matthiton2005@gmail.com")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/opencardev/openauto")
 
 # Debian-specific settings
 set(CPACK_GENERATOR "DEB")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenCarDev Team <support@opencardev.com>")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenCarDev Team <matthiton2005@gmail.com>")
 set(CPACK_DEBIAN_PACKAGE_SECTION "electronics")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 
@@ -559,7 +559,7 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Debug packages include development tools and debugging libraries
     set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-        "libboost-all-dev (>= 1.81), libprotobuf-dev (>= 3.6), libssl-dev (>= 1.1), libusb-1.0-0-dev (>= 1.0), libudev-dev (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2-dev (>= 1.1), libpulse-dev (>= 12.0), librtaudio-dev (>= 5.0), nlohmann-json3-dev (>= 3.6), libevent-dev (>= 2.1), systemd (>= 237), gdb, valgrind, strace, libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-dev (>= 2025.7.24)")
+        "libboost-all-dev (>= 1.81), libprotobuf-dev (>= 3.6), libssl-dev (>= 1.1), libusb-1.0-0-dev (>= 1.0), libudev-dev (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2-dev (>= 1.1), libpulse-dev (>= 12.0), librtaudio-dev (>= 5.0), nlohmann-json3-dev (>= 3.6), libevent-dev (>= 2.1), systemd (>= 237), gdb, valgrind, strace, libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-arm64 | libaasdk-arm64-dbg, libaasdk-arm64-dev")
     
     set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools, build-essential, cmake")
     set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq, wireshark, tcpdump")
@@ -567,7 +567,7 @@ else()
     # Production packages only need runtime libraries
     # Use flexible versioning to support multiple library versions
     set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-        "libboost-system1.81.0, libboost-log1.81.0, libprotobuf32, libssl3 | libssl1.1, libusb-1.0-0 (>= 1.0), libudev1 (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2 (>= 1.1), libpulse0 (>= 12.0), librtaudio6 | librtaudio5 (>= 5.0), systemd (>= 237), libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-dev (>= 2025.7.24)")
+        "libboost-system1.81.0, libboost-log1.81.0, libprotobuf32, libssl3 | libssl1.1, libusb-1.0-0 (>= 1.0), libudev1 (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2 (>= 1.1), libpulse0 (>= 12.0), librtaudio6 | librtaudio5 (>= 5.0), systemd (>= 237), libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-arm64 | libaasdk-arm64-dbg, libaasdk-arm64-dbg")
     
     set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools")
     set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq")
