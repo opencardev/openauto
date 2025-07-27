@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-removal script for debug package
+
+set -e
+
+echo "🛑 Stopping OpenAuto Debug services..."
+
+# Stop debug services
+if systemctl is-active --quiet openauto-debug 2>/dev/null; then
+    systemctl stop openauto-debug
+fi
+
+if systemctl is-active --quiet openauto-btservice-debug 2>/dev/null; then
+    systemctl stop openauto-btservice-debug
+fi
+
+# Disable debug services
+systemctl disable openauto-debug 2>/dev/null || true
+systemctl disable openauto-btservice-debug 2>/dev/null || true
+
+echo "✅ OpenAuto Debug services stopped and disabled"
+
+exit 0

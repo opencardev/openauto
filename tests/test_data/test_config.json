@@ -1,0 +1,34 @@
+{
+  "test_configuration": {
+    "android_auto": {
+      "enabled": true,
+      "connection_timeout": 5000,
+      "max_reconnect_attempts": 3
+    },
+    "bluetooth": {
+      "enabled": true,
+      "device_name": "OpenAuto Test Device",
+      "auto_connect": false
+    },
+    "wifi": {
+      "enabled": true,
+      "hotspot_ssid": "OpenAuto-Test",
+      "hotspot_password": "test123456"
+    },
+    "ui": {
+      "theme": "dark",
+      "resolution": "800x480",
+      "orientation": "landscape"
+    },
+    "audio": {
+      "volume": 75,
+      "sample_rate": 48000,
+      "channels": 2
+    },
+    "video": {
+      "framerate": 30,
+      "bitrate": 2000000,
+      "quality": "high"
+    }
+  }
+}

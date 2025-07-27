@@ -10,17 +10,75 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-# Set Compile Versions
-string(TIMESTAMP OPENAUTO_BUILD_DATE "%Y%m%d")  # Dynamic Binary Release Build Date
-set(OPENAUTO_BUILD_MAJOR_RELEASE 5)             # Binary Release Build Major Number
-set(OPENAUTO_BUILD_MINOR_RELEASE 0)             # Binary Release Build Minor Number
-set(OPENAUTO_BUILD_INCREMENTAL 0)               # Binary Build Version - Increment for Each Build
+# Set Compile Versions (Date-based versioning: YYYY.MM.DD+gitcommit)
+string(TIMESTAMP OPENAUTO_BUILD_YEAR "%Y")      # Year as major version
+string(TIMESTAMP OPENAUTO_BUILD_MONTH "%m")     # Month as minor version (01-12)
+string(TIMESTAMP OPENAUTO_BUILD_DAY "%d")       # Day as patch version (01-31)
+string(TIMESTAMP OPENAUTO_BUILD_DATE "%Y%m%d")  # Full date for compatibility
+
+# Get git commit information
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_COMMIT_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_COMMIT_FULL
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --dirty --always
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_DESCRIBE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+else()
+    set(OPENAUTO_GIT_COMMIT_SHORT "unknown")
+    set(OPENAUTO_GIT_COMMIT_FULL "unknown")
+    set(OPENAUTO_GIT_DESCRIBE "unknown")
+    set(OPENAUTO_GIT_BRANCH "unknown")
+    message(WARNING "Git not found. Version will not include commit information.")
+endif()
+
+# Set version numbers using date-based scheme
+set(OPENAUTO_BUILD_MAJOR_RELEASE ${OPENAUTO_BUILD_YEAR})   # Year (e.g., 2025)
+set(OPENAUTO_BUILD_MINOR_RELEASE ${OPENAUTO_BUILD_MONTH})  # Month (01-12)
+set(OPENAUTO_BUILD_INCREMENTAL ${OPENAUTO_BUILD_DAY})      # Day (01-31)
 
 # Configure CMAKE
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -Wall -pedantic -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-g -O3")
+
+# Add version and git information as compile definitions
+add_definitions(-DOPENAUTO_VERSION_MAJOR=${OPENAUTO_BUILD_MAJOR_RELEASE})
+add_definitions(-DOPENAUTO_VERSION_MINOR=${OPENAUTO_BUILD_MINOR_RELEASE})
+add_definitions(-DOPENAUTO_VERSION_PATCH=${OPENAUTO_BUILD_INCREMENTAL})
+add_definitions(-DOPENAUTO_VERSION_STRING="${PROGRAM_VERSION_STRING}")
+add_definitions(-DOPENAUTO_GIT_COMMIT="${OPENAUTO_GIT_COMMIT_SHORT}")
+add_definitions(-DOPENAUTO_GIT_COMMIT_FULL="${OPENAUTO_GIT_COMMIT_FULL}")
+add_definitions(-DOPENAUTO_GIT_BRANCH="${OPENAUTO_GIT_BRANCH}")
+add_definitions(-DOPENAUTO_GIT_DESCRIBE="${OPENAUTO_GIT_DESCRIBE}")
+add_definitions(-DOPENAUTO_BUILD_DATE="${OPENAUTO_BUILD_DATE}")
 
 # Default to Release mode unless overridden with -DCMAKE_BUILD_TYPE=Debug on cmake command
 if(NOT CMAKE_BUILD_TYPE)
@@ -44,6 +102,104 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
+
+# PNG Profile Check and Fix Function
+function(check_and_fix_png_profiles ASSETS_DIR)
+    message(STATUS "🔧 Checking PNG files for problematic iCCP profiles...")
+    
+    # Find all PNG files
+    file(GLOB PNG_FILES "${ASSETS_DIR}/*.png")
+    
+    # Check if required tools are available
+    find_program(PNGCHECK_EXECUTABLE pngcheck)
+    find_program(PNGCRUSH_EXECUTABLE pngcrush)
+    find_program(CONVERT_EXECUTABLE convert)
+    
+    if(NOT PNGCHECK_EXECUTABLE)
+        message(WARNING "⚠️  pngcheck not found. Install with: sudo apt-get install pngcheck")
+        return()
+    endif()
+    
+    set(PROBLEMATIC_FILES "")
+    set(FIXED_COUNT 0)
+    
+    foreach(PNG_FILE ${PNG_FILES})
+        get_filename_component(FILENAME ${PNG_FILE} NAME)
+        
+        # Check if file has iCCP profile
+        execute_process(
+            COMMAND ${PNGCHECK_EXECUTABLE} -v ${PNG_FILE}
+            OUTPUT_VARIABLE PNGCHECK_OUTPUT
+            ERROR_VARIABLE PNGCHECK_ERROR
+            RESULT_VARIABLE PNGCHECK_RESULT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        
+        if(PNGCHECK_OUTPUT MATCHES "iCCP")
+            list(APPEND PROBLEMATIC_FILES ${PNG_FILE})
+            message(WARNING "🚨 PROBLEMATIC PNG DETECTED:")
+            message(WARNING "   📄 File: ${FILENAME}")
+            message(WARNING "   📁 Path: ${PNG_FILE}")
+            message(WARNING "   ⚠️  This file contains an incorrect sRGB profile that will cause:")
+            message(WARNING "      'libpng warning: iCCP: known incorrect sRGB profile'")
+            message(WARNING "   🔧 Attempting automatic fix...")
+            
+            # Try to fix with pngcrush
+            if(PNGCRUSH_EXECUTABLE)
+                execute_process(
+                    COMMAND ${PNGCRUSH_EXECUTABLE} -rem iCCP ${PNG_FILE} ${PNG_FILE}.tmp
+                    OUTPUT_QUIET
+                    ERROR_QUIET
+                    RESULT_VARIABLE PNGCRUSH_RESULT
+                )
+                
+                if(PNGCRUSH_RESULT EQUAL 0)
+                    file(RENAME ${PNG_FILE}.tmp ${PNG_FILE})
+                    message(STATUS "   ✅ Fixed ${FILENAME} using pngcrush")
+                    math(EXPR FIXED_COUNT "${FIXED_COUNT} + 1")
+                elseif(CONVERT_EXECUTABLE)
+                    # Fallback to ImageMagick
+                    execute_process(
+                        COMMAND ${CONVERT_EXECUTABLE} ${PNG_FILE} -strip ${PNG_FILE}.tmp
+                        OUTPUT_QUIET
+                        ERROR_QUIET
+                        RESULT_VARIABLE CONVERT_RESULT
+                    )
+                    
+                    if(CONVERT_RESULT EQUAL 0)
+                        file(RENAME ${PNG_FILE}.tmp ${PNG_FILE})
+                        message(STATUS "   ✅ Fixed ${FILENAME} using ImageMagick")
+                        math(EXPR FIXED_COUNT "${FIXED_COUNT} + 1")
+                    else()
+                        message(WARNING "   ❌ Failed to fix ${FILENAME}")
+                        file(REMOVE_IF_EXISTS ${PNG_FILE}.tmp)
+                    endif()
+                endif()
+            else()
+                message(WARNING "   ❌ pngcrush not available. Install with: sudo apt-get install pngcrush")
+            endif()
+        endif()
+    endforeach()
+    
+    list(LENGTH PROBLEMATIC_FILES PROBLEMATIC_COUNT)
+    if(PROBLEMATIC_COUNT GREATER 0)
+        message(STATUS "🎯 PNG Profile Check Summary:")
+        message(STATUS "   📊 Problematic files found: ${PROBLEMATIC_COUNT}")
+        message(STATUS "   🔧 Files automatically fixed: ${FIXED_COUNT}")
+        
+        if(FIXED_COUNT LESS PROBLEMATIC_COUNT)
+            message(WARNING "⚠️  Some PNG files still have problematic profiles!")
+            message(WARNING "   Install fixing tools: sudo apt-get install pngcrush imagemagick")
+        else()
+            message(STATUS "✅ All PNG profile issues resolved!")
+        endif()
+    else()
+        message(STATUS "✅ All PNG files are clean - no profile issues found")
+    endif()
+endfunction()
+
+# Run PNG profile check on assets
+check_and_fix_png_profiles(${resources_directory})
 
 # Configure Boost
 set(Boost_USE_STATIC_LIBS OFF)
@@ -151,9 +307,14 @@ target_link_libraries(autoapp PUBLIC
         ${AAP_PROTOBUF_LIB_DIR}
         ${AASDK_LIB_DIR})
 
-set(PROGRAM_VERSION_STRING "${OPENAUTO_BUILD_MAJOR_RELEASE}.${OPENAUTO_BUILD_MINOR_RELEASE}.${OPENAUTO_BUILD_INCREMENTAL}+${OPENAUTO_BUILD_DATE}")
+set(PROGRAM_VERSION_STRING "${OPENAUTO_BUILD_MAJOR_RELEASE}.${OPENAUTO_BUILD_MINOR_RELEASE}.${OPENAUTO_BUILD_INCREMENTAL}+${OPENAUTO_GIT_COMMIT_SHORT}")
 
 message(STATUS "Project Version: ${PROGRAM_VERSION_STRING}")
+message(STATUS "Git Information:")
+message(STATUS "  Branch: ${OPENAUTO_GIT_BRANCH}")
+message(STATUS "  Commit: ${OPENAUTO_GIT_COMMIT_SHORT} (${OPENAUTO_GIT_COMMIT_FULL})")
+message(STATUS "  Describe: ${OPENAUTO_GIT_DESCRIBE}")
+message(STATUS "  Build Date: ${OPENAUTO_BUILD_DATE}")
 
 set(btservice_sources_directory ${sources_directory}/btservice)
 
@@ -182,6 +343,10 @@ set_target_properties(autoapp
 
 # Modern Architecture Components
 option(ENABLE_MODERN_API "Enable modern REST API and event bus" ON)
+option(ENABLE_REST_API "Enable REST API server" ON)
+option(ENABLE_EVENT_BUS "Enable event bus system" ON)
+option(ENABLE_STATE_MACHINE "Enable state machine system" ON)
+option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan" OFF)
 
 if(ENABLE_MODERN_API)
     message(STATUS "Modern API enabled")
@@ -238,8 +403,31 @@ if(ENABLE_MODERN_API)
     message(STATUS "Modern API components added to build with OpenAPI support")
 endif()
 
+# Sanitizer support
+if(ENABLE_SANITIZERS)
+    message(STATUS "Enabling AddressSanitizer and UBSan")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
+endif()
+
+# Additional compiler definitions based on options
+if(ENABLE_REST_API)
+    add_definitions(-DENABLE_REST_API)
+    message(STATUS "REST API support enabled")
+endif()
+
+if(ENABLE_EVENT_BUS)
+    add_definitions(-DENABLE_EVENT_BUS)
+    message(STATUS "Event Bus support enabled")
+endif()
+
+if(ENABLE_STATE_MACHINE)
+    add_definitions(-DENABLE_STATE_MACHINE)
+    message(STATUS "State Machine support enabled")
+endif()
+
 # Testing support
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 enable_testing()
 
 # Testing dependencies
@@ -288,4 +476,247 @@ if(BUILD_TESTS)
             DEPENDENCIES check
         )
     endif()
+endif()
+
+# =============================================================================
+# DEBIAN PACKAGE CONFIGURATION
+# =============================================================================
+
+# Determine package name and description based on build type
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(BUILD_TYPE_SUFFIX "-debug")
+    set(PACKAGE_DESCRIPTION_SUFFIX " (Debug Build)")
+    set(PACKAGE_DESCRIPTION_DETAIL "This is a debug build with verbose logging, debug symbols, and development tools enabled. Suitable for development and troubleshooting.")
+    set(SERVICE_SUFFIX "-debug")
+else()
+    set(BUILD_TYPE_SUFFIX "")
+    set(PACKAGE_DESCRIPTION_SUFFIX "")
+    set(PACKAGE_DESCRIPTION_DETAIL "This is an optimized production build suitable for automotive deployment.")
+    set(SERVICE_SUFFIX "")
+endif()
+
+# Determine architecture suffix
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(ARCH_SUFFIX "-arm64")
+    else()
+        set(ARCH_SUFFIX "-armhf")
+    endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+    set(ARCH_SUFFIX "-amd64")
+else()
+    set(ARCH_SUFFIX "-${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
+# Determine platform suffix based on NOPI setting
+if (NOPI STREQUAL "FALSE" OR NOPI STREQUAL "OFF")
+    set(PLATFORM_SUFFIX "-pi")
+endif()
+
+# Combine all suffixes
+set(PACKAGE_SUFFIX "${BUILD_TYPE_SUFFIX}${PLATFORM_SUFFIX}${ARCH_SUFFIX}")
+
+# Package metadata
+set(CPACK_PACKAGE_NAME "openauto-modern${PACKAGE_SUFFIX}")
+set(CPACK_PACKAGE_VENDOR "OpenCarDev Team")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Modern Android Auto implementation for automotive systems${PACKAGE_DESCRIPTION_SUFFIX}")
+
+# Create platform-specific description
+if (NOPI)
+    set(PLATFORM_DESCRIPTION "Built for non-Raspberry Pi systems (x86/x64 platforms).")
+else()
+    set(PLATFORM_DESCRIPTION "Built for Raspberry Pi 3 and lower.")
+endif()
+
+set(CPACK_PACKAGE_DESCRIPTION "OpenAuto is a modern Android Auto implementation that allows you to use Android Auto on various automotive systems. This package includes the modernized architecture with REST API, event bus, state machine, and comprehensive logging. ${PACKAGE_DESCRIPTION_DETAIL} ${PLATFORM_DESCRIPTION} Built from commit ${OPENAUTO_GIT_COMMIT_SHORT} on branch ${OPENAUTO_GIT_BRANCH}.")
+set(CPACK_PACKAGE_VERSION_MAJOR ${OPENAUTO_BUILD_MAJOR_RELEASE})
+set(CPACK_PACKAGE_VERSION_MINOR ${OPENAUTO_BUILD_MINOR_RELEASE})
+set(CPACK_PACKAGE_VERSION_PATCH ${OPENAUTO_BUILD_INCREMENTAL})
+set(CPACK_PACKAGE_VERSION "${PROGRAM_VERSION_STRING}")
+set(CPACK_PACKAGE_CONTACT "matthiton2005@gmail.com")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/opencardev/openauto")
+
+# Debian-specific settings
+set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenCarDev Team <matthiton2005@gmail.com>")
+set(CPACK_DEBIAN_PACKAGE_SECTION "electronics")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+
+# Auto-detect architecture
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    else()
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "armhf")
+    endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+else()
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "all")
+endif()
+
+# Dependencies (different for debug vs release)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Debug packages include development tools and debugging libraries
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+        "libboost-all-dev (>= 1.81), libprotobuf-dev (>= 3.6), libssl-dev (>= 1.1), libusb-1.0-0-dev (>= 1.0), libudev-dev (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2-dev (>= 1.1), libpulse-dev (>= 12.0), librtaudio-dev (>= 5.0), nlohmann-json3-dev (>= 3.6), libevent-dev (>= 2.1), systemd (>= 237), gdb, valgrind, strace, libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-arm64 | libaasdk-arm64-dbg, libaasdk-arm64-dev")
+    
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools, build-essential, cmake")
+    set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq, wireshark, tcpdump")
+else()
+    # Production packages only need runtime libraries
+    # Use flexible versioning to support multiple library versions
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+        "libboost-system1.81.0, libboost-log1.81.0, libprotobuf32, libssl3 | libssl1.1, libusb-1.0-0 (>= 1.0), libudev1 (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2 (>= 1.1), libpulse0 (>= 12.0), librtaudio6 | librtaudio5 (>= 5.0), systemd (>= 237), libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-arm64 | libaasdk-arm64-dbg, libaasdk-arm64-dbg")
+    
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools")
+    set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq")
+endif()
+
+# Package conflicts - debug and release packages conflict with each other
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CPACK_DEBIAN_PACKAGE_CONFLICTS "openauto-modern")
+    set(CPACK_DEBIAN_PACKAGE_PROVIDES "openauto-modern-debug")
+else()
+    set(CPACK_DEBIAN_PACKAGE_CONFLICTS "openauto-modern-debug")
+    set(CPACK_DEBIAN_PACKAGE_PROVIDES "openauto-modern")
+endif()
+
+# Pre/post installation scripts (build-type specific)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
+        "${CMAKE_SOURCE_DIR}/packaging/debian/preinst-debug;${CMAKE_SOURCE_DIR}/packaging/debian/postinst-debug;${CMAKE_SOURCE_DIR}/packaging/debian/prerm-debug;${CMAKE_SOURCE_DIR}/packaging/debian/postrm-debug")
+else()
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
+        "${CMAKE_SOURCE_DIR}/packaging/debian/preinst;${CMAKE_SOURCE_DIR}/packaging/debian/postinst;${CMAKE_SOURCE_DIR}/packaging/debian/prerm;${CMAKE_SOURCE_DIR}/packaging/debian/postrm")
+endif()
+
+# Enable CPack for package generation (must be after setting all CPACK variables)
+include(CPack)
+
+# =============================================================================
+# INSTALLATION CONFIGURATION
+# =============================================================================
+
+# Set installation paths based on build type
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(INSTALL_BIN_DIR "/opt/openauto-debug")
+    set(INSTALL_CONFIG_DIR "/etc/openauto-debug")
+    set(INSTALL_DATA_DIR "/var/lib/openauto-debug")
+    set(INSTALL_LOG_DIR "/var/log/openauto-debug")
+    set(INSTALL_DOC_DIR "/usr/share/doc/openauto-modern-debug")
+else()
+    set(INSTALL_BIN_DIR "/opt/openauto")
+    set(INSTALL_CONFIG_DIR "/etc/openauto")
+    set(INSTALL_DATA_DIR "/var/lib/openauto")
+    set(INSTALL_LOG_DIR "/var/log/openauto")
+    set(INSTALL_DOC_DIR "/usr/share/doc/openauto-modern")
+endif()
+
+# Install binaries
+install(TARGETS autoapp 
+    RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+install(TARGETS btservice 
+    RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+# Install configuration files (build-type specific templates)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    install(FILES packaging/config/openauto-debug.conf
+        DESTINATION ${INSTALL_CONFIG_DIR}
+        RENAME openauto.conf
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    
+    install(FILES packaging/config/logger-debug.conf
+        DESTINATION ${INSTALL_CONFIG_DIR}
+        RENAME logger.conf
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    
+    install(FILES packaging/config/services-debug.conf
+        DESTINATION ${INSTALL_CONFIG_DIR}
+        RENAME services.conf
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+else()
+    install(FILES packaging/config/openauto.conf
+        DESTINATION ${INSTALL_CONFIG_DIR}
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
+    install(FILES packaging/config/logger.conf
+        DESTINATION ${INSTALL_CONFIG_DIR}
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
+    install(FILES packaging/config/services.conf
+        DESTINATION ${INSTALL_CONFIG_DIR}
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+endif()
+
+#Install default legacy ini configuration files
+install(FILES packaging/config/openauto.ini
+    DESTINATION ${INSTALL_CONFIG_DIR}
+    RENAME openauto.ini
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+install(FILES packaging/config/openauto-logs.ini
+    DESTINATION ${INSTALL_CONFIG_DIR}
+    RENAME openauto-logs.ini
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
+# Install systemd service files (build-type specific)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    install(FILES packaging/systemd/openauto-debug.service
+        DESTINATION /etc/systemd/system
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
+    install(FILES packaging/systemd/openauto-btservice-debug.service
+        DESTINATION /etc/systemd/system
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+else()
+    install(FILES packaging/systemd/openauto.service
+        DESTINATION /etc/systemd/system
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
+    install(FILES packaging/systemd/openauto-btservice.service
+        DESTINATION /etc/systemd/system
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+endif()
+
+# Install udev rules (shared between debug and release)
+install(FILES packaging/udev/99-openauto.rules
+    DESTINATION /etc/udev/rules.d
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
+# Install scripts
+install(FILES packaging/scripts/openauto-setup.sh
+    DESTINATION ${INSTALL_BIN_DIR}/scripts
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+install(FILES packaging/scripts/openauto-monitor.sh
+    DESTINATION ${INSTALL_BIN_DIR}/scripts
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+# Install documentation
+install(FILES README.md RELEASE.txt LICENSE
+    DESTINATION ${INSTALL_DOC_DIR})
+
+install(DIRECTORY docs/
+    DESTINATION ${INSTALL_DOC_DIR}/docs
+    FILES_MATCHING PATTERN "*.md")
+
+# Install default data directory structure
+install(DIRECTORY DESTINATION ${INSTALL_DATA_DIR}
+    DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE)
+
+install(DIRECTORY DESTINATION ${INSTALL_LOG_DIR}
+    DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE)
+
+# Install logrotate configuration (build-type specific)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    install(FILES packaging/logrotate/openauto-debug
+        DESTINATION /etc/logrotate.d
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+else()
+    install(FILES packaging/logrotate/openauto
+        DESTINATION /etc/logrotate.d
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 endif()

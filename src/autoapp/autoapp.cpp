@@ -17,9 +17,15 @@
 */
 
 #include <thread>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
+#include <cstdlib>  // For std::getenv
 #include <QApplication>
 #include <QScreen>
 #include <QDesktopWidget>
+#include <QPixmap>
+#include <QString>
 #include <aasdk/USB/USBHub.hpp>
 #include <aasdk/USB/ConnectedAccessoriesEnumerator.hpp>
 #include <aasdk/USB/AccessoryModeQueryChain.hpp>
@@ -39,6 +45,11 @@
 #include <f1x/openauto/autoapp/UI/WarningDialog.hpp>
 #include <f1x/openauto/autoapp/UI/UpdateDialog.hpp>
 #include <modern/Logger.hpp>
+#include <modern/ModernIntegration.hpp>
+#include <modern/ConfigurationManager.hpp>
+#include <modern/EventBus.hpp>
+#include <modern/StateMachine.hpp>
+#include <modern/RestApiServer.hpp>
 
 namespace autoapp = f1x::openauto::autoapp;
 using ThreadPool = std::vector<std::thread>;
@@ -73,16 +84,140 @@ void startIOServiceWorkers(boost::asio::io_service& ioService, ThreadPool& threa
 }
 
 void configureLogging() {
+    // Check for debug mode from environment or command line
+    bool debugMode = false;
+    const char* envDebug = std::getenv("OPENAUTO_DEBUG_MODE");
+    const char* envLogLevel = std::getenv("OPENAUTO_LOG_LEVEL");
+    
+    if (envDebug && std::string(envDebug) == "1") {
+        debugMode = true;
+    }
+    
+    if (envLogLevel && std::string(envLogLevel) == "DEBUG") {
+        debugMode = true;
+    }
+    
     // Configure modern logger for autoapp
     auto& logger = openauto::modern::Logger::getInstance();
-    logger.setLevel(openauto::modern::LogLevel::INFO);
-    logger.setAsync(true);
+    
+    // Set log level based on debug mode
+    if (debugMode) {
+        logger.setLevel(openauto::modern::LogLevel::DEBUG);
+        // Enable debug for all categories
+        logger.setCategoryLevel(openauto::modern::LogCategory::ANDROID_AUTO, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::SYSTEM, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::UI, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::CAMERA, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::NETWORK, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::BLUETOOTH, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::AUDIO, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::VIDEO, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::CONFIG, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::API, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::EVENT, openauto::modern::LogLevel::DEBUG);
+        logger.setCategoryLevel(openauto::modern::LogCategory::STATE, openauto::modern::LogLevel::DEBUG);
+    } else {
+        logger.setLevel(openauto::modern::LogLevel::INFO);
+    }
+    
+    // Add file sink for logging
+    const std::string logFile = "/var/log/openauto/openauto.log";
+    try {
+        // Create file sink with rotation
+        auto fileSink = std::make_shared<openauto::modern::FileSink>(logFile);
+        logger.addSink(fileSink);
+        
+        // Add console sink for immediate feedback
+        auto consoleSink = std::make_shared<openauto::modern::ConsoleSink>();
+        logger.addSink(consoleSink);
+        
+        // Use synchronous logging to ensure immediate output
+        logger.setAsync(false);
+        
+        // Test file logging
+        std::ofstream testFile(logFile, std::ios::app);
+        if (testFile.is_open()) {
+            std::time_t now = std::time(nullptr);
+            testFile << "[" << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S") 
+                    << "] [INFO] [SYSTEM] [autoapp] Logger initialized with file output\n";
+            testFile.close();
+        }
+        
+    } catch (const std::exception& e) {
+        // Fall back to console-only logging
+        auto consoleSink = std::make_shared<openauto::modern::ConsoleSink>();
+        logger.addSink(consoleSink);
+        logger.setAsync(false);
+    }
+    
+    // Test that logging is working
+    if (debugMode) {
+        SLOG_DEBUG(SYSTEM, "autoapp", "🔍 DEBUG MODE ENABLED - Verbose logging active");
+        SLOG_DEBUG(SYSTEM, "autoapp", "   📊 Log level: DEBUG (all categories)");
+        SLOG_DEBUG(SYSTEM, "autoapp", "   🔗 AASDK debug: Enabled via build configuration");
+        SLOG_DEBUG(SYSTEM, "autoapp", "   📺 Output: Console + " + logFile);
+    } else {
+        SLOG_INFO(SYSTEM, "autoapp", "🚀 Modern logging system initialized");
+        SLOG_INFO(SYSTEM, "autoapp", "   📊 Log level: INFO");
+        SLOG_INFO(SYSTEM, "autoapp", "   📺 Output: Console + " + logFile);
+    }
     
     // Check for legacy log config file and warn about migration
     const std::string logIni = "openauto-logs.ini";
     std::ifstream logSettings(logIni);
     if (logSettings.good()) {
         SLOG_WARN(CONFIG, "autoapp", "Legacy log configuration file found - consider migrating to modern logger config");
+    }
+}
+
+void validatePngAssets()
+{
+    SLOG_INFO(UI, "autoapp", "🔧 Validating PNG assets for runtime warnings...");
+    
+    // List of PNG files that are embedded in Qt resources
+    const std::vector<std::string> pngResources = {
+        ":/ico_warning.png", ":/ico_info.png", ":/aausb-hot.png", ":/aawifi-hot.png",
+        ":/cursor-hot.png", ":/power-hot.png", ":/settings-hot.png", ":/sleep-hot.png",
+        ":/wifi-hot.png", ":/brightness-hot.png", ":/camera-hot.png", ":/day-hot.png",
+        ":/night-hot.png", ":/record-hot.png", ":/stop-hot.png", ":/save-hot.png",
+        ":/reboot-hot.png", ":/back-hot.png", ":/rearcam-hot.png", ":/recordactive-hot.png",
+        ":/lock-hot.png", ":/volume-hot.png", ":/bug-hot.png", ":/eye-hot.png",
+        ":/skin-hot.png", ":/mp3-hot.png", ":/play-hot.png", ":/prev-hot.png",
+        ":/next-hot.png", ":/pause-hot.png", ":/prevbig-hot.png", ":/nextbig-hot.png",
+        ":/list-hot.png", ":/home-hot.png", ":/player-hot.png", ":/coverlogo.png",
+        ":/black.png", ":/album-hot.png"
+    };
+    
+    int validatedCount = 0;
+    int problematicCount = 0;
+    
+    for (const auto& resourcePath : pngResources) {
+        QPixmap pixmap(QString::fromStdString(resourcePath));
+        if (!pixmap.isNull()) {
+            validatedCount++;
+            SLOG_DEBUG(UI, "autoapp", "✅ PNG asset validated: " + resourcePath);
+        } else {
+            problematicCount++;
+            SLOG_WARN(UI, "autoapp", "⚠️  PNG asset failed to load: " + resourcePath);
+            SLOG_WARN(UI, "autoapp", "   📄 This may indicate a corrupted or missing PNG file");
+            SLOG_WARN(UI, "autoapp", "   🔧 Consider running: cmake -B build && make -C build");
+        }
+    }
+    
+    std::map<std::string, std::string> context = {
+        {"validated_pngs", std::to_string(validatedCount)},
+        {"problematic_pngs", std::to_string(problematicCount)},
+        {"total_pngs", std::to_string(pngResources.size())}
+    };
+    
+    if (problematicCount == 0) {
+        SLOG_INFO(UI, "autoapp", "✅ All PNG assets validated successfully (" + std::to_string(validatedCount) + " files)");
+        SLOG_INFO(UI, "autoapp", "   📝 No libpng warnings expected from embedded resources");
+    } else {
+        SLOG_ERROR(UI, "autoapp", "🚨 PNG Asset Validation Failed!");
+        SLOG_ERROR(UI, "autoapp", "   📊 " + std::to_string(problematicCount) + " out of " + std::to_string(pngResources.size()) + " PNG assets have issues");
+        SLOG_ERROR(UI, "autoapp", "   ⚠️  This may cause 'libpng warning' messages at runtime");
+        SLOG_ERROR(UI, "autoapp", "   🔧 Rebuild the project to fix: cmake -B build && make -C build");
     }
 }
 
@@ -135,7 +270,63 @@ int main(int argc, char* argv[])
     };
     SLOG_INFO(UI, "autoapp", "Display configuration: " + std::to_string(width) + "x" + std::to_string(height));
 
+    // Runtime PNG validation
+    validatePngAssets();
+
     auto configuration = std::make_shared<autoapp::configuration::Configuration>();
+
+    // Initialize modern architecture components
+    openauto::modern::EventBus* eventBus = nullptr;
+    std::shared_ptr<openauto::modern::ConfigurationManager> configManager;
+    std::shared_ptr<openauto::modern::StateMachine> stateMachine;
+    std::unique_ptr<openauto::modern::RestApiServer> restApiServer;
+    
+    try {
+        // Get EventBus instance (singleton reference)
+        eventBus = &openauto::modern::EventBus::getInstance();
+        SLOG_INFO(SYSTEM, "autoapp", "EventBus initialized");
+        
+        // Create ConfigurationManager
+        configManager = std::make_shared<openauto::modern::ConfigurationManager>();
+        SLOG_INFO(SYSTEM, "autoapp", "ConfigurationManager initialized");
+        
+        // Create StateMachine
+        stateMachine = std::make_shared<openauto::modern::StateMachine>();
+        SLOG_INFO(SYSTEM, "autoapp", "StateMachine initialized");
+        
+        // Create and start REST API Server (if enabled)
+        bool enableRestApi = configManager->getValue<bool>("modern_api.enable_rest_api", true);
+        if (enableRestApi) {
+            int apiPort = configManager->getValue<int>("modern_api.rest_api_port", 8080);
+            
+            // Convert EventBus* to shared_ptr for RestApiServer
+            std::shared_ptr<openauto::modern::EventBus> eventBusPtr(
+                eventBus, [](openauto::modern::EventBus*){} // No-op deleter for singleton
+            );
+            
+            restApiServer = std::make_unique<openauto::modern::RestApiServer>(
+                apiPort, eventBusPtr, stateMachine, configManager);
+            
+            // Start the REST API server in a separate thread
+            std::thread apiThread([&restApiServer]() {
+                try {
+                    restApiServer->start();
+                } catch (const std::exception& e) {
+                    SLOG_ERROR(API, "autoapp", "REST API server error: " + std::string(e.what()));
+                }
+            });
+            apiThread.detach();
+            
+            SLOG_INFO(API, "autoapp", "REST API server started on port " + std::to_string(apiPort));
+        }
+        
+        // Set initial system state using transition
+        stateMachine->transition(openauto::modern::Trigger::SYSTEM_START);
+        SLOG_INFO(STATE, "autoapp", "System state transition to IDLE");
+        
+    } catch (const std::exception& e) {
+        SLOG_ERROR(SYSTEM, "autoapp", "Failed to initialize modern components: " + std::string(e.what()));
+    }
 
     autoapp::ui::MainWindow mainWindow(configuration);
     //mainWindow.setWindowFlags(Qt::WindowStaysOnTopHint);
@@ -307,6 +498,23 @@ int main(int argc, char* argv[])
     app->waitForUSBDevice();
 
     auto result = qApplication.exec();
+
+    // Shutdown modern components gracefully
+    try {
+        if (restApiServer) {
+            restApiServer->stop();
+            SLOG_INFO(API, "autoapp", "REST API server stopped");
+        }
+        
+        if (stateMachine) {
+            stateMachine->transition(openauto::modern::Trigger::SHUTDOWN_REQUEST);
+            SLOG_INFO(STATE, "autoapp", "System state transitioned to SHUTTING_DOWN");
+        }
+        
+        SLOG_INFO(SYSTEM, "autoapp", "Modern components shutdown complete");
+    } catch (const std::exception& e) {
+        SLOG_ERROR(SYSTEM, "autoapp", "Error during modern components shutdown: " + std::string(e.what()));
+    }
 
     std::for_each(threadPool.begin(), threadPool.end(), std::bind(&std::thread::join, std::placeholders::_1));
 

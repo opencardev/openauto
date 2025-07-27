@@ -4,6 +4,29 @@
 
 This guide provides comprehensive instructions for building OpenAuto with the modern architecture, including the new logger, event bus, state machine, and REST API components.
 
+For complete details about OpenAuto's date-based versioning system and VS Code development environment, see the **[Version Scheme and VS Code Integration Guide](version-scheme-and-vscode.md)**.
+
+## Quick Start with VS Code
+
+If you're using VS Code, OpenAuto includes **18 specialized tasks** for complete development automation:
+
+### Essential VS Code Tasks
+
+| Task | Purpose | Shortcut |
+|------|---------|----------|
+| **Build Release Package** | Build production package | `Ctrl+Shift+P` → "Tasks: Run Build Task" |
+| **Run Tests** | Execute test suite | `Ctrl+Shift+P` → "Tasks: Run Test Task" |
+| **Full Build and Test Pipeline** | Complete CI/CD workflow | `Ctrl+Shift+P` → "Tasks: Run Task" |
+
+### VS Code Setup
+
+1. **Open Workspace**: Open `/home/pi/openauto` in VS Code
+2. **Install Extensions**: C/C++, CMake Tools (recommended)  
+3. **Run Tasks**: `Ctrl+Shift+P` → "Tasks: Run Task" → Select any task
+4. **View Problems**: Compilation errors appear in Problems panel automatically
+
+See the [Version Scheme and VS Code Integration Guide](version-scheme-and-vscode.md) for complete task documentation.
+
 ## Prerequisites
 
 ### System Requirements
@@ -196,16 +219,16 @@ cmake \
     ..
 ```
 
-#### Development Build
+#### Development Build with Debug Logging
 ```bash
 cmake \
     -DCMAKE_BUILD_TYPE=Debug \
     -DENABLE_MODERN_API=ON \
-    -DENABLE_LOGGER_DEMO=ON \
     -DENABLE_REST_API=ON \
     -DENABLE_EVENT_BUS=ON \
     -DENABLE_STATE_MACHINE=ON \
     -DENABLE_SANITIZERS=ON \
+    -DNOPI=ON \
     ..
 ```
 
@@ -444,6 +467,118 @@ cmake \
 make -j$(nproc)
 ```
 
+## Debug Logging
+
+### Enable Debug Mode
+
+To enable comprehensive debug logging including AASDK debug information:
+
+#### Method 1: Build Configuration + Environment Variables
+```bash
+# 1. Build with debug configuration
+cmake \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DENABLE_MODERN_API=ON \
+    -DENABLE_REST_API=ON \
+    -DENABLE_EVENT_BUS=ON \
+    -DENABLE_STATE_MACHINE=ON \
+    -DENABLE_SANITIZERS=ON \
+    -DNOPI=ON \
+    ..
+
+make -j$(nproc)
+
+# 2. Configure debug logging
+./configure_debug_logging.sh
+
+# 3. Run with debug logging
+./autoapp
+```
+
+#### Method 2: Manual Environment Setup
+```bash
+# Set environment variables
+export OPENAUTO_LOG_LEVEL=DEBUG
+export AASDK_LOG_LEVEL=DEBUG
+export OPENAUTO_DEBUG_MODE=1
+
+# Run autoapp
+./autoapp
+```
+
+#### Method 3: Quick Debug Session
+```bash
+# One-liner for debug session
+OPENAUTO_DEBUG_MODE=1 OPENAUTO_LOG_LEVEL=DEBUG ./autoapp
+```
+
+### Log Levels and Categories
+
+**Available Log Levels:**
+- `TRACE` - Most verbose, includes function entry/exit
+- `DEBUG` - Detailed operational information
+- `INFO` - General informational messages  
+- `WARN` - Warning messages
+- `ERROR` - Error conditions
+- `FATAL` - Critical errors
+
+**Log Categories:**
+- `ANDROID_AUTO` - Android Auto protocol and communication
+- `SYSTEM` - System-level operations
+- `UI` - User interface events and updates
+- `CAMERA` - Camera operations and video processing
+- `NETWORK` - Network communications
+- `BLUETOOTH` - Bluetooth operations
+- `AUDIO` - Audio processing and playback
+- `VIDEO` - Video processing and display
+- `CONFIG` - Configuration management
+- `API` - REST API operations
+- `EVENT` - Event bus messages
+- `STATE` - State machine transitions
+
+### Debug Output Locations
+
+When debug logging is enabled, you'll see output in:
+
+1. **Console (stdout)** - Real-time colored debug output
+2. **Log file** - `/tmp/openauto-debug.log` (if configured)
+3. **Application log** - `autoapp.log` in current directory
+
+### Sample Debug Output
+
+```
+[2025-07-18 10:30:15.123] [DEBUG] [ANDROID_AUTO] [autoapp] 🔍 Starting Android Auto handshake
+[2025-07-18 10:30:15.124] [DEBUG] [SYSTEM] [autoapp] USB device enumeration started
+[2025-07-18 10:30:15.125] [DEBUG] [UI] [autoapp] MainWindow initialized with resolution 1920x1080
+[2025-07-18 10:30:15.126] [DEBUG] [CAMERA] [autoapp] Camera service initialized
+```
+
+### Troubleshooting Debug Logging
+
+**Issue: No debug output appearing**
+```bash
+# Check environment variables
+echo $OPENAUTO_LOG_LEVEL
+echo $OPENAUTO_DEBUG_MODE
+
+# Verify build configuration
+strings ./autoapp | grep -i debug
+```
+
+**Issue: Too much log output**
+```bash
+# Filter specific categories
+OPENAUTO_LOG_LEVEL=INFO ./autoapp 2>&1 | grep "ANDROID_AUTO"
+
+# Save to file for analysis
+OPENAUTO_DEBUG_MODE=1 ./autoapp > debug_output.log 2>&1
+```
+
+**Issue: Missing AASDK debug info**
+- Ensure you're using `-DCMAKE_BUILD_TYPE=Debug`
+- AASDK debug is compiled in during debug builds
+- Check that AASDK library was built with debug symbols
+
 ## Troubleshooting Build Issues
 
 ### Common Issues
@@ -535,6 +670,28 @@ valgrind --leak-check=full ./autoapp
 ```
 
 ## Build Verification
+
+### Version Information Check
+```bash
+# Check version information during build
+./check-version.sh
+
+# Expected output:
+# 🔍 OpenAuto Version Information
+# ==================================
+# 📅 Date-based Version Components:
+#   Major (Year):  2025
+#   Minor (Month): 07
+#   Patch (Day):   20
+# 🔗 Git Information:
+#   Branch:        crankshaft-ng_2025
+#   Commit:        fc4e9d0
+#   Working Tree:  CLEAN
+# 🎯 Final Version: 2025.07.20+fc4e9d0
+
+# Verify version embedded in binary
+strings autoapp | grep "2025\."
+```
 
 ### Automated Tests
 ```bash

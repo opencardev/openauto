@@ -1,0 +1,29 @@
+#!/bin/bash
+# Pre-installation script for debug package
+
+set -e
+
+# Stop debug services if they're running
+if systemctl is-active --quiet openauto-debug 2>/dev/null; then
+    echo "Stopping OpenAuto Debug service..."
+    systemctl stop openauto-debug
+fi
+
+if systemctl is-active --quiet openauto-btservice-debug 2>/dev/null; then
+    echo "Stopping OpenAuto Bluetooth Debug service..."
+    systemctl stop openauto-btservice-debug
+fi
+
+# Backup existing debug configuration if present
+if [ -d "/etc/openauto-debug" ]; then
+    echo "Backing up existing debug configuration..."
+    cp -r /etc/openauto-debug /etc/openauto-debug.backup.$(date +%Y%m%d_%H%M%S)
+fi
+
+# Ensure development tools are available
+echo "Checking debug tools availability..."
+which gdb >/dev/null 2>&1 || echo "Warning: gdb not found. Install with: apt install gdb"
+which valgrind >/dev/null 2>&1 || echo "Warning: valgrind not found. Install with: apt install valgrind"
+which strace >/dev/null 2>&1 || echo "Warning: strace not found. Install with: apt install strace"
+
+exit 0

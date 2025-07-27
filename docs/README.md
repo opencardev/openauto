@@ -70,6 +70,18 @@ This document provides a comprehensive index of all documentation for OpenAuto's
 
 ### Developer Resources
 
+#### [Version Scheme and VS Code Integration](version-scheme-and-vscode.md)
+**Purpose**: Complete guide to OpenAuto's date-based versioning and VS Code development environment
+**Key Topics**:
+- Date-based versioning system (YYYY.MM.DD+commit)
+- Git integration and version tracking
+- VS Code tasks configuration (18 specialized tasks)
+- Build, test, and deployment automation
+- Development workflow optimization
+- Version validation and debugging tools
+
+**Target Audience**: Developers, build engineers, DevOps
+
 #### [Logger Migration Guide](logger-migration.md)
 **Purpose**: Detailed guide for migrating from old to new logging system
 **Key Topics**:

@@ -1432,7 +1432,7 @@ comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none",
     ui_->tab6->hide();
     ui_->tab8->hide();
     ui_->tab9->hide();
-    ui_->tab7->show();
+    ui_->tab7->show(); // hide
   }
 
   void SettingsWindow::show_tab8() {
@@ -1444,7 +1444,7 @@ comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none",
     ui_->tab6->hide();
     ui_->tab7->hide();
     ui_->tab9->hide();
-    ui_->tab8->show();
+    ui_->tab8->show(); // hide
   }
 
   void SettingsWindow::show_tab9() {
@@ -1456,7 +1456,7 @@ comboBoxBluetooth->addItem(QCoreApplication::translate("SettingsWindow", "none",
     ui_->tab6->hide();
     ui_->tab7->hide();
     ui_->tab8->hide();
-    ui_->tab9->show();
+    ui_->tab9->show(); // hide
   }
 
 }
