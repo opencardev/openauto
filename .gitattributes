@@ -15,3 +15,5 @@
 *.js            text=auto eol=lf
 postinst text=auto eol=lf
 prerm text=auto eol=lf
+*.conf		text=auto eol=lf
+*.ini		text=auto eol=lf
