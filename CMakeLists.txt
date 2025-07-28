@@ -348,6 +348,7 @@ option(ENABLE_REST_API "Enable REST API server" ON)
 option(ENABLE_EVENT_BUS "Enable event bus system" ON)
 option(ENABLE_STATE_MACHINE "Enable state machine system" ON)
 option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan" OFF)
+option(ENABLE_CS_PARAM_CALLS "Enable Crankshaft parameter file reading" OFF)
 
 if(ENABLE_MODERN_API)
     message(STATUS "Modern API enabled")
@@ -425,6 +426,11 @@ endif()
 if(ENABLE_STATE_MACHINE)
     add_definitions(-DENABLE_STATE_MACHINE)
     message(STATUS "State Machine support enabled")
+endif()
+
+if(ENABLE_CS_PARAM_CALLS)
+    add_definitions(-DENABLE_CS_PARAM_CALLS)
+    message(STATUS "Crankshaft parameter calls enabled")
 endif()
 
 # Testing support
