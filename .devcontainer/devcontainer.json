@@ -8,7 +8,9 @@
         }
     },
     "runArgs": [
-        "--platform=linux/amd64"
+        "--platform=linux/amd64""--privileged",
+        "-v",
+        "/dev/bus/usb:/dev/bus/usb"
     ],
     "containerEnv": {
         "TARGET_ARCH": "amd64",
