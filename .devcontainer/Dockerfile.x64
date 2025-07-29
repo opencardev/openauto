@@ -63,7 +63,9 @@ RUN apt-get -y install --no-install-recommends \
         libgps-dev \
         nlohmann-json3-dev \
         libcpp-httplib-dev \
-        pngcheck
+        pngcheck \
+        udev \
+        usbutils
 
 # Clean up
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*

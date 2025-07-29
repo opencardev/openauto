@@ -1,0 +1,27 @@
+# OpenAuto udev rules
+# USB devices for Android Auto
+SUBSYSTEM=="usb", ATTRS{idVendor}=="18d1", GROUP="openauto", MODE="0664", TAG+="uaccess", RUN+="/opt/openauto/scripts/openauto-usb_action.sh add '$env{ID_MODEL}' '%E{DEVNAME}'"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bb4", GROUP="openauto", MODE="0664", TAG+="uaccess", RUN+="/opt/openauto/scripts/openauto-usb_action.sh add '$env{ID_MODEL}' '%E{DEVNAME}'"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="22b8", GROUP="openauto", MODE="0664", TAG+="uaccess", RUN+="/opt/openauto/scripts/openauto-usb_action.sh add '$env{ID_MODEL}' '%E{DEVNAME}'"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0e8d", GROUP="openauto", MODE="0664", TAG+="uaccess", RUN+="/opt/openauto/scripts/openauto-usb_action.sh add '$env{ID_MODEL}' '%E{DEVNAME}'"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="12d1", GROUP="openauto", MODE="0664", TAG+="uaccess", RUN+="/opt/openauto/scripts/openauto-usb_action.sh add '$env{ID_MODEL}' '%E{DEVNAME}'"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="19d2", GROUP="openauto", MODE="0664", TAG+="uaccess", RUN+="/opt/openauto/scripts/openauto-usb_action.sh add '$env{ID_MODEL}' '%E{DEVNAME}'"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04e8", GROUP="openauto", MODE="0664", TAG+="uaccess", RUN+="/opt/openauto/scripts/openauto-usb_action.sh add '$env{ID_MODEL}' '%E{DEVNAME}'"
+
+# Audio devices
+SUBSYSTEM=="sound", GROUP="audio", MODE="0664"
+KERNEL=="controlC[0-9]*", GROUP="audio", MODE="0664"
+
+# Video devices
+SUBSYSTEM=="drm", GROUP="video", MODE="0664"
+KERNEL=="card[0-9]*", GROUP="video", MODE="0664"
+
+# Input devices
+SUBSYSTEM=="input", GROUP="input", MODE="0664"
+KERNEL=="event[0-9]*", GROUP="input", MODE="0664"
+
+# Disconnect action
+SUBSYSTEM=="usb", ACTION=="remove", RUN+="/opt/openauto/scripts/openauto-usb_action.sh remove '$env{ID_MODEL}' '%E{DEVNAME}'"
+
+# Skip action
+LABEL="SKIP_DEVICE"

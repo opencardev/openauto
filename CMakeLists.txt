@@ -689,11 +689,15 @@ else()
 endif()
 
 # Install udev rules (shared between debug and release)
-install(FILES packaging/udev/99-openauto.rules
+install(FILES packaging/udev/51-openauto.rules
     DESTINATION /etc/udev/rules.d
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
 # Install scripts
+install(FILES packaging/scripts/openauto-usb_action.sh
+    DESTINATION ${INSTALL_BIN_DIR}/scripts
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
 install(FILES packaging/scripts/openauto-setup.sh
     DESTINATION ${INSTALL_BIN_DIR}/scripts
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

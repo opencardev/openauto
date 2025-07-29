@@ -5,22 +5,27 @@ set -e
 echo "🚀 Setting up OpenAuto development environment..."
 
 # Set up workspace permissions
+echo
 sudo chown -R vscode:vscode /workspaces/openauto
 
 # Make build scripts executable
+echo "🔧 Making build scripts executable..."
 chmod +x /workspaces/openauto/*.sh
 
 # Create build directories
+echo "📂 Creating build directories..."
 mkdir -p /workspaces/openauto/build
 mkdir -p /workspaces/openauto/build-release
 mkdir -p /workspaces/openauto/build-debug
 mkdir -p /workspaces/openauto/packages
 
 # Set up ccache
+echo "🔧 Setting up ccache..."
 sudo mkdir -p /tmp/ccache
 sudo chown vscode:vscode /tmp/ccache
 
 # Initialize git if needed
+echo "🔍 Initializing git repository if not already done..."
 cd /workspaces/openauto
 if [ ! -d .git ]; then
     git init
@@ -44,6 +49,32 @@ if pkg-config --exists Qt5Core; then
 else
     echo "⚠️  Qt5 not found or not properly configured."
 fi
+
+# install openauto scripts and udev
+echo "🔍 Setting up OpenAuto scripts..."
+sudo mkdir -p /opt/openauto/
+sudo cp -r packaging/scripts /opt/openauto/
+sudo chmod +x /opt/openauto/scripts/*.sh
+# Check if udev is installed
+echo "🔍 Checking udev installation..."
+if ! command -v udevadm &> /dev/null; then
+    echo "⚠️  udevadm not found. Please install udev package."
+else
+    echo "✅ udev is installed."
+fi
+# Copy udev rules
+echo "🔍 Setting up udev rules..."
+sudo cp -r packaging/udev/* /etc/udev/rules.d/
+# Reload udev rules
+sudo udevadm control --reload 2>/dev/null || true
+sudo udevadm control --reload-rules 2>/dev/null || true
+sudo udevadm trigger 2>/dev/null || true
+# Set up environment variables
+echo "export OPENAUTO_ROOT=/workspaces/openauto" >> /home/vscode/.bashrc
+echo "export PATH=\$PATH:/opt/openauto/scripts" >> /home/vscode/.bashrc
+echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/openauto/lib" >> /home/vscode/.bashrc
+# Source the updated .bashrc
+source /home/vscode/.bashrc
 
 # Display version information
 echo ""

@@ -22,7 +22,8 @@
 #include <f1x/openauto/autoapp/App.hpp>
 #include <modern/Logger.hpp>
 
-namespace f1x::openauto::autoapp {
+namespace f1x::openauto::autoapp
+{
 
   App::App(boost::asio::io_service &ioService, aasdk::usb::USBWrapper &usbWrapper, aasdk::tcp::ITCPWrapper &tcpWrapper,
            service::IAndroidAutoEntityFactory &androidAutoEntityFactory,
@@ -31,30 +32,37 @@ namespace f1x::openauto::autoapp {
       : ioService_(ioService), usbWrapper_(usbWrapper), tcpWrapper_(tcpWrapper), strand_(ioService_),
         androidAutoEntityFactory_(androidAutoEntityFactory), usbHub_(std::move(usbHub)),
         connectedAccessoriesEnumerator_(std::move(connectedAccessoriesEnumerator)),
-        acceptor_(ioService, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 5000)), isStopped_(false) {
-
+        acceptor_(ioService, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 5000)), isStopped_(false)
+  {
   }
 
-  void App::waitForUSBDevice() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
-      try {
-        this->waitForDevice();
-      }
-      catch (...) {
-        LOG_ERROR(GENERAL, "[App] waitForUSBDevice() -exception caused by this->waitForDevice()");
-      }
-      try {
-        this->enumerateDevices();
-      }
-      catch (...) {
-        LOG_ERROR(GENERAL, "[App] waitForUSBDevice() exception caused by this->enumerateDevices()");
-      }
-
-    });
+  void App::waitForUSBDevice()
+  {
+    strand_.dispatch([this, self = this->shared_from_this()]()
+                     {
+                       try
+                       {
+                         this->waitForDevice();
+                       }
+                       catch (...)
+                       {
+                         LOG_ERROR(GENERAL, "[App] waitForUSBDevice() -exception caused by this->waitForDevice()");
+                       }
+                       try
+                       {
+                         this->enumerateDevices();
+                       }
+                       catch (...)
+                       {
+                         LOG_ERROR(GENERAL, "[App] waitForUSBDevice() exception caused by this->enumerateDevices()");
+                       }
+                     });
   }
 
-  void App::start(aasdk::tcp::ITCPEndpoint::SocketPointer socket) {
-    strand_.dispatch([this, self = this->shared_from_this(), socket = std::move(socket)]() mutable {
+  void App::start(aasdk::tcp::ITCPEndpoint::SocketPointer socket)
+  {
+    strand_.dispatch([this, self = this->shared_from_this(), socket = std::move(socket)]() mutable
+                     {
       LOG_INFO(GENERAL, "Start from socket");
       if (androidAutoEntity_ != nullptr) {
 //            tcpWrapper_.close(*socket);
@@ -85,12 +93,13 @@ namespace f1x::openauto::autoapp {
 
         //androidAutoEntity_.reset();
         this->waitForDevice();
-      }
-    });
+      } });
   }
 
-  void App::stop() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
+  void App::stop()
+  {
+    strand_.dispatch([this, self = this->shared_from_this()]()
+                     {
       isStopped_ = true;
       try {
         connectedAccessoriesEnumerator_->cancel();
@@ -114,33 +123,38 @@ namespace f1x::openauto::autoapp {
         } catch (...) {
           LOG_ERROR(GENERAL, "[App] stop: exception caused by androidAutoEntity_.reset()");
         }
-      }
-    });
-
+      } });
   }
 
-  void App::aoapDeviceHandler(aasdk::usb::DeviceHandle deviceHandle) {
+  void App::aoapDeviceHandler(aasdk::usb::DeviceHandle deviceHandle)
+  {
     LOG_INFO(GENERAL, "[App] Device connected.");
 
-    if (androidAutoEntity_ != nullptr) {
+    if (androidAutoEntity_ != nullptr)
+    {
       LOG_WARN(GENERAL, "[App] android auto entity is still running.");
       return;
     }
 
-    try {
+    try
+    {
       // ignore autostart if exit to csng was used
-      if (!disableAutostartEntity) {
+      if (!disableAutostartEntity)
+      {
         LOG_INFO(GENERAL, "[App] Start Android Auto allowed - let's go.");
         connectedAccessoriesEnumerator_->cancel();
 
         auto aoapDevice(aasdk::usb::AOAPDevice::create(usbWrapper_, ioService_, deviceHandle));
         androidAutoEntity_ = androidAutoEntityFactory_.create(std::move(aoapDevice));
         androidAutoEntity_->start(*this);
-      } else {
+      }
+      else
+      {
         LOG_INFO(GENERAL, "[App] Start Android Auto not allowed - skip.");
       }
     }
-    catch (const aasdk::error::Error &error) {
+    catch (const aasdk::error::Error &error)
+    {
       LOG_ERROR_STREAM(GENERAL, "[App] USB AndroidAutoEntity create error: " << error.what());
 
       androidAutoEntity_.reset();
@@ -148,19 +162,21 @@ namespace f1x::openauto::autoapp {
     }
   }
 
-  void App::enumerateDevices() {
+  void App::enumerateDevices()
+  {
     auto promise = aasdk::usb::IConnectedAccessoriesEnumerator::Promise::defer(strand_);
-    promise->then([this, self = this->shared_from_this()](auto result) {
-                    LOG_INFO_STREAM(GENERAL, "[App] Devices enumeration result: " << result);
-                  },
-                  [this, self = this->shared_from_this()](auto e) {
+    promise->then([this, self = this->shared_from_this()](auto result)
+                  { LOG_INFO_STREAM(GENERAL, "[App] Devices enumeration result: " << result); },
+                  [this, self = this->shared_from_this()](auto e)
+                  {
                     LOG_ERROR_STREAM(GENERAL, "[App] Devices enumeration failed: " << e.what());
                   });
 
     connectedAccessoriesEnumerator_->enumerate(std::move(promise));
   }
 
-  void App::waitForDevice() {
+  void App::waitForDevice()
+  {
     LOG_INFO(GENERAL, "[App] Waiting for device...");
 
     auto promise = aasdk::usb::IUSBHub::Promise::defer(strand_);
@@ -170,45 +186,52 @@ namespace f1x::openauto::autoapp {
     startServerSocket();
   }
 
-  void App::startServerSocket() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
+  void App::startServerSocket()
+  {
+    strand_.dispatch([this, self = this->shared_from_this()]()
+                     {
       LOG_INFO(NETWORK, "startServerSocket() - Listening for WIFI Clients on Port 5000");
       auto socket = std::make_shared<boost::asio::ip::tcp::socket>(ioService_);
       acceptor_.async_accept(
           *socket,
           std::bind(&App::handleNewClient, this, socket, std::placeholders::_1)
-      );
-    });
+      ); });
   }
 
   void
-  App::handleNewClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const boost::system::error_code &err) {
+  App::handleNewClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const boost::system::error_code &err)
+  {
     LOG_INFO(NETWORK, "handleNewClient() - Handle WIFI Client Connection");
-    if (!err) {
+    if (!err)
+    {
       start(std::move(socket));
     }
   }
 
-  void App::pause() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
+  void App::pause()
+  {
+    strand_.dispatch([this, self = this->shared_from_this()]()
+                     {
       LOG_INFO(GENERAL, "[App] pause...");
-      androidAutoEntity_->pause();
-    });
+      androidAutoEntity_->pause(); });
   }
 
-  void App::resume() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
+  void App::resume()
+  {
+    strand_.dispatch([this, self = this->shared_from_this()]()
+                     {
       if (androidAutoEntity_ != nullptr) {
         LOG_INFO(GENERAL, "[App] resume...");
         androidAutoEntity_->resume();
       } else {
         LOG_INFO(GENERAL, "[App] Ignore resume -> no androidAutoEntity_ ...");
-      }
-    });
+      } });
   }
 
-  void App::onAndroidAutoQuit() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
+  void App::onAndroidAutoQuit()
+  {
+    strand_.dispatch([this, self = this->shared_from_this()]()
+                     {
       LOG_INFO(UI, "[App] onAndroidAutoQuit()");
 
       //acceptor_.close();
@@ -232,24 +255,25 @@ namespace f1x::openauto::autoapp {
         } catch (...) {
           LOG_ERROR(UI, "[App] onAndroidAutoQuit: exception caused by this->waitForDevice()");
         }
-      }
-    });
+      } });
   }
 
-  void App::onUSBHubError(const aasdk::error::Error &error) {
+  void App::onUSBHubError(const aasdk::error::Error &error)
+  {
     LOG_ERROR_STREAM(GENERAL, "[App] onUSBHubError(): " << error.what());
 
-//    if(error != aasdk::error::ErrorCode::OPERATION_ABORTED &&
-//       error != aasdk::error::ErrorCode::OPERATION_IN_PROGRESS)
-//    {
-//        try {
-//            this->waitForDevice();
-//        } catch (...) {
-//            LOG_ERROR(GENERAL, "[App] onUSBHubError: exception caused by this->waitForDevice()");
-//        }
-//    }
+    if (error != aasdk::error::ErrorCode::OPERATION_ABORTED &&
+        error != aasdk::error::ErrorCode::OPERATION_IN_PROGRESS)
+    {
+      try
+      {
+        this->waitForDevice();
+      }
+      catch (...)
+      {
+        LOG_ERROR(GENERAL, "[App] onUSBHubError: exception caused by this->waitForDevice()");
+      }
+    }
   }
 
 }
-
-

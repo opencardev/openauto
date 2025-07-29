@@ -8,9 +8,12 @@
         }
     },
     "runArgs": [
-        "--platform=linux/amd64""--privileged",
+        "--platform=linux/amd64",
+        "--privileged",
         "-v",
-        "/dev/bus/usb:/dev/bus/usb"
+        "/dev/bus/usb:/dev/bus/usb",
+        "-v",
+        "/run/udev/control:/run/udev/control"
     ],
     "containerEnv": {
         "TARGET_ARCH": "amd64",
