@@ -84,7 +84,8 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Copy and install aasdk packages
-COPY --chown=$USERNAME:$USERNAME packages/*.deb /tmp/packages/
+COPY --chown=$USERNAME:$USERNAME packages/libaasdk-${TARGET_ARCH}_*.deb /tmp/packages/
+COPY --chown=$USERNAME:$USERNAME packages/libaasdk-${TARGET_ARCH}-dev_*.deb /tmp/packages/
 RUN dpkg -i /tmp/packages/*.deb || true \
     && apt-get update \
     && apt-get -f install -y \
