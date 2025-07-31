@@ -99,8 +99,9 @@ set(include_directory ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+# Build binaries into their respective build directories
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 # PNG Profile Check and Fix Function
@@ -347,6 +348,7 @@ option(ENABLE_REST_API "Enable REST API server" ON)
 option(ENABLE_EVENT_BUS "Enable event bus system" ON)
 option(ENABLE_STATE_MACHINE "Enable state machine system" ON)
 option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan" OFF)
+option(ENABLE_CS_PARAM_CALLS "Enable Crankshaft parameter file reading" OFF)
 
 if(ENABLE_MODERN_API)
     message(STATUS "Modern API enabled")
@@ -424,6 +426,11 @@ endif()
 if(ENABLE_STATE_MACHINE)
     add_definitions(-DENABLE_STATE_MACHINE)
     message(STATUS "State Machine support enabled")
+endif()
+
+if(ENABLE_CS_PARAM_CALLS)
+    add_definitions(-DENABLE_CS_PARAM_CALLS)
+    message(STATUS "Crankshaft parameter calls enabled")
 endif()
 
 # Testing support
@@ -682,11 +689,15 @@ else()
 endif()
 
 # Install udev rules (shared between debug and release)
-install(FILES packaging/udev/99-openauto.rules
+install(FILES packaging/udev/51-openauto.rules
     DESTINATION /etc/udev/rules.d
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
 # Install scripts
+install(FILES packaging/scripts/openauto-usb_action.sh
+    DESTINATION ${INSTALL_BIN_DIR}/scripts
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
 install(FILES packaging/scripts/openauto-setup.sh
     DESTINATION ${INSTALL_BIN_DIR}/scripts
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

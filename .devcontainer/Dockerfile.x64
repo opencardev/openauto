@@ -1,0 +1,101 @@
+FROM debian:bookworm
+
+# Install architecture-specific packages
+ARG TARGET_ARCH=amd64
+ENV TARGET_ARCH=${TARGET_ARCH}
+
+# Install common dependencies and build tools
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        wget \
+        curl \
+        pkg-config \
+        ca-certificates \
+        protobuf-compiler \
+        libprotobuf-dev \
+        libusb-1.0-0-dev \
+        libssl-dev \
+        gdb \
+        valgrind \
+        lcov \
+        gcovr \
+        ninja-build \
+        ccache
+
+# Install boost libraries
+RUN apt-get -y install --no-install-recommends \
+        libboost-dev \
+        libboost-system-dev \
+        libboost-filesystem-dev \
+        libboost-thread-dev \
+        libboost-date-time-dev \
+        libboost-atomic-dev \
+        libboost-chrono-dev \
+        libboost-regex-dev \
+        libboost-log-dev
+
+# Install Qt5 and other OpenAuto dependencies
+RUN apt-get -y install --no-install-recommends \
+        qtbase5-dev \
+        qtmultimedia5-dev \
+        qtconnectivity5-dev \
+        libqt5multimedia5-plugins \
+        libqt5multimediawidgets5 \
+        libqt5bluetooth5 \
+        libqt5network5 \
+        libqt5dbus5 \
+        librtaudio-dev \
+        librtaudio6 \
+        libtagc0-dev \
+        libtag1-dev \
+        libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer-plugins-bad1.0-dev \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-ugly \
+        gstreamer1.0-libav \
+        libgtest-dev \
+        libudev-dev \
+        libgps-dev \
+        nlohmann-json3-dev \
+        libcpp-httplib-dev \
+        pngcheck \
+        udev \
+        usbutils
+
+# Clean up
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Copy and install aasdk packages
+COPY --chown=$USERNAME:$USERNAME packages/libaasdk-${TARGET_ARCH}_*.deb /tmp/packages/
+COPY --chown=$USERNAME:$USERNAME packages/libaasdk-${TARGET_ARCH}-dev_*.deb /tmp/packages/
+RUN dpkg -i /tmp/packages/*.deb || true \
+    && apt-get update \
+    && apt-get -f install -y \
+    && rm -rf /tmp/packages \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Set the default shell to bash rather than sh
+ENV SHELL=/bin/bash
+
+# Create workspace directory and set ownership
+RUN mkdir -p /workspace && chown $USERNAME:$USERNAME /workspace
+
+WORKDIR /workspace
