@@ -17,55 +17,47 @@
 */
 
 #include <QApplication>
-#include <modern/Logger.hpp>
-#include <f1x/openauto/autoapp/Projection/LocalBluetoothDevice.hpp>
 #include <QtBluetooth>
+#include <f1x/openauto/autoapp/Projection/LocalBluetoothDevice.hpp>
+#include <modern/Logger.hpp>
 
 namespace f1x::openauto::autoapp::projection {
 
-  LocalBluetoothDevice::LocalBluetoothDevice(const QString &adapterAddress, QObject *parent) : QObject(parent) {
+LocalBluetoothDevice::LocalBluetoothDevice(const QString &adapterAddress, QObject *parent)
+    : QObject(parent) {
     qRegisterMetaType<IBluetoothDevice::PairingPromise::Pointer>("PairingPromise::Pointer");
 
     this->moveToThread(QApplication::instance()->thread());
 
     QMetaObject::invokeMethod(this, "createBluetoothLocalDevice", Qt::BlockingQueuedConnection,
                               Q_ARG(QString, adapterAddress));
+}
 
-  }
-
-  void LocalBluetoothDevice::createBluetoothLocalDevice(const QString &adapterAddress) {
+void LocalBluetoothDevice::createBluetoothLocalDevice(const QString &adapterAddress) {
     LOG_INFO(GENERAL, "[LocalBluetoothDevice] create.");
-
 
     QBluetoothAddress address(adapterAddress);
     localDevice_ = std::make_unique<QBluetoothLocalDevice>(address);
 
     // Pairing signals are being handled by btservice
+}
 
-  }
+void LocalBluetoothDevice::stop() { std::lock_guard<decltype(mutex_)> lock(mutex_); }
 
-  void LocalBluetoothDevice::stop() {
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-
-  }
-
-  bool LocalBluetoothDevice::isPaired(const std::string &address) const {
+bool LocalBluetoothDevice::isPaired(const std::string &address) const {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
     return localDevice_->pairingStatus(QBluetoothAddress(QString::fromStdString(address))) !=
            QBluetoothLocalDevice::Unpaired;
-  }
-
-  std::string LocalBluetoothDevice::getAdapterAddress() const {
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    return localDevice_->isValid() ? localDevice_->address().toString().toStdString() : "";
-  }
-
-  bool LocalBluetoothDevice::isAvailable() const {
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    return localDevice_->isValid();
-  }
 }
 
+std::string LocalBluetoothDevice::getAdapterAddress() const {
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    return localDevice_->isValid() ? localDevice_->address().toString().toStdString() : "";
+}
 
-
+bool LocalBluetoothDevice::isAvailable() const {
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    return localDevice_->isValid();
+}
+}  // namespace f1x::openauto::autoapp::projection

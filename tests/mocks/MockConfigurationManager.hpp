@@ -8,7 +8,7 @@ namespace modern {
 namespace test {
 
 class MockConfigurationManager {
-public:
+  public:
     MOCK_METHOD(void, setValue, (const std::string& key, const nlohmann::json& value));
     MOCK_METHOD(nlohmann::json, getValue, (const std::string& key), (const));
     MOCK_METHOD(bool, hasKey, (const std::string& key), (const));
@@ -21,6 +21,6 @@ public:
     MOCK_METHOD(void, notifyChange, (const std::string& key));
 };
 
-} // namespace test
-} // namespace modern
-} // namespace openauto
+}  // namespace test
+}  // namespace modern
+}  // namespace openauto

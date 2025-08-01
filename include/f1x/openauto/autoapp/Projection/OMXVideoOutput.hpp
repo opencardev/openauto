@@ -19,29 +19,23 @@
 #ifdef USE_OMX
 #pragma once
 
-extern "C"
-{
+extern "C" {
 #include <ilclient.h>
 }
 
-#include <mutex>
-#include <condition_variable>
-#include <thread>
 #include <boost/circular_buffer.hpp>
+#include <condition_variable>
 #include <f1x/openauto/autoapp/Projection/VideoOutput.hpp>
+#include <mutex>
+#include <thread>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class OMXVideoOutput: public VideoOutput
-{
-public:
+class OMXVideoOutput : public VideoOutput {
+  public:
     OMXVideoOutput(configuration::IConfiguration::Pointer configuration);
 
     bool open() override;
@@ -49,7 +43,7 @@ public:
     void write(uint64_t timestamp, const aasdk::common::DataConstBuffer& buffer) override;
     void stop() override;
 
-private:
+  private:
     bool createComponents();
     bool initClock();
     bool setupTunnels();
@@ -64,9 +58,9 @@ private:
     TUNNEL_T tunnels_[4];
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x
 
 #endif

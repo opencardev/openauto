@@ -18,28 +18,28 @@
 
 #pragma once
 
-#include <aasdk/USB/IUSBHub.hpp>
-#include <aasdk/USB/IConnectedAccessoriesEnumerator.hpp>
-#include <aasdk/USB/USBWrapper.hpp>
-#include <aasdk/TCP/ITCPWrapper.hpp>
 #include <aasdk/TCP/ITCPEndpoint.hpp>
+#include <aasdk/TCP/ITCPWrapper.hpp>
+#include <aasdk/USB/IConnectedAccessoriesEnumerator.hpp>
+#include <aasdk/USB/IUSBHub.hpp>
+#include <aasdk/USB/USBWrapper.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntityEventHandler.hpp>
 #include <f1x/openauto/autoapp/Service/IAndroidAutoEntityFactory.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
 
-class App: public service::IAndroidAutoEntityEventHandler, public std::enable_shared_from_this<App>
-{
-public:
+class App : public service::IAndroidAutoEntityEventHandler,
+            public std::enable_shared_from_this<App> {
+  public:
     typedef std::shared_ptr<App> Pointer;
 
-    App(boost::asio::io_service& ioService, aasdk::usb::USBWrapper& usbWrapper, aasdk::tcp::ITCPWrapper& tcpWrapper, service::IAndroidAutoEntityFactory& androidAutoEntityFactory,
-        aasdk::usb::IUSBHub::Pointer usbHub, aasdk::usb::IConnectedAccessoriesEnumerator::Pointer connectedAccessoriesEnumerator);
+    App(boost::asio::io_service& ioService, aasdk::usb::USBWrapper& usbWrapper,
+        aasdk::tcp::ITCPWrapper& tcpWrapper,
+        service::IAndroidAutoEntityFactory& androidAutoEntityFactory,
+        aasdk::usb::IUSBHub::Pointer usbHub,
+        aasdk::usb::IConnectedAccessoriesEnumerator::Pointer connectedAccessoriesEnumerator);
 
     void waitForUSBDevice();
     void start(aasdk::tcp::ITCPEndpoint::SocketPointer socket);
@@ -49,7 +49,7 @@ public:
     void onAndroidAutoQuit() override;
     bool disableAutostartEntity = false;
 
-private:
+  private:
     using std::enable_shared_from_this<App>::shared_from_this;
     void enumerateDevices();
     void waitForDevice();
@@ -69,9 +69,10 @@ private:
 
     void startServerSocket();
 
-    void handleNewClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const boost::system::error_code &err);
+    void handleNewClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
+                         const boost::system::error_code& err);
 };
 
-}
-}
-}
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

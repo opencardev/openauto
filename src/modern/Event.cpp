@@ -24,35 +24,28 @@ namespace openauto {
 namespace modern {
 
 Event::Event(EventType type, const std::string& source)
-    : type_(type), source_(source), timestamp_(std::chrono::system_clock::now()) {
-}
+    : type_(type), source_(source), timestamp_(std::chrono::system_clock::now()) {}
 
 Event::Event(EventType type, const EventData& data, const std::string& source)
-    : type_(type), data_(data), source_(source), timestamp_(std::chrono::system_clock::now()) {
-}
+    : type_(type), data_(data), source_(source), timestamp_(std::chrono::system_clock::now()) {}
 
-void Event::setData(const std::string& key, const EventValue& value) {
-    data_[key] = value;
-}
+void Event::setData(const std::string& key, const EventValue& value) { data_[key] = value; }
 
 EventValue Event::getData(const std::string& key) const {
     auto it = data_.find(key);
     if (it != data_.end()) {
         return it->second;
     }
-    return std::string(""); // Return empty string as default
+    return std::string("");  // Return empty string as default
 }
 
-bool Event::hasData(const std::string& key) const {
-    return data_.find(key) != data_.end();
-}
+bool Event::hasData(const std::string& key) const { return data_.find(key) != data_.end(); }
 
 std::string Event::toString() const {
     std::ostringstream oss;
-    oss << "Event{type=" << eventTypeToString(type_) 
-        << ", source=" << source_ 
-        << ", timestamp=" << std::chrono::duration_cast<std::chrono::milliseconds>(
-               timestamp_.time_since_epoch()).count()
+    oss << "Event{type=" << eventTypeToString(type_) << ", source=" << source_ << ", timestamp="
+        << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp_.time_since_epoch())
+               .count()
         << ", data_size=" << data_.size() << "}";
     return oss.str();
 }
@@ -61,24 +54,23 @@ nlohmann::json Event::toJson() const {
     nlohmann::json json;
     json["type"] = eventTypeToString(type_);
     json["source"] = source_;
-    json["timestamp"] = std::chrono::duration_cast<std::chrono::milliseconds>(
-        timestamp_.time_since_epoch()).count();
-    
+    json["timestamp"] =
+        std::chrono::duration_cast<std::chrono::milliseconds>(timestamp_.time_since_epoch())
+            .count();
+
     nlohmann::json dataJson;
     for (const auto& [key, value] : data_) {
-        std::visit([&](const auto& v) {
-            dataJson[key] = v;
-        }, value);
+        std::visit([&](const auto& v) { dataJson[key] = v; }, value);
     }
     json["data"] = dataJson;
-    
+
     return json;
 }
 
 Event::Pointer Event::fromJson(const nlohmann::json& json) {
     auto type = stringToEventType(json["type"]);
     auto source = json["source"].get<std::string>();
-    
+
     EventData data;
     if (json.contains("data")) {
         for (const auto& [key, value] : json["data"].items()) {
@@ -93,65 +85,118 @@ Event::Pointer Event::fromJson(const nlohmann::json& json) {
             }
         }
     }
-    
+
     return std::make_shared<Event>(type, data, source);
 }
 
 std::string Event::eventTypeToString(EventType type) {
     switch (type) {
-        case EventType::SYSTEM_STARTUP: return "SYSTEM_STARTUP";
-        case EventType::SYSTEM_SHUTDOWN: return "SYSTEM_SHUTDOWN";
-        case EventType::SYSTEM_REBOOT: return "SYSTEM_REBOOT";
-        case EventType::SYSTEM_ERROR: return "SYSTEM_ERROR";
-        case EventType::ANDROID_AUTO_CONNECTED: return "ANDROID_AUTO_CONNECTED";
-        case EventType::ANDROID_AUTO_DISCONNECTED: return "ANDROID_AUTO_DISCONNECTED";
-        case EventType::ANDROID_AUTO_START: return "ANDROID_AUTO_START";
-        case EventType::ANDROID_AUTO_STOP: return "ANDROID_AUTO_STOP";
-        case EventType::ANDROID_AUTO_PAUSE: return "ANDROID_AUTO_PAUSE";
-        case EventType::ANDROID_AUTO_RESUME: return "ANDROID_AUTO_RESUME";
-        case EventType::UI_BUTTON_PRESSED: return "UI_BUTTON_PRESSED";
-        case EventType::UI_BRIGHTNESS_CHANGED: return "UI_BRIGHTNESS_CHANGED";
-        case EventType::UI_VOLUME_CHANGED: return "UI_VOLUME_CHANGED";
-        case EventType::UI_MODE_CHANGED: return "UI_MODE_CHANGED";
-        case EventType::UI_SCREEN_TOUCH: return "UI_SCREEN_TOUCH";
-        case EventType::CAMERA_SHOW: return "CAMERA_SHOW";
-        case EventType::CAMERA_HIDE: return "CAMERA_HIDE";
-        case EventType::CAMERA_RECORD_START: return "CAMERA_RECORD_START";
-        case EventType::CAMERA_RECORD_STOP: return "CAMERA_RECORD_STOP";
-        case EventType::CAMERA_SAVE: return "CAMERA_SAVE";
-        case EventType::CAMERA_ZOOM_IN: return "CAMERA_ZOOM_IN";
-        case EventType::CAMERA_ZOOM_OUT: return "CAMERA_ZOOM_OUT";
-        case EventType::CAMERA_MOVE_UP: return "CAMERA_MOVE_UP";
-        case EventType::CAMERA_MOVE_DOWN: return "CAMERA_MOVE_DOWN";
-        case EventType::WIFI_CONNECTED: return "WIFI_CONNECTED";
-        case EventType::WIFI_DISCONNECTED: return "WIFI_DISCONNECTED";
-        case EventType::HOTSPOT_ENABLED: return "HOTSPOT_ENABLED";
-        case EventType::HOTSPOT_DISABLED: return "HOTSPOT_DISABLED";
-        case EventType::BLUETOOTH_CONNECTED: return "BLUETOOTH_CONNECTED";
-        case EventType::BLUETOOTH_DISCONNECTED: return "BLUETOOTH_DISCONNECTED";
-        case EventType::BLUETOOTH_PAIRING_REQUEST: return "BLUETOOTH_PAIRING_REQUEST";
-        case EventType::MEDIA_PLAY: return "MEDIA_PLAY";
-        case EventType::MEDIA_PAUSE: return "MEDIA_PAUSE";
-        case EventType::MEDIA_STOP: return "MEDIA_STOP";
-        case EventType::MEDIA_NEXT: return "MEDIA_NEXT";
-        case EventType::MEDIA_PREVIOUS: return "MEDIA_PREVIOUS";
-        case EventType::MEDIA_TRACK_CHANGED: return "MEDIA_TRACK_CHANGED";
-        case EventType::CONFIG_CHANGED: return "CONFIG_CHANGED";
-        case EventType::CONFIG_SAVED: return "CONFIG_SAVED";
-        case EventType::CUSTOM_BUTTON_1: return "CUSTOM_BUTTON_1";
-        case EventType::CUSTOM_BUTTON_2: return "CUSTOM_BUTTON_2";
-        case EventType::CUSTOM_BUTTON_3: return "CUSTOM_BUTTON_3";
-        case EventType::CUSTOM_BUTTON_4: return "CUSTOM_BUTTON_4";
-        case EventType::CUSTOM_BUTTON_5: return "CUSTOM_BUTTON_5";
-        case EventType::CUSTOM_BUTTON_6: return "CUSTOM_BUTTON_6";
-        case EventType::DAY_MODE_ENABLED: return "DAY_MODE_ENABLED";
-        case EventType::NIGHT_MODE_ENABLED: return "NIGHT_MODE_ENABLED";
-        case EventType::UPDATE_AVAILABLE: return "UPDATE_AVAILABLE";
-        case EventType::UPDATE_STARTED: return "UPDATE_STARTED";
-        case EventType::UPDATE_COMPLETED: return "UPDATE_COMPLETED";
-        case EventType::UPDATE_FAILED: return "UPDATE_FAILED";
-        case EventType::CUSTOM_EVENT: return "CUSTOM_EVENT";
-        default: return "UNKNOWN";
+        case EventType::SYSTEM_STARTUP:
+            return "SYSTEM_STARTUP";
+        case EventType::SYSTEM_SHUTDOWN:
+            return "SYSTEM_SHUTDOWN";
+        case EventType::SYSTEM_REBOOT:
+            return "SYSTEM_REBOOT";
+        case EventType::SYSTEM_ERROR:
+            return "SYSTEM_ERROR";
+        case EventType::ANDROID_AUTO_CONNECTED:
+            return "ANDROID_AUTO_CONNECTED";
+        case EventType::ANDROID_AUTO_DISCONNECTED:
+            return "ANDROID_AUTO_DISCONNECTED";
+        case EventType::ANDROID_AUTO_START:
+            return "ANDROID_AUTO_START";
+        case EventType::ANDROID_AUTO_STOP:
+            return "ANDROID_AUTO_STOP";
+        case EventType::ANDROID_AUTO_PAUSE:
+            return "ANDROID_AUTO_PAUSE";
+        case EventType::ANDROID_AUTO_RESUME:
+            return "ANDROID_AUTO_RESUME";
+        case EventType::UI_BUTTON_PRESSED:
+            return "UI_BUTTON_PRESSED";
+        case EventType::UI_BRIGHTNESS_CHANGED:
+            return "UI_BRIGHTNESS_CHANGED";
+        case EventType::UI_VOLUME_CHANGED:
+            return "UI_VOLUME_CHANGED";
+        case EventType::UI_MODE_CHANGED:
+            return "UI_MODE_CHANGED";
+        case EventType::UI_SCREEN_TOUCH:
+            return "UI_SCREEN_TOUCH";
+        case EventType::CAMERA_SHOW:
+            return "CAMERA_SHOW";
+        case EventType::CAMERA_HIDE:
+            return "CAMERA_HIDE";
+        case EventType::CAMERA_RECORD_START:
+            return "CAMERA_RECORD_START";
+        case EventType::CAMERA_RECORD_STOP:
+            return "CAMERA_RECORD_STOP";
+        case EventType::CAMERA_SAVE:
+            return "CAMERA_SAVE";
+        case EventType::CAMERA_ZOOM_IN:
+            return "CAMERA_ZOOM_IN";
+        case EventType::CAMERA_ZOOM_OUT:
+            return "CAMERA_ZOOM_OUT";
+        case EventType::CAMERA_MOVE_UP:
+            return "CAMERA_MOVE_UP";
+        case EventType::CAMERA_MOVE_DOWN:
+            return "CAMERA_MOVE_DOWN";
+        case EventType::WIFI_CONNECTED:
+            return "WIFI_CONNECTED";
+        case EventType::WIFI_DISCONNECTED:
+            return "WIFI_DISCONNECTED";
+        case EventType::HOTSPOT_ENABLED:
+            return "HOTSPOT_ENABLED";
+        case EventType::HOTSPOT_DISABLED:
+            return "HOTSPOT_DISABLED";
+        case EventType::BLUETOOTH_CONNECTED:
+            return "BLUETOOTH_CONNECTED";
+        case EventType::BLUETOOTH_DISCONNECTED:
+            return "BLUETOOTH_DISCONNECTED";
+        case EventType::BLUETOOTH_PAIRING_REQUEST:
+            return "BLUETOOTH_PAIRING_REQUEST";
+        case EventType::MEDIA_PLAY:
+            return "MEDIA_PLAY";
+        case EventType::MEDIA_PAUSE:
+            return "MEDIA_PAUSE";
+        case EventType::MEDIA_STOP:
+            return "MEDIA_STOP";
+        case EventType::MEDIA_NEXT:
+            return "MEDIA_NEXT";
+        case EventType::MEDIA_PREVIOUS:
+            return "MEDIA_PREVIOUS";
+        case EventType::MEDIA_TRACK_CHANGED:
+            return "MEDIA_TRACK_CHANGED";
+        case EventType::CONFIG_CHANGED:
+            return "CONFIG_CHANGED";
+        case EventType::CONFIG_SAVED:
+            return "CONFIG_SAVED";
+        case EventType::CUSTOM_BUTTON_1:
+            return "CUSTOM_BUTTON_1";
+        case EventType::CUSTOM_BUTTON_2:
+            return "CUSTOM_BUTTON_2";
+        case EventType::CUSTOM_BUTTON_3:
+            return "CUSTOM_BUTTON_3";
+        case EventType::CUSTOM_BUTTON_4:
+            return "CUSTOM_BUTTON_4";
+        case EventType::CUSTOM_BUTTON_5:
+            return "CUSTOM_BUTTON_5";
+        case EventType::CUSTOM_BUTTON_6:
+            return "CUSTOM_BUTTON_6";
+        case EventType::DAY_MODE_ENABLED:
+            return "DAY_MODE_ENABLED";
+        case EventType::NIGHT_MODE_ENABLED:
+            return "NIGHT_MODE_ENABLED";
+        case EventType::UPDATE_AVAILABLE:
+            return "UPDATE_AVAILABLE";
+        case EventType::UPDATE_STARTED:
+            return "UPDATE_STARTED";
+        case EventType::UPDATE_COMPLETED:
+            return "UPDATE_COMPLETED";
+        case EventType::UPDATE_FAILED:
+            return "UPDATE_FAILED";
+        case EventType::CUSTOM_EVENT:
+            return "CUSTOM_EVENT";
+        default:
+            return "UNKNOWN";
     }
 }
 
@@ -208,9 +253,9 @@ EventType Event::stringToEventType(const std::string& typeStr) {
     if (typeStr == "UPDATE_COMPLETED") return EventType::UPDATE_COMPLETED;
     if (typeStr == "UPDATE_FAILED") return EventType::UPDATE_FAILED;
     if (typeStr == "CUSTOM_EVENT") return EventType::CUSTOM_EVENT;
-    
+
     throw std::invalid_argument("Unknown event type: " + typeStr);
 }
 
-} // namespace modern
-} // namespace openauto
+}  // namespace modern
+}  // namespace openauto

@@ -18,33 +18,33 @@
 
 #include <QCoreApplication>
 #include <QtBluetooth>
-#include <modern/Logger.hpp>
 #include <f1x/openauto/autoapp/Configuration/Configuration.hpp>
-#include <f1x/openauto/btservice/BluetoothHandler.hpp>
 #include <f1x/openauto/btservice/AndroidBluetoothService.hpp>
+#include <f1x/openauto/btservice/BluetoothHandler.hpp>
+#include <modern/Logger.hpp>
 
 namespace btservice = f1x::openauto::btservice;
 
-int main(int argc, char *argv[]) {
-  QLoggingCategory::setFilterRules(QStringLiteral("qt.bluetooth*=true"));
-  QCoreApplication qApplication(argc, argv);
+int main(int argc, char* argv[]) {
+    QLoggingCategory::setFilterRules(QStringLiteral("qt.bluetooth*=true"));
+    QCoreApplication qApplication(argc, argv);
 
-  // Configure modern logger for btservice
-  auto& logger = openauto::modern::Logger::getInstance();
-  logger.setLevel(openauto::modern::LogLevel::INFO);
-  logger.setAsync(true);
-  
-  auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
+    // Configure modern logger for btservice
+    auto& logger = openauto::modern::Logger::getInstance();
+    logger.setLevel(openauto::modern::LogLevel::INFO);
+    logger.setAsync(true);
 
-  try {
-    auto androidBluetoothService = std::make_shared<btservice::AndroidBluetoothService>();
-    btservice::BluetoothHandler bluetoothHandler(androidBluetoothService, configuration);
-    QCoreApplication::exec();
-  } catch (std::runtime_error& e) {
-    std::cerr << "Exception caught: " << e.what() << std::endl;
-  }
+    auto configuration = std::make_shared<f1x::openauto::autoapp::configuration::Configuration>();
 
-  SLOG_INFO(GENERAL, "btservice", "Bluetooth service stopping");
+    try {
+        auto androidBluetoothService = std::make_shared<btservice::AndroidBluetoothService>();
+        btservice::BluetoothHandler bluetoothHandler(androidBluetoothService, configuration);
+        QCoreApplication::exec();
+    } catch (std::runtime_error& e) {
+        std::cerr << "Exception caught: " << e.what() << std::endl;
+    }
 
-  return 0;
+    SLOG_INFO(GENERAL, "btservice", "Bluetooth service stopping");
+
+    return 0;
 }

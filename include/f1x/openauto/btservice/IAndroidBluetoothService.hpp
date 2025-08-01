@@ -17,23 +17,19 @@
 */
 
 #pragma once
-#include <memory>
 #include <QBluetoothAddress>
+#include <memory>
 
-namespace f1x::openauto::btservice
-{
+namespace f1x::openauto::btservice {
 
-class IAndroidBluetoothService
-{
-public:
-  typedef std::shared_ptr<IAndroidBluetoothService> Pointer;
+class IAndroidBluetoothService {
+  public:
+    typedef std::shared_ptr<IAndroidBluetoothService> Pointer;
 
-  virtual ~IAndroidBluetoothService() = default;
+    virtual ~IAndroidBluetoothService() = default;
 
-  virtual bool registerService(int16_t portNumber, const QBluetoothAddress& bluetoothAddress) = 0;
-  virtual bool unregisterService() = 0;
+    virtual bool registerService(int16_t portNumber, const QBluetoothAddress& bluetoothAddress) = 0;
+    virtual bool unregisterService() = 0;
 };
 
-}
-
-
+}  // namespace f1x::openauto::btservice

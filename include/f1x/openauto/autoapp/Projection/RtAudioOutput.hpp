@@ -22,21 +22,17 @@
 #include <f1x/openauto/autoapp/Projection/IAudioOutput.hpp>
 #include <f1x/openauto/autoapp/Projection/SequentialBuffer.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class RtAudioOutput: public IAudioOutput
-{
-public:
+class RtAudioOutput : public IAudioOutput {
+  public:
     RtAudioOutput(uint32_t channelCount, uint32_t sampleSize, uint32_t sampleRate);
     bool open() override;
-    void write(aasdk::messenger::Timestamp::ValueType timestamp, const aasdk::common::DataConstBuffer& buffer) override;
+    void write(aasdk::messenger::Timestamp::ValueType timestamp,
+               const aasdk::common::DataConstBuffer& buffer) override;
     void start() override;
     void stop() override;
     void suspend() override;
@@ -44,10 +40,11 @@ public:
     uint32_t getChannelCount() const override;
     uint32_t getSampleRate() const override;
 
-private:
+  private:
     void doSuspend();
-    static int audioBufferReadHandler(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
-                                      double streamTime, RtAudioStreamStatus status, void* userData);
+    static int audioBufferReadHandler(void* outputBuffer, void* inputBuffer,
+                                      unsigned int nBufferFrames, double streamTime,
+                                      RtAudioStreamStatus status, void* userData);
 
     uint32_t channelCount_;
     uint32_t sampleSize_;
@@ -57,7 +54,7 @@ private:
     std::mutex mutex_;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

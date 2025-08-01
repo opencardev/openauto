@@ -18,26 +18,25 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <memory>
-#include <QBluetoothServer>
-#include <f1x/openauto/btservice/IAndroidBluetoothServer.hpp>
-#include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
-#include <aasdk/Messenger/Message.hpp>
 #include <aap_protobuf/aaw/MessageId.pb.h>
 #include <aap_protobuf/aaw/Status.pb.h>
 #include <aap_protobuf/aaw/WifiConnectionStatus.pb.h>
 #include <aap_protobuf/aaw/WifiInfoResponse.pb.h>
+#include <aap_protobuf/aaw/WifiStartRequest.pb.h>
+#include <aap_protobuf/aaw/WifiStartResponse.pb.h>
 #include <aap_protobuf/aaw/WifiVersionRequest.pb.h>
 #include <aap_protobuf/aaw/WifiVersionResponse.pb.h>
-#include <aap_protobuf/aaw/WifiStartResponse.pb.h>
-#include <aap_protobuf/aaw/WifiStartRequest.pb.h>
-
+#include <stdint.h>
+#include <QBluetoothServer>
+#include <aasdk/Messenger/Message.hpp>
+#include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
+#include <f1x/openauto/btservice/IAndroidBluetoothServer.hpp>
+#include <memory>
 
 namespace f1x::openauto::btservice {
 
-  class AndroidBluetoothServer : public QObject, public IAndroidBluetoothServer {
-  Q_OBJECT
+class AndroidBluetoothServer : public QObject, public IAndroidBluetoothServer {
+    Q_OBJECT
 
   public:
     AndroidBluetoothServer(autoapp::configuration::IConfiguration::Pointer configuration);
@@ -68,12 +67,9 @@ namespace f1x::openauto::btservice {
 
     void sendMessage(const google::protobuf::Message &message, uint16_t type);
 
-
     const ::std::string getIP4_(const QString intf);
 
     void DecodeProtoMessage(const std::string &proto_data);
-  };
+};
 
-}
-
-
+}  // namespace f1x::openauto::btservice

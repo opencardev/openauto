@@ -20,18 +20,13 @@
 
 #pragma once
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class IBluetoothDevice
-{
-public:
+class IBluetoothDevice {
+  public:
     typedef aasdk::io::Promise<void, void> PairingPromise;
     typedef std::shared_ptr<IBluetoothDevice> Pointer;
 
@@ -41,7 +36,7 @@ public:
     virtual bool isAvailable() const = 0;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

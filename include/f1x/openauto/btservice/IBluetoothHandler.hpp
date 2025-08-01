@@ -5,22 +5,19 @@
 #ifndef OPENAUTO_IBLUETOOTHHANDLER_HPP
 #define OPENAUTO_IBLUETOOTHHANDLER_HPP
 
-#include <memory>
 #include <QBluetoothAddress>
 #include <QBluetoothLocalDevice>
+#include <memory>
 
 namespace f1x::openauto::btservice {
 
-  class IBluetoothHandler
-  {
+class IBluetoothHandler {
   public:
     virtual ~IBluetoothHandler() = default;
 
     virtual void shutdownService() = 0;
-  };
+};
 
-}
+}  // namespace f1x::openauto::btservice
 
-
-
-#endif //OPENAUTO_IBLUETOOTHHANDLER_HPP
+#endif  // OPENAUTO_IBLUETOOTHHANDLER_HPP

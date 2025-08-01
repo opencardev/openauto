@@ -16,106 +16,96 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <modern/Logger.hpp>
+#include <QNetworkInterface>
+#include <QString>
 #include <f1x/openauto/autoapp/Service/WifiProjection/WifiProjectionService.hpp>
 #include <fstream>
-#include <QString>
-#include <QNetworkInterface>
-
+#include <modern/Logger.hpp>
 
 namespace f1x::openauto::autoapp::service::wifiprojection {
-  WifiProjectionService::WifiProjectionService(boost::asio::io_service &ioService,
-                                               aasdk::messenger::IMessenger::Pointer messenger,
-                                               configuration::IConfiguration::Pointer configuration)
-      : configuration_(std::move(configuration)),
-        strand_(ioService),
-        timer_(ioService),
-        channel_(
-            std::make_shared<aasdk::channel::wifiprojection::WifiProjectionService>(strand_, std::move(messenger))) {
+WifiProjectionService::WifiProjectionService(boost::asio::io_service &ioService,
+                                             aasdk::messenger::IMessenger::Pointer messenger,
+                                             configuration::IConfiguration::Pointer configuration)
+    : configuration_(std::move(configuration)),
+      strand_(ioService),
+      timer_(ioService),
+      channel_(std::make_shared<aasdk::channel::wifiprojection::WifiProjectionService>(
+          strand_, std::move(messenger))) {}
 
-  }
+void WifiProjectionService::start() {
+    strand_.dispatch([this, self = this->shared_from_this()]() { LOG_INFO(NETWORK, "start()"); });
+}
 
-  void WifiProjectionService::start() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO(NETWORK, "start()");
-    });
-  }
+void WifiProjectionService::stop() {
+    strand_.dispatch([this, self = this->shared_from_this()]() { LOG_INFO(NETWORK, "stop()"); });
+}
 
-  void WifiProjectionService::stop() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO(NETWORK, "stop()");
-    });
-  }
+void WifiProjectionService::pause() {
+    strand_.dispatch([this, self = this->shared_from_this()]() { LOG_INFO(NETWORK, "pause()"); });
+}
 
-  void WifiProjectionService::pause() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO(NETWORK, "pause()");
-    });
-  }
+void WifiProjectionService::resume() {
+    strand_.dispatch([this, self = this->shared_from_this()]() { LOG_INFO(NETWORK, "resume()"); });
+}
 
-  void WifiProjectionService::resume() {
-    strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_INFO(NETWORK, "resume()");
-    });
-  }
-
-  void WifiProjectionService::fillFeatures(
-      aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
+void WifiProjectionService::fillFeatures(
+    aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
     LOG_INFO(NETWORK, "fillFeatures()");
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
 
     auto *wifiChannel = service->mutable_wifi_projection_service();
-    wifiChannel->set_car_wifi_bssid(QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
-  }
+    wifiChannel->set_car_wifi_bssid(
+        QNetworkInterface::interfaceFromName("wlan0").hardwareAddress().toStdString());
+}
 
-  void WifiProjectionService::onWifiCredentialsRequest(
-      const aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest &request) {
-
+void WifiProjectionService::onWifiCredentialsRequest(
+    const aap_protobuf::service::wifiprojection::message::WifiCredentialsRequest &request) {
     LOG_INFO(NETWORK, "onWifiCredentialsRequest()");
 
     aap_protobuf::service::wifiprojection::message::WifiCredentialsResponse response;
 
-    response.set_access_point_type(aap_protobuf::service::wifiprojection::message::AccessPointType::STATIC);
-    response.set_car_wifi_ssid(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","ssid").toStdString());
-    response.set_car_wifi_password(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","wpa_passphrase").toStdString());
+    response.set_access_point_type(
+        aap_protobuf::service::wifiprojection::message::AccessPointType::STATIC);
+    response.set_car_wifi_ssid(
+        configuration_->getParamFromFile("/etc/hostapd/hostapd.conf", "ssid").toStdString());
+    response.set_car_wifi_password(
+        configuration_->getParamFromFile("/etc/hostapd/hostapd.conf", "wpa_passphrase")
+            .toStdString());
 
     // Might need to set WPA2_ENTERPRISE
     response.set_car_wifi_security_mode(
         aap_protobuf::service::wifiprojection::message::WifiSecurityMode::WPA2_PERSONAL);
 
     auto promise = aasdk::channel::SendPromise::defer(strand_);
-    promise->then([]() {}, std::bind(&WifiProjectionService::onChannelError, this->shared_from_this(),
-                                     std::placeholders::_1));
+    promise->then([]() {}, std::bind(&WifiProjectionService::onChannelError,
+                                     this->shared_from_this(), std::placeholders::_1));
     channel_->sendWifiCredentialsResponse(response, std::move(promise));
     channel_->receive(this->shared_from_this());
+}
 
-  }
-
-  void WifiProjectionService::onChannelOpenRequest(
-      const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+void WifiProjectionService::onChannelOpenRequest(
+    const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO_STREAM(NETWORK, "onChannelOpenRequest()");
-    LOG_DEBUG_STREAM(NETWORK, "Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
+    LOG_DEBUG_STREAM(NETWORK, "Channel Id: " + std::to_string(request.service_id()) +
+                                  ", Priority: " + std::to_string(request.priority()));
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
-    const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+    const aap_protobuf::shared::MessageStatus status =
+        aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
     response.set_status(status);
 
     auto promise = aasdk::channel::SendPromise::defer(strand_);
-    promise->then([]() {}, std::bind(&WifiProjectionService::onChannelError, this->shared_from_this(),
-                                     std::placeholders::_1));
+    promise->then([]() {}, std::bind(&WifiProjectionService::onChannelError,
+                                     this->shared_from_this(), std::placeholders::_1));
     channel_->sendChannelOpenResponse(response, std::move(promise));
 
     channel_->receive(this->shared_from_this());
-  }
-
-  void WifiProjectionService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR_STREAM(NETWORK, "onChannelError(): " + std::string(e.what()));
-  }
-
-
 }
 
+void WifiProjectionService::onChannelError(const aasdk::error::Error &e) {
+    LOG_ERROR_STREAM(NETWORK, "onChannelError(): " + std::string(e.what()));
+}
 
-
+}  // namespace f1x::openauto::autoapp::service::wifiprojection

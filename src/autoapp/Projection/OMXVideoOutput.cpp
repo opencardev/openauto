@@ -18,8 +18,7 @@
 
 #ifdef USE_OMX
 
-extern "C"
-{
+extern "C" {
 #include <bcm_host.h>
 }
 
@@ -27,35 +26,28 @@ extern "C"
 #include <f1x/openauto/autoapp/Projection/OMXVideoOutput.hpp>
 #include <modern/Logger.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-namespace VideoComponent
-{
-    static constexpr uint32_t DECODER = 0;
-    static constexpr uint32_t RENDERER = 1;
-    static constexpr uint32_t CLOCK = 2;
-    static constexpr uint32_t SCHEDULER = 3;
-}
+namespace VideoComponent {
+static constexpr uint32_t DECODER = 0;
+static constexpr uint32_t RENDERER = 1;
+static constexpr uint32_t CLOCK = 2;
+static constexpr uint32_t SCHEDULER = 3;
+}  // namespace VideoComponent
 
 OMXVideoOutput::OMXVideoOutput(configuration::IConfiguration::Pointer configuration)
-    : VideoOutput(std::move(configuration))
-    , isActive_(false)
-    , portSettingsChanged_(false)
-    , client_(nullptr)
-{
+    : VideoOutput(std::move(configuration)),
+      isActive_(false),
+      portSettingsChanged_(false),
+      client_(nullptr) {
     memset(components_, 0, sizeof(components_));
     memset(tunnels_, 0, sizeof(tunnels_));
 }
 
-bool OMXVideoOutput::open()
-{
+bool OMXVideoOutput::open() {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
     LOG_DEBUG(VIDEO, "[OMXVideoOutput] open.");
@@ -63,26 +55,22 @@ bool OMXVideoOutput::open()
 #ifdef USE_OMX
     bcm_host_init();
 #endif
-    if(OMX_Init() != OMX_ErrorNone)
-    {
+    if (OMX_Init() != OMX_ErrorNone) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] omx init failed.");
         return false;
     }
 
     client_ = ilclient_init();
-    if(client_ == nullptr)
-    {
+    if (client_ == nullptr) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] ilclient init failed.");
         return false;
     }
 
-    if(!this->createComponents())
-    {
+    if (!this->createComponents()) {
         return false;
     }
 
-    if(!this->setupTunnels())
-    {
+    if (!this->setupTunnels()) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] setup tunnels failed.");
         return false;
     }
@@ -90,8 +78,7 @@ bool OMXVideoOutput::open()
     ilclient_change_component_state(components_[VideoComponent::CLOCK], OMX_StateExecuting);
     ilclient_change_component_state(components_[VideoComponent::DECODER], OMX_StateIdle);
 
-    if(!this->enablePortBuffers())
-    {
+    if (!this->enablePortBuffers()) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] enable port buffers failed.");
         return false;
     }
@@ -100,18 +87,17 @@ bool OMXVideoOutput::open()
     return true;
 }
 
-bool OMXVideoOutput::init()
-{
+bool OMXVideoOutput::init() {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    LOG_DEBUG_STREAM(VIDEO, "[OMXVideoOutput] init, state: " + std::string(isActive_ ? "true" : "false"));
+    LOG_DEBUG_STREAM(VIDEO,
+                     "[OMXVideoOutput] init, state: " + std::string(isActive_ ? "true" : "false"));
     ilclient_change_component_state(components_[VideoComponent::DECODER], OMX_StateExecuting);
-    
+
     return this->setupDisplayRegion();
 }
 
-bool OMXVideoOutput::setupDisplayRegion()
-{
+bool OMXVideoOutput::setupDisplayRegion() {
     OMX_CONFIG_DISPLAYREGIONTYPE displayRegion;
     displayRegion.nSize = sizeof(OMX_CONFIG_DISPLAYREGIONTYPE);
     displayRegion.nVersion.nVersion = OMX_VERSION;
@@ -119,74 +105,70 @@ bool OMXVideoOutput::setupDisplayRegion()
     displayRegion.layer = static_cast<OMX_S32>(configuration_->getOMXLayerIndex());
     displayRegion.fullscreen = OMX_TRUE;
     displayRegion.noaspect = OMX_TRUE;
-    displayRegion.set = static_cast<OMX_DISPLAYSETTYPE >(OMX_DISPLAY_SET_FULLSCREEN | OMX_DISPLAY_SET_NOASPECT | OMX_DISPLAY_SET_LAYER);    
+    displayRegion.set = static_cast<OMX_DISPLAYSETTYPE>(
+        OMX_DISPLAY_SET_FULLSCREEN | OMX_DISPLAY_SET_NOASPECT | OMX_DISPLAY_SET_LAYER);
 
-    return OMX_SetConfig(ilclient_get_handle(components_[VideoComponent::RENDERER]), OMX_IndexConfigDisplayRegion, &displayRegion) == OMX_ErrorNone;
+    return OMX_SetConfig(ilclient_get_handle(components_[VideoComponent::RENDERER]),
+                         OMX_IndexConfigDisplayRegion, &displayRegion) == OMX_ErrorNone;
 }
 
-void OMXVideoOutput::write(uint64_t timestamp, const aasdk::common::DataConstBuffer& buffer)
-{
+void OMXVideoOutput::write(uint64_t timestamp, const aasdk::common::DataConstBuffer& buffer) {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
     size_t writeSize = 0;
 
-    while(isActive_ && writeSize < buffer.size)
-    {
-        OMX_BUFFERHEADERTYPE* buf = ilclient_get_input_buffer(components_[VideoComponent::DECODER], 130, 1);
+    while (isActive_ && writeSize < buffer.size) {
+        OMX_BUFFERHEADERTYPE* buf =
+            ilclient_get_input_buffer(components_[VideoComponent::DECODER], 130, 1);
 
-        if(buf == nullptr)
-        {
+        if (buf == nullptr) {
             break;
-        }
-        else
-        {
+        } else {
             aasdk::common::DataConstBuffer currentBuffer(buffer.cdata, buffer.size, writeSize);
             buf->nFilledLen = std::min<size_t>(buf->nAllocLen, currentBuffer.size);
             memcpy(buf->pBuffer, &currentBuffer.cdata[0], buf->nFilledLen);
             buf->nTimeStamp = omx_ticks_from_s64(timestamp / 1000000);
-            buf->nOffset = 0;           
-            
+            buf->nOffset = 0;
+
             writeSize += buf->nFilledLen;
-            
-            if(timestamp == 0)
-            {
-              buf->nFlags = OMX_BUFFERFLAG_STARTTIME;
+
+            if (timestamp == 0) {
+                buf->nFlags = OMX_BUFFERFLAG_STARTTIME;
             }
 
-            if(!portSettingsChanged_ && ilclient_remove_event(components_[VideoComponent::DECODER], OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0)
-            {
+            if (!portSettingsChanged_ &&
+                ilclient_remove_event(components_[VideoComponent::DECODER],
+                                      OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) {
                 portSettingsChanged_ = true;
 
-                if(ilclient_setup_tunnel(&tunnels_[0], 0, 0) != 0)
-                {
+                if (ilclient_setup_tunnel(&tunnels_[0], 0, 0) != 0) {
                     break;
                 }
 
-                ilclient_change_component_state(components_[VideoComponent::SCHEDULER], OMX_StateExecuting);
-                if(ilclient_setup_tunnel(&tunnels_[1], 0, 1000) != 0)
-                {
+                ilclient_change_component_state(components_[VideoComponent::SCHEDULER],
+                                                OMX_StateExecuting);
+                if (ilclient_setup_tunnel(&tunnels_[1], 0, 1000) != 0) {
                     break;
                 }
 
-                ilclient_change_component_state(components_[VideoComponent::RENDERER], OMX_StateExecuting);
+                ilclient_change_component_state(components_[VideoComponent::RENDERER],
+                                                OMX_StateExecuting);
             }
 
-            if(OMX_EmptyThisBuffer(ILC_GET_HANDLE(components_[VideoComponent::DECODER]), buf) != OMX_ErrorNone)
-            {
+            if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(components_[VideoComponent::DECODER]), buf) !=
+                OMX_ErrorNone) {
                 break;
             }
         }
     }
 }
 
-void OMXVideoOutput::stop()
-{
+void OMXVideoOutput::stop() {
     LOG_DEBUG(VIDEO, "[OMXVideoOutput] stop.");
 
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    if(isActive_)
-    {
+    if (isActive_) {
         isActive_ = false;
 
         ilclient_disable_tunnel(&tunnels_[0]);
@@ -204,34 +186,36 @@ void OMXVideoOutput::stop()
     }
 }
 
-bool OMXVideoOutput::createComponents()
-{
-    if(ilclient_create_component(client_, &components_[VideoComponent::DECODER], const_cast<char*>("video_decode"), static_cast<ILCLIENT_CREATE_FLAGS_T>(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0)
-    {
+bool OMXVideoOutput::createComponents() {
+    if (ilclient_create_component(
+            client_, &components_[VideoComponent::DECODER], const_cast<char*>("video_decode"),
+            static_cast<ILCLIENT_CREATE_FLAGS_T>(ILCLIENT_DISABLE_ALL_PORTS |
+                                                 ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] video decode component creation failed.");
         return false;
     }
 
-    if(ilclient_create_component(client_, &components_[VideoComponent::RENDERER], const_cast<char*>("video_render"), ILCLIENT_DISABLE_ALL_PORTS) != 0)
-    {
+    if (ilclient_create_component(client_, &components_[VideoComponent::RENDERER],
+                                  const_cast<char*>("video_render"),
+                                  ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] video renderer component creation failed.");
         return false;
     }
 
-    if(ilclient_create_component(client_, &components_[VideoComponent::CLOCK], const_cast<char*>("clock"), ILCLIENT_DISABLE_ALL_PORTS) != 0)
-    {
+    if (ilclient_create_component(client_, &components_[VideoComponent::CLOCK],
+                                  const_cast<char*>("clock"), ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] clock component creation failed.");
         return false;
     }
 
-    if(!this->initClock())
-    {
+    if (!this->initClock()) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] clock init failed.");
         return false;
     }
 
-    if(ilclient_create_component(client_, &components_[VideoComponent::SCHEDULER], const_cast<char*>("video_scheduler"), ILCLIENT_DISABLE_ALL_PORTS) != 0)
-    {
+    if (ilclient_create_component(client_, &components_[VideoComponent::SCHEDULER],
+                                  const_cast<char*>("video_scheduler"),
+                                  ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         LOG_ERROR(VIDEO, "[OMXVideoOutput] video scheduler component creation failed.");
         return false;
     }
@@ -239,8 +223,7 @@ bool OMXVideoOutput::createComponents()
     return true;
 }
 
-bool OMXVideoOutput::initClock()
-{
+bool OMXVideoOutput::initClock() {
     OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
     memset(&cstate, 0, sizeof(cstate));
     cstate.nSize = sizeof(cstate);
@@ -248,20 +231,22 @@ bool OMXVideoOutput::initClock()
     cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
     cstate.nWaitMask = 1;
 
-    return OMX_SetParameter(ILC_GET_HANDLE(components_[VideoComponent::CLOCK]), OMX_IndexConfigTimeClockState, &cstate) == OMX_ErrorNone;
+    return OMX_SetParameter(ILC_GET_HANDLE(components_[VideoComponent::CLOCK]),
+                            OMX_IndexConfigTimeClockState, &cstate) == OMX_ErrorNone;
 }
 
-bool OMXVideoOutput::setupTunnels()
-{
-    set_tunnel(&tunnels_[0], components_[VideoComponent::DECODER], 131, components_[VideoComponent::SCHEDULER], 10);
-    set_tunnel(&tunnels_[1], components_[VideoComponent::SCHEDULER], 11, components_[VideoComponent::RENDERER], 90);
-    set_tunnel(&tunnels_[2], components_[VideoComponent::CLOCK], 80, components_[VideoComponent::SCHEDULER], 12);
+bool OMXVideoOutput::setupTunnels() {
+    set_tunnel(&tunnels_[0], components_[VideoComponent::DECODER], 131,
+               components_[VideoComponent::SCHEDULER], 10);
+    set_tunnel(&tunnels_[1], components_[VideoComponent::SCHEDULER], 11,
+               components_[VideoComponent::RENDERER], 90);
+    set_tunnel(&tunnels_[2], components_[VideoComponent::CLOCK], 80,
+               components_[VideoComponent::SCHEDULER], 12);
 
     return ilclient_setup_tunnel(&tunnels_[2], 0, 0) == 0;
 }
 
-bool OMXVideoOutput::enablePortBuffers()
-{
+bool OMXVideoOutput::enablePortBuffers() {
     OMX_VIDEO_PARAM_PORTFORMATTYPE format;
     memset(&format, 0, sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
     format.nSize = sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE);
@@ -269,13 +254,15 @@ bool OMXVideoOutput::enablePortBuffers()
     format.nPortIndex = 130;
     format.eCompressionFormat = OMX_VIDEO_CodingAVC;
 
-    return OMX_SetParameter(ILC_GET_HANDLE(components_[VideoComponent::DECODER]), OMX_IndexParamVideoPortFormat, &format) == OMX_ErrorNone &&
-           ilclient_enable_port_buffers(components_[VideoComponent::DECODER], 130, NULL, NULL, NULL) == 0;
+    return OMX_SetParameter(ILC_GET_HANDLE(components_[VideoComponent::DECODER]),
+                            OMX_IndexParamVideoPortFormat, &format) == OMX_ErrorNone &&
+           ilclient_enable_port_buffers(components_[VideoComponent::DECODER], 130, NULL, NULL,
+                                        NULL) == 0;
 }
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x
 
 #endif

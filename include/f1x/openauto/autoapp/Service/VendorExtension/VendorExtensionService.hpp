@@ -19,19 +19,19 @@
 #pragma once
 
 #include <aasdk/Channel/VendorExtension/VendorExtensionService.hpp>
-#include <f1x/openauto/autoapp/Service/IService.hpp>
-#include <boost/asio/io_service.hpp>
 #include <aasdk/Messenger/IMessenger.hpp>
-
+#include <boost/asio/io_service.hpp>
+#include <f1x/openauto/autoapp/Service/IService.hpp>
 
 namespace f1x::openauto::autoapp::service::vendorextension {
 
-  class VendorExtensionService :
-      public aasdk::channel::vendorextension::IVendorExtensionServiceEventHandler,
+class VendorExtensionService
+    : public aasdk::channel::vendorextension::IVendorExtensionServiceEventHandler,
       public IService,
       public std::enable_shared_from_this<VendorExtensionService> {
   public:
-    VendorExtensionService(boost::asio::io_service &ioService, aasdk::messenger::IMessenger::Pointer messenger);
+    VendorExtensionService(boost::asio::io_service &ioService,
+                           aasdk::messenger::IMessenger::Pointer messenger);
 
     void start() override;
 
@@ -41,21 +41,19 @@ namespace f1x::openauto::autoapp::service::vendorextension {
 
     void resume() override;
 
-    void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
+    void fillFeatures(
+        aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-    void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
+    void onChannelOpenRequest(
+        const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
     void onChannelError(const aasdk::error::Error &e) override;
-
 
   private:
     using std::enable_shared_from_this<VendorExtensionService>::shared_from_this;
     boost::asio::io_service::strand strand_;
     boost::asio::deadline_timer timer_;
     aasdk::channel::vendorextension::VendorExtensionService::Pointer channel_;
-  };
+};
 
-}
-
-
-
+}  // namespace f1x::openauto::autoapp::service::vendorextension

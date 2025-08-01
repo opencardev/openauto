@@ -18,39 +18,37 @@
 
 #pragma once
 
+#include <QComboBox>
+#include <QFileDialog>
+#include <QKeyEvent>
 #include <QWidget>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
-#include <QFileDialog>
-#include <QComboBox>
-#include <QKeyEvent>
 #ifdef MAC_OS
 #else
-  #include <sys/sysinfo.h>
+#include <sys/sysinfo.h>
 #endif
 
 class QCheckBox;
 class QTimer;
 
-namespace Ui
-{
+namespace Ui {
 class SettingsWindow;
 }
 
-namespace f1x::openauto::autoapp::ui
-{
+namespace f1x::openauto::autoapp::ui {
 
-class SettingsWindow : public QWidget
-{
+class SettingsWindow : public QWidget {
     Q_OBJECT
-public:
-    explicit SettingsWindow(configuration::IConfiguration::Pointer configuration, QWidget *parent = nullptr);
+  public:
+    explicit SettingsWindow(configuration::IConfiguration::Pointer configuration,
+                            QWidget *parent = nullptr);
     ~SettingsWindow() override;
     void loadSystemValues();
 
-protected:
+  protected:
     void keyPressEvent(QKeyEvent *event) override;
 
-private slots:
+  private slots:
     void unpairAll();
     void onSave();
     void onResetToDefaults();
@@ -81,7 +79,7 @@ private slots:
     void updateSystemInfo();
     void updateInfo();
 
-public slots:
+  public slots:
     void show_tab1();
     void show_tab2();
     void show_tab3();
@@ -92,12 +90,14 @@ public slots:
     void show_tab8();
     void show_tab9();
 
-private:
-    void showEvent(QShowEvent* event) override;
+  private:
+    void showEvent(QShowEvent *event) override;
     void load();
     void loadButtonCheckBoxes();
     void saveButtonCheckBoxes();
-    void saveButtonCheckBox(const QCheckBox* checkBox, configuration::IConfiguration::ButtonCodes& buttonCodes, aap_protobuf::service::media::sink::message::KeyCode buttonCode);
+    void saveButtonCheckBox(const QCheckBox *checkBox,
+                            configuration::IConfiguration::ButtonCodes &buttonCodes,
+                            aap_protobuf::service::media::sink::message::KeyCode buttonCode);
     void setButtonCheckBoxes(bool value);
 #ifdef Q_OS_LINUX
     void populateBluetoothComboBoxLinux(QComboBox *comboBoxBluetooth);
@@ -109,13 +109,10 @@ private:
     void populateBluetoothComboBoxMac(QComboBox *comboBoxBluetooth);
 #endif
     void populateBluetoothComboBox(QComboBox *comboBoxBluetooth);
-    Ui::SettingsWindow* ui_;
+    Ui::SettingsWindow *ui_;
     configuration::IConfiguration::Pointer configuration_;
 
-  void getMacMemoryInfo(QString &freeMemory);
+    void getMacMemoryInfo(QString &freeMemory);
 };
 
-}
-
-
-
+}  // namespace f1x::openauto::autoapp::ui

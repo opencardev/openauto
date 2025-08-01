@@ -1,21 +1,21 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <modern/EventBus.hpp>
-#include <modern/Event.hpp>
-#include <thread>
-#include <chrono>
+#include <gtest/gtest.h>
 #include <atomic>
+#include <chrono>
+#include <modern/Event.hpp>
+#include <modern/EventBus.hpp>
+#include <thread>
 
 using namespace openauto::modern;
 using namespace testing;
 
 class MockEventHandler {
-public:
+  public:
     MOCK_METHOD(void, onEvent, (std::shared_ptr<Event> event));
 };
 
 class EventBusTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         eventBus = std::make_shared<EventBus>();
         mockHandler = std::make_shared<MockEventHandler>();
@@ -34,14 +34,13 @@ protected:
 TEST_F(EventBusTest, BasicSubscriptionAndPublishing) {
     // Subscribe to CONFIG_CHANGED events
     std::shared_ptr<Event> receivedEvent;
-    eventBus->subscribe(EventType::CONFIG_CHANGED, [&receivedEvent](std::shared_ptr<Event> event) {
-        receivedEvent = event;
-    });
+    eventBus->subscribe(EventType::CONFIG_CHANGED,
+                        [&receivedEvent](std::shared_ptr<Event> event) { receivedEvent = event; });
 
     // Create and publish event
     auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "test_source");
     event->setData("key", std::string("test_value"));
-    
+
     eventBus->publish(event);
 
     // Give some time for async processing
@@ -51,7 +50,7 @@ TEST_F(EventBusTest, BasicSubscriptionAndPublishing) {
     ASSERT_NE(receivedEvent, nullptr);
     EXPECT_EQ(receivedEvent->getType(), EventType::CONFIG_CHANGED);
     EXPECT_EQ(receivedEvent->getSource(), "test_source");
-    
+
     auto value = receivedEvent->getData<std::string>("key");
     ASSERT_TRUE(value.has_value());
     EXPECT_EQ(value.value(), "test_value");
@@ -64,17 +63,14 @@ TEST_F(EventBusTest, MultipleSubscribers) {
     std::atomic<int> callCount3{0};
 
     // Subscribe multiple handlers to the same event type
-    eventBus->subscribe(EventType::STATE_CHANGED, [&callCount1](std::shared_ptr<Event> event) {
-        callCount1++;
-    });
+    eventBus->subscribe(EventType::STATE_CHANGED,
+                        [&callCount1](std::shared_ptr<Event> event) { callCount1++; });
 
-    eventBus->subscribe(EventType::STATE_CHANGED, [&callCount2](std::shared_ptr<Event> event) {
-        callCount2++;
-    });
+    eventBus->subscribe(EventType::STATE_CHANGED,
+                        [&callCount2](std::shared_ptr<Event> event) { callCount2++; });
 
-    eventBus->subscribe(EventType::STATE_CHANGED, [&callCount3](std::shared_ptr<Event> event) {
-        callCount3++;
-    });
+    eventBus->subscribe(EventType::STATE_CHANGED,
+                        [&callCount3](std::shared_ptr<Event> event) { callCount3++; });
 
     // Publish event
     auto event = std::make_shared<Event>(EventType::STATE_CHANGED, "test");
@@ -96,17 +92,17 @@ TEST_F(EventBusTest, EventTypeFiltering) {
     std::atomic<int> connectionStatusCount{0};
 
     // Subscribe to different event types
-    eventBus->subscribe(EventType::CONFIG_CHANGED, [&configChangedCount](std::shared_ptr<Event> event) {
-        configChangedCount++;
-    });
+    eventBus->subscribe(
+        EventType::CONFIG_CHANGED,
+        [&configChangedCount](std::shared_ptr<Event> event) { configChangedCount++; });
 
-    eventBus->subscribe(EventType::STATE_CHANGED, [&stateChangedCount](std::shared_ptr<Event> event) {
-        stateChangedCount++;
-    });
+    eventBus->subscribe(
+        EventType::STATE_CHANGED,
+        [&stateChangedCount](std::shared_ptr<Event> event) { stateChangedCount++; });
 
-    eventBus->subscribe(EventType::CONNECTION_STATUS, [&connectionStatusCount](std::shared_ptr<Event> event) {
-        connectionStatusCount++;
-    });
+    eventBus->subscribe(
+        EventType::CONNECTION_STATUS,
+        [&connectionStatusCount](std::shared_ptr<Event> event) { connectionStatusCount++; });
 
     // Publish different event types
     eventBus->publish(std::make_shared<Event>(EventType::CONFIG_CHANGED, "test"));
@@ -127,9 +123,8 @@ TEST_F(EventBusTest, UnsubscribeTest) {
     std::atomic<int> callCount{0};
 
     // Subscribe and get subscription ID
-    auto subscriptionId = eventBus->subscribe(EventType::CONFIG_CHANGED, [&callCount](std::shared_ptr<Event> event) {
-        callCount++;
-    });
+    auto subscriptionId = eventBus->subscribe(
+        EventType::CONFIG_CHANGED, [&callCount](std::shared_ptr<Event> event) { callCount++; });
 
     // Publish event - should be received
     eventBus->publish(std::make_shared<Event>(EventType::CONFIG_CHANGED, "test"));
@@ -142,16 +137,15 @@ TEST_F(EventBusTest, UnsubscribeTest) {
     // Publish another event - should not be received
     eventBus->publish(std::make_shared<Event>(EventType::CONFIG_CHANGED, "test"));
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    EXPECT_EQ(callCount.load(), 1); // Should still be 1
+    EXPECT_EQ(callCount.load(), 1);  // Should still be 1
 }
 
 // Test event data types
 TEST_F(EventBusTest, EventDataTypes) {
     std::shared_ptr<Event> receivedEvent;
-    
-    eventBus->subscribe(EventType::CONFIG_CHANGED, [&receivedEvent](std::shared_ptr<Event> event) {
-        receivedEvent = event;
-    });
+
+    eventBus->subscribe(EventType::CONFIG_CHANGED,
+                        [&receivedEvent](std::shared_ptr<Event> event) { receivedEvent = event; });
 
     // Create event with different data types
     auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "test");
@@ -185,11 +179,10 @@ TEST_F(EventBusTest, EventDataTypes) {
 // Test thread safety
 TEST_F(EventBusTest, ThreadSafetyTest) {
     std::atomic<int> totalEvents{0};
-    
+
     // Subscribe to events
-    eventBus->subscribe(EventType::CONFIG_CHANGED, [&totalEvents](std::shared_ptr<Event> event) {
-        totalEvents++;
-    });
+    eventBus->subscribe(EventType::CONFIG_CHANGED,
+                        [&totalEvents](std::shared_ptr<Event> event) { totalEvents++; });
 
     std::vector<std::thread> publisherThreads;
     std::vector<std::thread> subscriberThreads;
@@ -198,7 +191,8 @@ TEST_F(EventBusTest, ThreadSafetyTest) {
     for (int i = 0; i < 5; ++i) {
         publisherThreads.emplace_back([this, i]() {
             for (int j = 0; j < 10; ++j) {
-                auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "thread_" + std::to_string(i));
+                auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED,
+                                                     "thread_" + std::to_string(i));
                 event->setData("value", j);
                 eventBus->publish(event);
             }
@@ -226,16 +220,15 @@ TEST_F(EventBusTest, ThreadSafetyTest) {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     // Should have received all published events
-    EXPECT_EQ(totalEvents.load(), 50); // 5 threads * 10 events each
+    EXPECT_EQ(totalEvents.load(), 50);  // 5 threads * 10 events each
 }
 
 // Test event with metadata
 TEST_F(EventBusTest, EventMetadataTest) {
     std::shared_ptr<Event> receivedEvent;
-    
-    eventBus->subscribe(EventType::CONFIG_CHANGED, [&receivedEvent](std::shared_ptr<Event> event) {
-        receivedEvent = event;
-    });
+
+    eventBus->subscribe(EventType::CONFIG_CHANGED,
+                        [&receivedEvent](std::shared_ptr<Event> event) { receivedEvent = event; });
 
     auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "metadata_test");
     event->setData("priority", std::string("high"));
@@ -246,10 +239,10 @@ TEST_F(EventBusTest, EventMetadataTest) {
 
     ASSERT_NE(receivedEvent, nullptr);
     EXPECT_EQ(receivedEvent->getSource(), "metadata_test");
-    
+
     auto priority = receivedEvent->getData<std::string>("priority");
     auto category = receivedEvent->getData<std::string>("category");
-    
+
     ASSERT_TRUE(priority.has_value());
     ASSERT_TRUE(category.has_value());
     EXPECT_EQ(priority.value(), "high");
@@ -259,13 +252,12 @@ TEST_F(EventBusTest, EventMetadataTest) {
 // Test large number of events
 TEST_F(EventBusTest, HighVolumeTest) {
     std::atomic<int> receivedCount{0};
-    
-    eventBus->subscribe(EventType::CONFIG_CHANGED, [&receivedCount](std::shared_ptr<Event> event) {
-        receivedCount++;
-    });
+
+    eventBus->subscribe(EventType::CONFIG_CHANGED,
+                        [&receivedCount](std::shared_ptr<Event> event) { receivedCount++; });
 
     const int NUM_EVENTS = 1000;
-    
+
     // Publish many events
     for (int i = 0; i < NUM_EVENTS; ++i) {
         auto event = std::make_shared<Event>(EventType::CONFIG_CHANGED, "volume_test");

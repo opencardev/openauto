@@ -24,8 +24,7 @@
 
 namespace f1x::openauto::autoapp::service {
 
-  class Service
-      : public IService {
+class Service : public IService {
   public:
     Service(boost::asio::io_service &ioService);
 
@@ -37,11 +36,10 @@ namespace f1x::openauto::autoapp::service {
 
     void resume() override;
 
-    void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
+    void fillFeatures(
+        aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
   private:
-
     boost::asio::io_service::strand strand_;
-
-  };
-}
+};
+}  // namespace f1x::openauto::autoapp::service

@@ -17,41 +17,35 @@
 */
 
 #include <QBluetoothLocalDevice>
-#include <f1x/openauto/autoapp/Projection/IBluetoothDevice.hpp>
 #include <QBluetoothServiceInfo>
 #include <QtBluetooth/QBluetoothServer>
+#include <f1x/openauto/autoapp/Projection/IBluetoothDevice.hpp>
 
 #pragma once
 
-namespace f1x::openauto::autoapp::projection
-{
+namespace f1x::openauto::autoapp::projection {
 
-class LocalBluetoothDevice: public QObject, public IBluetoothDevice
-{
+class LocalBluetoothDevice : public QObject, public IBluetoothDevice {
     Q_OBJECT
 
-public:
+  public:
     LocalBluetoothDevice(const QString &adapterAddress = QString(), QObject *parent = nullptr);
 
     void stop() override;
-    bool isPaired(const std::string& address) const override;
+    bool isPaired(const std::string &address) const override;
     std::string getAdapterAddress() const override;
     bool isAvailable() const override;
 
-private slots:
+  private slots:
     void createBluetoothLocalDevice(const QString &adapterAddress);
 
-private:
+  private:
     mutable std::mutex mutex_;
     std::unique_ptr<QBluetoothLocalDevice> localDevice_;
     PairingPromise::Pointer pairingPromise_;
     QBluetoothAddress pairingAddress_;
     QBluetoothServiceInfo serviceInfo_;
     std::unique_ptr<QBluetoothServer> rfcommServer_;
-
 };
 
-}
-
-
-
+}  // namespace f1x::openauto::autoapp::projection

@@ -18,11 +18,11 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
-#include <functional>
-#include <mutex>
 #include <vector>
 #include "Event.hpp"
 
@@ -58,61 +58,62 @@ enum class Trigger {
 };
 
 class StateMachine {
-public:
-    using StateChangeCallback = std::function<void(SystemState oldState, SystemState newState, Trigger trigger)>;
+  public:
+    using StateChangeCallback =
+        std::function<void(SystemState oldState, SystemState newState, Trigger trigger)>;
     using StateEntryCallback = std::function<void(SystemState state)>;
     using StateExitCallback = std::function<void(SystemState state)>;
-    
+
     StateMachine();
     ~StateMachine();
-    
+
     // State management
     SystemState getCurrentState() const;
     bool transition(Trigger trigger);
     bool canTransition(Trigger trigger) const;
-    
+
     // State callbacks
     void setStateChangeCallback(StateChangeCallback callback);
     void setStateEntryCallback(SystemState state, StateEntryCallback callback);
     void setStateExitCallback(SystemState state, StateExitCallback callback);
-    
+
     // Event handling
     void handleEvent(const Event::Pointer& event);
-    
+
     // Utility
     std::string stateToString(SystemState state) const;
     std::string triggerToString(Trigger trigger) const;
     std::vector<Trigger> getValidTransitions() const;
-    
+
     // Reset to initial state
     void reset();
 
-private:
+  private:
     struct Transition {
         SystemState fromState;
         Trigger trigger;
         SystemState toState;
-        
+
         bool operator==(const Transition& other) const {
             return fromState == other.fromState && trigger == other.trigger;
         }
     };
-    
+
     struct TransitionHash {
         std::size_t operator()(const Transition& t) const {
             return std::hash<int>()(static_cast<int>(t.fromState)) ^
                    (std::hash<int>()(static_cast<int>(t.trigger)) << 1);
         }
     };
-    
+
     mutable std::mutex mutex_;
     SystemState currentState_;
     std::unordered_map<Transition, SystemState, TransitionHash> transitions_;
-    
+
     StateChangeCallback stateChangeCallback_;
     std::unordered_map<SystemState, StateEntryCallback> entryCallbacks_;
     std::unordered_map<SystemState, StateExitCallback> exitCallbacks_;
-    
+
     void initializeTransitions();
     void executeStateEntry(SystemState state);
     void executeStateExit(SystemState state);
@@ -120,5 +121,5 @@ private:
     Trigger eventTypeToTrigger(EventType eventType) const;
 };
 
-} // namespace modern
-} // namespace openauto
+}  // namespace modern
+}  // namespace openauto

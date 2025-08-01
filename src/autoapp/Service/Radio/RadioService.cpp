@@ -16,63 +16,64 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <modern/Logger.hpp>
+#include <QString>
 #include <f1x/openauto/autoapp/Service/Radio/RadioService.hpp>
 #include <fstream>
-#include <QString>
+#include <modern/Logger.hpp>
 
 namespace f1x::openauto::autoapp::service::radio {
 
-  RadioService::RadioService(boost::asio::io_service &ioService,
-                             aasdk::messenger::IMessenger::Pointer messenger)
-      : strand_(ioService),
-        timer_(ioService),
-        channel_(std::make_shared<aasdk::channel::radio::RadioService>(strand_, std::move(messenger))) {
+RadioService::RadioService(boost::asio::io_service &ioService,
+                           aasdk::messenger::IMessenger::Pointer messenger)
+    : strand_(ioService),
+      timer_(ioService),
+      channel_(
+          std::make_shared<aasdk::channel::radio::RadioService>(strand_, std::move(messenger))) {}
 
-  }
-
-  void RadioService::start() {
+void RadioService::start() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_DEBUG(ANDROID_AUTO, "[RadioService] start()");
+        LOG_DEBUG(ANDROID_AUTO, "[RadioService] start()");
     });
-  }
+}
 
-  void RadioService::stop() {
+void RadioService::stop() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_DEBUG(ANDROID_AUTO, "[RadioService] stop()");
+        LOG_DEBUG(ANDROID_AUTO, "[RadioService] stop()");
     });
-  }
+}
 
-  void RadioService::pause() {
+void RadioService::pause() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_DEBUG(ANDROID_AUTO, "[RadioService] pause()");
+        LOG_DEBUG(ANDROID_AUTO, "[RadioService] pause()");
     });
-  }
+}
 
-  void RadioService::resume() {
+void RadioService::resume() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      LOG_DEBUG(ANDROID_AUTO, "[RadioService] resume()");
+        LOG_DEBUG(ANDROID_AUTO, "[RadioService] resume()");
     });
-  }
+}
 
-  void RadioService::fillFeatures(
-      aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
+void RadioService::fillFeatures(
+    aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
     LOG_INFO(ANDROID_AUTO, "[RadioService] fillFeatures()");
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
 
     auto *radio = service->mutable_radio_service();
-    (void)radio; // Suppress unused variable warning
-  }
+    (void)radio;  // Suppress unused variable warning
+}
 
-  void RadioService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+void RadioService::onChannelOpenRequest(
+    const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
     LOG_INFO(ANDROID_AUTO, "[RadioService] onChannelOpenRequest()");
-    LOG_DEBUG(ANDROID_AUTO, "[RadioService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
-
+    LOG_DEBUG(ANDROID_AUTO, "[RadioService] Channel Id: " + std::to_string(request.service_id()) +
+                                ", Priority: " + std::to_string(request.priority()));
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
-    const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+    const aap_protobuf::shared::MessageStatus status =
+        aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
     response.set_status(status);
 
     auto promise = aasdk::channel::SendPromise::defer(strand_);
@@ -81,14 +82,10 @@ namespace f1x::openauto::autoapp::service::radio {
     channel_->sendChannelOpenResponse(response, std::move(promise));
 
     channel_->receive(this->shared_from_this());
-  }
-
-  void RadioService::onChannelError(const aasdk::error::Error &e) {
-    LOG_ERROR(ANDROID_AUTO, "[RadioService] onChannelError(): " + std::string(e.what()));
-  }
-
-
 }
 
+void RadioService::onChannelError(const aasdk::error::Error &e) {
+    LOG_ERROR(ANDROID_AUTO, "[RadioService] onChannelError(): " + std::string(e.what()));
+}
 
-
+}  // namespace f1x::openauto::autoapp::service::radio

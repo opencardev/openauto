@@ -5,15 +5,15 @@
 #ifndef OPENAUTO_BLUETOOTHHANDLER_HPP
 #define OPENAUTO_BLUETOOTHHANDLER_HPP
 
-#include <f1x/openauto/btservice/IBluetoothHandler.hpp>
+#include <QObject>
+#include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/btservice/IAndroidBluetoothServer.hpp>
 #include <f1x/openauto/btservice/IAndroidBluetoothService.hpp>
-#include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
-#include <QObject>
+#include <f1x/openauto/btservice/IBluetoothHandler.hpp>
 
 namespace f1x::openauto::btservice {
 
-  class BluetoothHandler : public QObject, public IBluetoothHandler {
+class BluetoothHandler : public QObject, public IBluetoothHandler {
     Q_OBJECT
   public:
     BluetoothHandler(btservice::IAndroidBluetoothService::Pointer androidBluetoothService,
@@ -26,20 +26,19 @@ namespace f1x::openauto::btservice {
 
     void onPairingDisplayConfirmation(const QBluetoothAddress &address, QString pin);
 
-    void onPairingFinished(const QBluetoothAddress &address, QBluetoothLocalDevice::Pairing pairing);
+    void onPairingFinished(const QBluetoothAddress &address,
+                           QBluetoothLocalDevice::Pairing pairing);
 
     void onError(QBluetoothLocalDevice::Error error);
 
     void onHostModeStateChanged(QBluetoothLocalDevice::HostMode state);
-
 
   private:
     std::unique_ptr<QBluetoothLocalDevice> localDevice_;
     autoapp::configuration::IConfiguration::Pointer configuration_;
     btservice::IAndroidBluetoothService::Pointer androidBluetoothService_;
     btservice::IAndroidBluetoothServer::Pointer androidBluetoothServer_;
-  };
-}
+};
+}  // namespace f1x::openauto::btservice
 
-
-#endif //OPENAUTO_BLUETOOTHHANDLER_HPP
+#endif  // OPENAUTO_BLUETOOTHHANDLER_HPP

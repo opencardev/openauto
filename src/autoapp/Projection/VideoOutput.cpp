@@ -16,36 +16,31 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <modern/Logger.hpp>
 #include <f1x/openauto/autoapp/Projection/VideoOutput.hpp>
+#include <modern/Logger.hpp>
 
 namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace projection {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-        VideoOutput::VideoOutput(configuration::IConfiguration::Pointer configuration)
-            : configuration_(std::move(configuration)) {
+VideoOutput::VideoOutput(configuration::IConfiguration::Pointer configuration)
+    : configuration_(std::move(configuration)) {}
 
-        }
-
-        aap_protobuf::service::media::sink::message::VideoFrameRateType VideoOutput::getVideoFPS() const {
-          return configuration_->getVideoFPS();
-        }
-
-        aap_protobuf::service::media::sink::message::VideoCodecResolutionType VideoOutput::getVideoResolution() const {
-          return configuration_->getVideoResolution();
-        }
-
-        size_t VideoOutput::getScreenDPI() const {
-          return configuration_->getScreenDPI();
-        }
-
-        QRect VideoOutput::getVideoMargins() const {
-          return configuration_->getVideoMargins();
-        }
-
-      }
-    }
-  }
+aap_protobuf::service::media::sink::message::VideoFrameRateType VideoOutput::getVideoFPS() const {
+    return configuration_->getVideoFPS();
 }
+
+aap_protobuf::service::media::sink::message::VideoCodecResolutionType
+VideoOutput::getVideoResolution() const {
+    return configuration_->getVideoResolution();
+}
+
+size_t VideoOutput::getScreenDPI() const { return configuration_->getScreenDPI(); }
+
+QRect VideoOutput::getVideoMargins() const { return configuration_->getVideoMargins(); }
+
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

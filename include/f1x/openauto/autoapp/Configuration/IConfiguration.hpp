@@ -18,27 +18,22 @@
 
 #pragma once
 
-#include <string>
-#include <QRect>
-#include <aap_protobuf/service/media/sink/message/VideoFrameRateType.pb.h>
-#include <aap_protobuf/service/media/sink/message/VideoCodecResolutionType.pb.h>
 #include <aap_protobuf/service/media/sink/message/KeyCode.pb.h>
+#include <aap_protobuf/service/media/sink/message/VideoCodecResolutionType.pb.h>
+#include <aap_protobuf/service/media/sink/message/VideoFrameRateType.pb.h>
+#include <QRect>
+#include <f1x/openauto/autoapp/Configuration/AudioOutputBackendType.hpp>
 #include <f1x/openauto/autoapp/Configuration/BluetoothAdapterType.hpp>
 #include <f1x/openauto/autoapp/Configuration/HandednessOfTrafficType.hpp>
-#include <f1x/openauto/autoapp/Configuration/AudioOutputBackendType.hpp>
+#include <string>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace configuration
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace configuration {
 
-class IConfiguration
-{
-public:
+class IConfiguration {
+  public:
     typedef std::shared_ptr<IConfiguration> Pointer;
     typedef std::vector<aap_protobuf::service::media::sink::message::KeyCode> ButtonCodes;
 
@@ -93,9 +88,12 @@ public:
     virtual QString getParamFromFile(QString fileName, QString searchString) const = 0;
 
     virtual aap_protobuf::service::media::sink::message::VideoFrameRateType getVideoFPS() const = 0;
-    virtual void setVideoFPS(aap_protobuf::service::media::sink::message::VideoFrameRateType value) = 0;
-    virtual aap_protobuf::service::media::sink::message::VideoCodecResolutionType getVideoResolution() const = 0;
-    virtual void setVideoResolution(aap_protobuf::service::media::sink::message::VideoCodecResolutionType value) = 0;
+    virtual void setVideoFPS(
+        aap_protobuf::service::media::sink::message::VideoFrameRateType value) = 0;
+    virtual aap_protobuf::service::media::sink::message::VideoCodecResolutionType
+    getVideoResolution() const = 0;
+    virtual void setVideoResolution(
+        aap_protobuf::service::media::sink::message::VideoCodecResolutionType value) = 0;
     virtual size_t getScreenDPI() const = 0;
     virtual void setScreenDPI(size_t value) = 0;
     virtual void setOMXLayerIndex(int32_t value) = 0;
@@ -129,7 +127,7 @@ public:
     virtual void setAudioOutputBackendType(AudioOutputBackendType value) = 0;
 };
 
-}
-}
-}
-}
+}  // namespace configuration
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

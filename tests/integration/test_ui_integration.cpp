@@ -1,15 +1,15 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <QApplication>
-#include <QWidget>
 #include <QPushButton>
 #include <QTimer>
+#include <QWidget>
 
 using namespace testing;
 
 // Integration tests for UI functionality
 class UIIntegrationTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // UI integration tests require QApplication
         // This is set up in the main.cpp
@@ -27,7 +27,7 @@ TEST_F(UIIntegrationTest, UIInitializationTest) {
     // - Main window creation
     // - Widget initialization
     // - Initial layout
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test UI responsiveness
@@ -37,7 +37,7 @@ TEST_F(UIIntegrationTest, UIResponsivenessTest) {
     // - Button click handling
     // - Menu navigation
     // - Touch input processing
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test UI state synchronization
@@ -47,7 +47,7 @@ TEST_F(UIIntegrationTest, StateSynchronizationTest) {
     // - UI updates on state changes
     // - Configuration changes reflected in UI
     // - Real-time status updates
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test UI themes and appearance
@@ -57,7 +57,7 @@ TEST_F(UIIntegrationTest, ThemeTest) {
     // - Day/night mode switching
     // - Theme consistency
     // - Custom styling
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test UI with Android Auto projection
@@ -67,5 +67,5 @@ TEST_F(UIIntegrationTest, AndroidAutoProjectionTest) {
     // - Video display integration
     // - Touch input forwarding
     // - Overlay controls
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }

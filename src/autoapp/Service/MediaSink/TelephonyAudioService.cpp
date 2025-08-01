@@ -20,21 +20,20 @@
 #include <f1x/openauto/autoapp/Service/MediaSink/TelephonyAudioService.hpp>
 
 namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace mediasink {
-          TelephonyAudioService::TelephonyAudioService(boost::asio::io_service &ioService,
-                                                     aasdk::messenger::IMessenger::Pointer messenger,
-                                                     projection::IAudioOutput::Pointer audioOutput)
-              : AudioMediaSinkService(ioService, std::make_shared<aasdk::channel::mediasink::audio::channel::TelephonyAudioChannel>(strand_,
-                                                                                                          std::move(
-                                                                                                              messenger)),
-                                 std::move(audioOutput)) {
-
-          }
-        }
-      }
-    }
-  }
-}
+namespace openauto {
+namespace autoapp {
+namespace service {
+namespace mediasink {
+TelephonyAudioService::TelephonyAudioService(boost::asio::io_service &ioService,
+                                             aasdk::messenger::IMessenger::Pointer messenger,
+                                             projection::IAudioOutput::Pointer audioOutput)
+    : AudioMediaSinkService(
+          ioService,
+          std::make_shared<aasdk::channel::mediasink::audio::channel::TelephonyAudioChannel>(
+              strand_, std::move(messenger)),
+          std::move(audioOutput)) {}
+}  // namespace mediasink
+}  // namespace service
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

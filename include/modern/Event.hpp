@@ -18,12 +18,12 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 #include <variant>
-#include <chrono>
-#include <nlohmann/json.hpp>
 
 namespace openauto {
 namespace modern {
@@ -38,7 +38,7 @@ enum class EventType {
     SYSTEM_REBOOT,
     SYSTEM_ERROR,
     SYSTEM_CONFIG_CHANGED,
-    
+
     // Android Auto Events
     ANDROID_AUTO_CONNECTED,
     ANDROID_AUTO_DISCONNECTED,
@@ -47,7 +47,7 @@ enum class EventType {
     ANDROID_AUTO_PAUSE,
     ANDROID_AUTO_RESUME,
     ANDROID_AUTO_ERROR,
-    
+
     // UI Events
     UI_BUTTON_PRESSED,
     UI_BRIGHTNESS_CHANGED,
@@ -56,7 +56,7 @@ enum class EventType {
     UI_SCREEN_TOUCH,
     UI_WINDOW_SHOW,
     UI_WINDOW_HIDE,
-    
+
     // Camera Events
     CAMERA_SHOW,
     CAMERA_HIDE,
@@ -67,7 +67,7 @@ enum class EventType {
     CAMERA_ZOOM_OUT,
     CAMERA_MOVE_UP,
     CAMERA_MOVE_DOWN,
-    
+
     // Network Events
     WIFI_CONNECTED,
     WIFI_DISCONNECTED,
@@ -78,7 +78,7 @@ enum class EventType {
     BLUETOOTH_DISCONNECTED,
     BLUETOOTH_PAIRING_REQUEST,
     NETWORK_STATUS_CHANGED,
-    
+
     // Media Events
     MEDIA_PLAY,
     MEDIA_PAUSE,
@@ -87,30 +87,30 @@ enum class EventType {
     MEDIA_PREVIOUS,
     MEDIA_TRACK_CHANGED,
     MEDIA_VOLUME_CHANGED,
-    
+
     // Configuration Events
     CONFIG_CHANGED,
     CONFIG_SAVED,
     CONFIG_LOADED,
     CONFIG_RESET,
-    
+
     // Update Events
     UPDATE_AVAILABLE,
     UPDATE_STARTED,
     UPDATE_PROGRESS,
     UPDATE_COMPLETED,
     UPDATE_FAILED,
-    
+
     // State Machine Events
     STATE_CHANGED,
     STATE_ENTERED,
     STATE_EXITED,
     STATE_TRANSITION_FAILED,
-    
+
     // UI Mode Events
     DAY_MODE_ENABLED,
     NIGHT_MODE_ENABLED,
-    
+
     // Custom Events
     CUSTOM_BUTTON_1,
     CUSTOM_BUTTON_2,
@@ -122,40 +122,41 @@ enum class EventType {
 };
 
 class Event {
-public:
+  public:
     using Pointer = std::shared_ptr<Event>;
-    
+
     Event(EventType type, const std::string& source = "unknown");
     Event(EventType type, const EventData& data, const std::string& source = "unknown");
-    
+
     // Getters
     EventType getType() const { return type_; }
     const EventData& getData() const { return data_; }
     const std::string& getSource() const { return source_; }
     std::chrono::system_clock::time_point getTimestamp() const { return timestamp_; }
     const std::string& getId() const { return id_; }
-    
+
     // Data manipulation
     void setData(const std::string& key, const EventValue& value);
     EventValue getData(const std::string& key) const;
     bool hasData(const std::string& key) const;
-    
+
     // Serialization
     std::string toString() const;
     nlohmann::json toJson() const;
     static Event::Pointer fromJson(const nlohmann::json& json);
-    
+
     // Type conversion utilities
     static std::string eventTypeToString(EventType type);
     static EventType stringToEventType(const std::string& typeStr);
-    
+
     // Factory methods
     static Event::Pointer create(EventType type, const std::string& source = "system");
-    static Event::Pointer create(EventType type, const EventData& data, const std::string& source = "system");
+    static Event::Pointer create(EventType type, const EventData& data,
+                                 const std::string& source = "system");
 
-private:
+  private:
     std::string generateEventId() const;
-    
+
     EventType type_;
     EventData data_;
     std::string source_;
@@ -163,5 +164,5 @@ private:
     std::chrono::system_clock::time_point timestamp_;
 };
 
-} // namespace modern
-} // namespace openauto
+}  // namespace modern
+}  // namespace openauto

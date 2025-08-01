@@ -18,15 +18,14 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
 #include <aap_protobuf/service/control/message/ServiceDiscoveryResponse.pb.h>
 #include <aap_protobuf/shared/MessageStatus.pb.h>
-
+#include <memory>
+#include <vector>
 
 namespace f1x::openauto::autoapp::service {
 
-  class IService {
+class IService {
   public:
     typedef std::shared_ptr<IService> Pointer;
 
@@ -40,12 +39,10 @@ namespace f1x::openauto::autoapp::service {
 
     virtual void resume() = 0;
 
-    virtual void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) = 0;
-  };
+    virtual void fillFeatures(
+        aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) = 0;
+};
 
-  typedef std::vector<IService::Pointer> ServiceList;
+typedef std::vector<IService::Pointer> ServiceList;
 
-}
-
-
-
+}  // namespace f1x::openauto::autoapp::service

@@ -19,43 +19,44 @@
 #pragma once
 
 #include <aasdk/Channel/PhoneStatus/PhoneStatusService.hpp>
-#include <f1x/openauto/autoapp/Service/IService.hpp>
-#include <boost/asio/io_service.hpp>
 #include <aasdk/Messenger/IMessenger.hpp>
+#include <boost/asio/io_service.hpp>
+#include <f1x/openauto/autoapp/Service/IService.hpp>
 
 namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace phonestatus {
+namespace openauto {
+namespace autoapp {
+namespace service {
+namespace phonestatus {
 
-          class PhoneStatusService :
-              public aasdk::channel::phonestatus::IPhoneStatusServiceEventHandler,
-              public IService,
-              public std::enable_shared_from_this<PhoneStatusService> {
-          public:
-            PhoneStatusService(boost::asio::io_service &ioService, aasdk::messenger::IMessenger::Pointer messenger);
+class PhoneStatusService : public aasdk::channel::phonestatus::IPhoneStatusServiceEventHandler,
+                           public IService,
+                           public std::enable_shared_from_this<PhoneStatusService> {
+  public:
+    PhoneStatusService(boost::asio::io_service &ioService,
+                       aasdk::messenger::IMessenger::Pointer messenger);
 
-            void start() override;
-            void stop() override;
-            void pause() override;
-            void resume() override;
-            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
+    void start() override;
+    void stop() override;
+    void pause() override;
+    void resume() override;
+    void fillFeatures(
+        aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-            void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
+    void onChannelOpenRequest(
+        const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
-            void onChannelError(const aasdk::error::Error &e) override;
+    void onChannelError(const aasdk::error::Error &e) override;
 
+  private:
+    using std::enable_shared_from_this<PhoneStatusService>::shared_from_this;
+    boost::asio::io_service::strand strand_;
+    boost::asio::deadline_timer timer_;
+    aasdk::channel::phonestatus::PhoneStatusService::Pointer channel_;
+};
 
-          private:
-            using std::enable_shared_from_this<PhoneStatusService>::shared_from_this;
-            boost::asio::io_service::strand strand_;
-            boost::asio::deadline_timer timer_;
-            aasdk::channel::phonestatus::PhoneStatusService::Pointer channel_;
-          };
-
-        }
-      }
-    }
-  }
-}
+}  // namespace phonestatus
+}  // namespace service
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

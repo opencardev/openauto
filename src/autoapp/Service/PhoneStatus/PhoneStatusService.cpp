@@ -16,82 +16,84 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <modern/Logger.hpp>
+#include <QString>
 #include <f1x/openauto/autoapp/Service/PhoneStatus/PhoneStatusService.hpp>
 #include <fstream>
-#include <QString>
+#include <modern/Logger.hpp>
 
 namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace phonestatus {
+namespace openauto {
+namespace autoapp {
+namespace service {
+namespace phonestatus {
 
-          PhoneStatusService::PhoneStatusService(boost::asio::io_service &ioService,
-                                                       aasdk::messenger::IMessenger::Pointer messenger)
-              : strand_(ioService),
-                timer_(ioService),
-                channel_(std::make_shared<aasdk::channel::phonestatus::PhoneStatusService>(strand_, std::move(messenger))) {
+PhoneStatusService::PhoneStatusService(boost::asio::io_service &ioService,
+                                       aasdk::messenger::IMessenger::Pointer messenger)
+    : strand_(ioService),
+      timer_(ioService),
+      channel_(std::make_shared<aasdk::channel::phonestatus::PhoneStatusService>(
+          strand_, std::move(messenger))) {}
 
-          }
-
-          void PhoneStatusService::start() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] start()");
-            });
-          }
-
-          void PhoneStatusService::stop() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] stop()");
-            });
-          }
-
-          void PhoneStatusService::pause() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] pause()");
-            });
-          }
-
-          void PhoneStatusService::resume() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] resume()");
-            });
-          }
-
-          void PhoneStatusService::fillFeatures(
-              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-            LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] fillFeatures()");
-
-            auto *service = response.add_channels();
-            service->set_id(static_cast<uint32_t>(channel_->getId()));
-
-            auto *phoneStatus = service->mutable_phone_status_service();
-            (void)phoneStatus; // Suppress unused variable warning
-          }
-
-          void PhoneStatusService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-            LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] onChannelOpenRequest()");
-            LOG_DEBUG(ANDROID_AUTO, "[PhoneStatusService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
-
-            aap_protobuf::service::control::message::ChannelOpenResponse response;
-            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
-            response.set_status(status);
-
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {}, std::bind(&PhoneStatusService::onChannelError, this->shared_from_this(),
-                                             std::placeholders::_1));
-            channel_->sendChannelOpenResponse(response, std::move(promise));
-
-            channel_->receive(this->shared_from_this());
-          }
-
-
-          void PhoneStatusService::onChannelError(const aasdk::error::Error &e) {
-            LOG_ERROR(ANDROID_AUTO, "[PhoneStatusService] onChannelError(): " + std::string(e.what()));
-          }
-        }
-      }
-    }
-  }
+void PhoneStatusService::start() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] start()");
+    });
 }
+
+void PhoneStatusService::stop() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] stop()");
+    });
+}
+
+void PhoneStatusService::pause() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] pause()");
+    });
+}
+
+void PhoneStatusService::resume() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] resume()");
+    });
+}
+
+void PhoneStatusService::fillFeatures(
+    aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
+    LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] fillFeatures()");
+
+    auto *service = response.add_channels();
+    service->set_id(static_cast<uint32_t>(channel_->getId()));
+
+    auto *phoneStatus = service->mutable_phone_status_service();
+    (void)phoneStatus;  // Suppress unused variable warning
+}
+
+void PhoneStatusService::onChannelOpenRequest(
+    const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+    LOG_INFO(ANDROID_AUTO, "[PhoneStatusService] onChannelOpenRequest()");
+    LOG_DEBUG(ANDROID_AUTO,
+              "[PhoneStatusService] Channel Id: " + std::to_string(request.service_id()) +
+                  ", Priority: " + std::to_string(request.priority()));
+
+    aap_protobuf::service::control::message::ChannelOpenResponse response;
+    const aap_protobuf::shared::MessageStatus status =
+        aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+    response.set_status(status);
+
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {}, std::bind(&PhoneStatusService::onChannelError, this->shared_from_this(),
+                                     std::placeholders::_1));
+    channel_->sendChannelOpenResponse(response, std::move(promise));
+
+    channel_->receive(this->shared_from_this());
+}
+
+void PhoneStatusService::onChannelError(const aasdk::error::Error &e) {
+    LOG_ERROR(ANDROID_AUTO, "[PhoneStatusService] onChannelError(): " + std::string(e.what()));
+}
+}  // namespace phonestatus
+}  // namespace service
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

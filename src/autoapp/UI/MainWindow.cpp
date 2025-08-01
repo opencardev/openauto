@@ -16,42 +16,35 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <QApplication>
-#include <f1x/openauto/autoapp/UI/MainWindow.hpp>
-#include <QFileInfo>
-#include <QFile>
-#include "ui_mainwindow.h"
-#include <QTimer>
-#include <QDateTime>
-#include <QMessageBox>
-#include <QTextStream>
-#include <QFontDatabase>
-#include <QFont>
-#include <QScreen>
-#include <modern/Logger.hpp>
-#include <QRect>
-#include <QVideoWidget>
-#include <QNetworkInterface>
-#include <QStandardItemModel>
-#include <iostream>
-#include <fstream>
-#include <cstdio>
 #include <unistd.h>
+#include <QApplication>
+#include <QDateTime>
+#include <QFile>
+#include <QFileInfo>
+#include <QFont>
+#include <QFontDatabase>
+#include <QMessageBox>
+#include <QNetworkInterface>
+#include <QRect>
+#include <QScreen>
+#include <QStandardItemModel>
+#include <QTextStream>
+#include <QTimer>
+#include <QVideoWidget>
+#include <cstdio>
+#include <f1x/openauto/autoapp/UI/MainWindow.hpp>
+#include <fstream>
+#include <iostream>
+#include <modern/Logger.hpp>
+#include "ui_mainwindow.h"
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace ui
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace ui {
 
 MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWidget *parent)
-    : QMainWindow(parent)
-    , ui_(new Ui::MainWindow)
-    , localDevice(new QBluetoothLocalDevice)
-{
+    : QMainWindow(parent), ui_(new Ui::MainWindow), localDevice(new QBluetoothLocalDevice) {
     // set default bg color to black
     this->setStyleSheet("QMainWindow {background-color: rgb(0,0,0);}");
 
@@ -86,7 +79,7 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
     this->wallpaperEQFileExists = check_file_exist("wallpaper-eq.png");
 
     ui_->setupUi(this);
-    
+
     // Configure window attributes to prevent ghosting
     this->setAttribute(Qt::WA_OpaquePaintEvent, true);
     this->setAttribute(Qt::WA_NoSystemBackground, false);
@@ -111,8 +104,10 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
     connect(ui_->pushButtonNight, &QPushButton::clicked, this, &MainWindow::switchGuiToNight);
     connect(ui_->pushButtonNight2, &QPushButton::clicked, this, &MainWindow::TriggerScriptNight);
     connect(ui_->pushButtonNight2, &QPushButton::clicked, this, &MainWindow::switchGuiToNight);
-    connect(ui_->pushButtonBrightness, &QPushButton::clicked, this, &MainWindow::showBrightnessSlider);
-    connect(ui_->pushButtonBrightness2, &QPushButton::clicked, this, &MainWindow::showBrightnessSlider);
+    connect(ui_->pushButtonBrightness, &QPushButton::clicked, this,
+            &MainWindow::showBrightnessSlider);
+    connect(ui_->pushButtonBrightness2, &QPushButton::clicked, this,
+            &MainWindow::showBrightnessSlider);
     connect(ui_->pushButtonVolume, &QPushButton::clicked, this, &MainWindow::showVolumeSlider);
     connect(ui_->pushButtonVolume2, &QPushButton::clicked, this, &MainWindow::showVolumeSlider);
     connect(ui_->pushButtonDebug, &QPushButton::clicked, this, &MainWindow::createDebuglog);
@@ -131,9 +126,11 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
     connect(ui_->pushButtonBack, &QPushButton::clicked, this, &MainWindow::playerHide);
     connect(ui_->pushButtonPlayerBack, &QPushButton::clicked, this, &MainWindow::playerHide);
     connect(ui_->pushButtonAndroidAuto, &QPushButton::clicked, this, &MainWindow::TriggerAppStart);
-    connect(ui_->pushButtonAndroidAuto, &QPushButton::clicked, this, &MainWindow::setRetryUSBConnect);
+    connect(ui_->pushButtonAndroidAuto, &QPushButton::clicked, this,
+            &MainWindow::setRetryUSBConnect);
     connect(ui_->pushButtonAndroidAuto2, &QPushButton::clicked, this, &MainWindow::TriggerAppStart);
-    connect(ui_->pushButtonAndroidAuto2, &QPushButton::clicked, this, &MainWindow::setRetryUSBConnect);
+    connect(ui_->pushButtonAndroidAuto2, &QPushButton::clicked, this,
+            &MainWindow::setRetryUSBConnect);
 
     ui_->clockOnlyWidget->hide();
 
@@ -168,25 +165,40 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
         QString branch = configuration_->readFileContent("/etc/crankshaft.branch");
         if (branch != "crankshaft-ng") {
             if (branch == "csng-dev") {
-                ui_->Header_Label->setText("<html><head/><body><p><span style=' font-style:normal; color:#ffffff;'>crank</span><span style=' font-style:normal; color:#5ce739;'>shaft </span><span style=' font-style:normal; color:#40bfbf;'>NG </span><span style=' font-style:normal; color:#888a85;'>- </span><span style=' font-style:normal; color:#cc0000;'>Dev-Build</span></p></body></html>");
+                ui_->Header_Label->setText(
+                    "<html><head/><body><p><span style=' font-style:normal; "
+                    "color:#ffffff;'>crank</span><span style=' font-style:normal; "
+                    "color:#5ce739;'>shaft </span><span style=' font-style:normal; "
+                    "color:#40bfbf;'>NG </span><span style=' font-style:normal; color:#888a85;'>- "
+                    "</span><span style=' font-style:normal; "
+                    "color:#cc0000;'>Dev-Build</span></p></body></html>");
             } else {
-                ui_->Header_Label->setText("<html><head/><body><p><span style=' font-style:normal; color:#ffffff;'>crank</span><span style=' font-style:normal; color:#5ce739;'>shaft </span><span style=' font-style:normal; color:#40bfbf;'>NG </span><span style=' font-style:normal; color:#888a85;'>- </span><span style=' font-style:normal; color:#ce5c00;'>Custom-Build</span></p></body></html>");
+                ui_->Header_Label->setText(
+                    "<html><head/><body><p><span style=' font-style:normal; "
+                    "color:#ffffff;'>crank</span><span style=' font-style:normal; "
+                    "color:#5ce739;'>shaft </span><span style=' font-style:normal; "
+                    "color:#40bfbf;'>NG </span><span style=' font-style:normal; color:#888a85;'>- "
+                    "</span><span style=' font-style:normal; "
+                    "color:#ce5c00;'>Custom-Build</span></p></body></html>");
             }
         }
     }
 
-    QTimer *timer=new QTimer(this);
-    connect(timer, SIGNAL(timeout()),this,SLOT(showTime()));
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(showTime()));
     timer->start(1000);
 
     // enable connects while cam is enabled
     if (this->cameraButtonForce) {
         connect(ui_->pushButtonCameraShow, &QPushButton::clicked, this, &MainWindow::cameraShow);
-        connect(ui_->pushButtonCameraShow, &QPushButton::clicked, this, &MainWindow::cameraControlShow);
+        connect(ui_->pushButtonCameraShow, &QPushButton::clicked, this,
+                &MainWindow::cameraControlShow);
         connect(ui_->pushButtonCameraShow2, &QPushButton::clicked, this, &MainWindow::cameraShow);
-        connect(ui_->pushButtonCameraShow2, &QPushButton::clicked, this, &MainWindow::cameraControlShow);
+        connect(ui_->pushButtonCameraShow2, &QPushButton::clicked, this,
+                &MainWindow::cameraControlShow);
         connect(ui_->pushButtonCameraHide, &QPushButton::clicked, this, &MainWindow::cameraHide);
-        connect(ui_->pushButtonCameraHide, &QPushButton::clicked, this, &MainWindow::cameraControlHide);
+        connect(ui_->pushButtonCameraHide, &QPushButton::clicked, this,
+                &MainWindow::cameraControlHide);
         connect(ui_->pushButtonStop, &QPushButton::clicked, this, &MainWindow::cameraStop);
         connect(ui_->pushButtonRecord, &QPushButton::clicked, this, &MainWindow::cameraRecord);
         connect(ui_->pushButtonSave, &QPushButton::clicked, this, &MainWindow::cameraSave);
@@ -194,8 +206,8 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
         connect(ui_->pushButtonDown, &QPushButton::clicked, this, &MainWindow::cameraPosYDown);
         connect(ui_->pushButtonPlus, &QPushButton::clicked, this, &MainWindow::cameraZoomPlus);
         connect(ui_->pushButtonMinus, &QPushButton::clicked, this, &MainWindow::cameraZoomMinus);
-        this->camera_ycorection=configuration->getCSValue("RPICAM_YCORRECTION").toInt();
-        this->camera_zoom=configuration->getCSValue("RPICAM_ZOOM").toInt();
+        this->camera_ycorection = configuration->getCSValue("RPICAM_YCORRECTION").toInt();
+        this->camera_zoom = configuration->getCSValue("RPICAM_ZOOM").toInt();
     } else {
         ui_->pushButtonCameraShow->hide();
         ui_->pushButtonCameraShow2->hide();
@@ -376,7 +388,8 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
     ui_->pushButtonRecordActive->hide();
 
     // fill gui with dummys if needed
-    if (this->c1ButtonForce || this->c2ButtonForce || this->c3ButtonForce || this->c4ButtonForce || this->c5ButtonForce || this->c6ButtonForce) {
+    if (this->c1ButtonForce || this->c2ButtonForce || this->c3ButtonForce || this->c4ButtonForce ||
+        this->c5ButtonForce || this->c6ButtonForce) {
         if (!this->c1ButtonForce && !this->c2ButtonForce) {
             ui_->pushButtonDummy1->show();
         } else {
@@ -422,8 +435,9 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
     // read param file
     if (std::ifstream("/boot/crankshaft/volume")) {
         // init volume
-        QString vol=QString::number(configuration_->readFileContent("/boot/crankshaft/volume").toInt());
-        ui_->volumeValueLabel->setText(vol+"%");
+        QString vol =
+            QString::number(configuration_->readFileContent("/boot/crankshaft/volume").toInt());
+        ui_->volumeValueLabel->setText(vol + "%");
         ui_->horizontalSliderVolume->setValue(vol.toInt());
     }
 
@@ -565,25 +579,22 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
     // Experimental test code
     localDevice = new QBluetoothLocalDevice(this);
 
-    connect(localDevice, SIGNAL(hostModeStateChanged(QBluetoothLocalDevice::HostMode)),
-            this, SLOT(hostModeStateChanged(QBluetoothLocalDevice::HostMode)));
+    connect(localDevice, SIGNAL(hostModeStateChanged(QBluetoothLocalDevice::HostMode)), this,
+            SLOT(hostModeStateChanged(QBluetoothLocalDevice::HostMode)));
 
     hostModeStateChanged(localDevice->hostMode());
     updateNetworkInfo();
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui_;
-}
+MainWindow::~MainWindow() { delete ui_; }
 
-}
-}
-}
-}
+}  // namespace ui
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x
 
-void f1x::openauto::autoapp::ui::MainWindow::hostModeStateChanged(QBluetoothLocalDevice::HostMode mode)
-{
+void f1x::openauto::autoapp::ui::MainWindow::hostModeStateChanged(
+    QBluetoothLocalDevice::HostMode mode) {
     if (mode != QBluetoothLocalDevice::HostPoweredOff) {
         this->bluetoothEnabled = true;
         ui_->pushButtonBluetooth->show();
@@ -600,25 +611,25 @@ void f1x::openauto::autoapp::ui::MainWindow::hostModeStateChanged(QBluetoothLoca
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::updateNetworkInfo()
-{
+void f1x::openauto::autoapp::ui::MainWindow::updateNetworkInfo() {
     QNetworkInterface wlan0if = QNetworkInterface::interfaceFromName("wlan0");
     if (wlan0if.flags().testFlag(QNetworkInterface::IsUp)) {
         QList<QNetworkAddressEntry> entrieswlan0 = wlan0if.addressEntries();
         if (!entrieswlan0.isEmpty()) {
             QNetworkAddressEntry wlan0 = entrieswlan0.first();
-            //qDebug() << "wlan0: " << wlan0.ip();
+            // qDebug() << "wlan0: " << wlan0.ip();
             ui_->value_ip->setText(wlan0.ip().toString().simplified());
             ui_->value_mask->setText(wlan0.netmask().toString().simplified());
             if (std::ifstream("/tmp/hotspot_active")) {
-                ui_->value_ssid->setText(configuration_->getParamFromFile("/etc/hostapd/hostapd.conf","ssid"));
+                ui_->value_ssid->setText(
+                    configuration_->getParamFromFile("/etc/hostapd/hostapd.conf", "ssid"));
             } else {
                 ui_->value_ssid->setText(configuration_->readFileContent("/tmp/wifi_ssid"));
             }
             ui_->value_gw->setText(configuration_->readFileContent("/tmp/gateway_wlan0"));
         }
     } else {
-        //qDebug() << "wlan0: down";
+        // qDebug() << "wlan0: down";
         ui_->value_ip->setText("");
         ui_->value_mask->setText("");
         ui_->value_gw->setText("");
@@ -626,39 +637,31 @@ void f1x::openauto::autoapp::ui::MainWindow::updateNetworkInfo()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed1()
-{
+void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed1() {
     system(qPrintable(this->custom_button_command_c1 + " &"));
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed2()
-{
+void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed2() {
     system(qPrintable(this->custom_button_command_c2 + " &"));
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed3()
-{
+void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed3() {
     system(qPrintable(this->custom_button_command_c3 + " &"));
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed4()
-{
+void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed4() {
     system(qPrintable(this->custom_button_command_c4 + " &"));
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed5()
-{
+void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed5() {
     system(qPrintable(this->custom_button_command_c5 + " &"));
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed6()
-{
+void f1x::openauto::autoapp::ui::MainWindow::customButtonPressed6() {
     system(qPrintable(this->custom_button_command_c6 + " &"));
 }
 
-
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness_clicked() {
     this->brightnessFile = new QFile(this->brightnessFilename);
     this->brightnessFileAlt = new QFile(this->brightnessFilenameAlt);
 
@@ -669,7 +672,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness_clicked()
             std::string::size_type sz;
             int brightness_val = std::stoi(data.toStdString(), &sz);
             ui_->horizontalSliderBrightness->setValue(brightness_val);
-            QString bri=QString::number(brightness_val);
+            QString bri = QString::number(brightness_val);
             ui_->brightnessValueLabel->setText(bri);
             this->brightnessFile->close();
         }
@@ -679,7 +682,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness_clicked()
             std::string::size_type sz;
             int brightness_val = std::stoi(data.toStdString(), &sz);
             ui_->horizontalSliderBrightness->setValue(brightness_val);
-            QString bri=QString::number(brightness_val);
+            QString bri = QString::number(brightness_val);
             ui_->brightnessValueLabel->setText(bri);
             this->brightnessFileAlt->close();
         }
@@ -688,8 +691,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness_clicked()
     ui_->VolumeSliderControl->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness2_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness2_clicked() {
     this->brightnessFile = new QFile(this->brightnessFilename);
     this->brightnessFileAlt = new QFile(this->brightnessFilenameAlt);
 
@@ -700,7 +702,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness2_clicked()
             std::string::size_type sz;
             int brightness_val = std::stoi(data.toStdString(), &sz);
             ui_->horizontalSliderBrightness->setValue(brightness_val);
-            QString bri=QString::number(brightness_val);
+            QString bri = QString::number(brightness_val);
             ui_->brightnessValueLabel->setText(bri);
             this->brightnessFile->close();
         }
@@ -710,7 +712,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness2_clicked()
             std::string::size_type sz;
             int brightness_val = std::stoi(data.toStdString(), &sz);
             ui_->horizontalSliderBrightness->setValue(brightness_val);
-            QString bri=QString::number(brightness_val);
+            QString bri = QString::number(brightness_val);
             ui_->brightnessValueLabel->setText(bri);
             this->brightnessFileAlt->close();
         }
@@ -719,8 +721,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBrightness2_clicked()
     ui_->VolumeSliderControl->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonVolume_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonVolume_clicked() {
     ui_->horizontalSliderVolume->show();
     ui_->volumeValueLabel->show();
     if (this->toggleMute) {
@@ -732,8 +733,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonVolume_clicked()
     ui_->BrightnessSliderControl->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonVolume2_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonVolume2_clicked() {
     ui_->horizontalSliderVolume->show();
     ui_->volumeValueLabel->show();
     if (this->toggleMute) {
@@ -745,8 +745,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonVolume2_clicked()
     ui_->BrightnessSliderControl->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderBrightness_valueChanged(int value)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderBrightness_valueChanged(int value) {
     int n = snprintf(this->brightness_str, 5, "%d", value);
     this->brightnessFile = new QFile(this->brightnessFilename);
     this->brightnessFileAlt = new QFile(this->brightnessFilenameAlt);
@@ -754,92 +753,237 @@ void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderBrightness_value
     if (!this->customBrightnessControl) {
         if (this->brightnessFile->open(QIODevice::WriteOnly)) {
             this->brightness_str[n] = '\n';
-            this->brightness_str[n+1] = '\0';
+            this->brightness_str[n + 1] = '\0';
             this->brightnessFile->write(this->brightness_str);
             this->brightnessFile->close();
         }
     } else {
         if (this->brightnessFileAlt->open(QIODevice::WriteOnly)) {
             this->brightness_str[n] = '\n';
-            this->brightness_str[n+1] = '\0';
+            this->brightness_str[n + 1] = '\0';
             this->brightnessFileAlt->write(this->brightness_str);
             this->brightnessFileAlt->close();
         }
     }
-    QString bri=QString::number(value);
+    QString bri = QString::number(value);
     ui_->brightnessValueLabel->setText(bri);
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderVolume_valueChanged(int value)
-{
-    QString vol=QString::number(value);
-    ui_->volumeValueLabel->setText(vol+"%");
+void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderVolume_valueChanged(int value) {
+    QString vol = QString::number(value);
+    ui_->volumeValueLabel->setText(vol + "%");
     system(("/usr/local/bin/autoapp_helper setvolume " + std::to_string(value) + "&").c_str());
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::updateAlpha()
-{
+void f1x::openauto::autoapp::ui::MainWindow::updateAlpha() {
     int value = configuration_->getAlphaTrans();
-    //int n = snprintf(this->alpha_str, 5, "%d", value);
+    // int n = snprintf(this->alpha_str, 5, "%d", value);
 
     if (value != this->alpha_current_str) {
         this->alpha_current_str = value;
-        double alpha = value/100.0;
-        QString alp=QString::number(alpha);
-        ui_->pushButtonExit->setStyleSheet( "QPushButton{background-color: rgba(164, 0, 0, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonShutdown->setStyleSheet( "QPushButton{background-color: rgba(239, 41, 41, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonReboot->setStyleSheet( "QPushButton{background-color: rgba(252, 175, 62, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonCancel->setStyleSheet( "QPushButton{background-color: rgba(32, 74, 135, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonBrightness->setStyleSheet( "QPushButton{background-color: rgba(245, 121, 0, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonVolume->setStyleSheet( "QPushButton{background-color: rgba(64, 191, 191, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonLock->setStyleSheet( "QPushButton{background-color: rgba(15, 54, 5, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonSettings->setStyleSheet( "QPushButton{background-color: rgba(138, 226, 52, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonDay->setStyleSheet( "QPushButton{background: rgba(252, 233, 79, " + alp + " );  outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonNight->setStyleSheet( "QPushButton{background-color: rgba(114, 159, 207, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonCameraShow->setStyleSheet( "QPushButton{background-color: rgba(100, 62, 4, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonWifi->setStyleSheet( "QPushButton{background-color: rgba(252, 175, 62, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonToggleGUI->setStyleSheet( "QPushButton{background-color: rgba(237, 164, 255, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButton_c1->setStyleSheet( "QPushButton{background-color: rgba(" + this->custom_button_color_c1 + ", " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButton_c2->setStyleSheet( "QPushButton{background-color: rgba(" + this->custom_button_color_c2 + ", " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButton_c3->setStyleSheet( "QPushButton{background-color: rgba(" + this->custom_button_color_c3 + ", " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButton_c4->setStyleSheet( "QPushButton{background-color: rgba(" + this->custom_button_color_c4 + ", " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButton_c5->setStyleSheet( "QPushButton{background-color: rgba(" + this->custom_button_color_c5 + ", " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButton_c6->setStyleSheet( "QPushButton{background-color: rgba(" + this->custom_button_color_c6 + ", " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonDummy1->setStyleSheet( "QPushButton{background-color: rgba(186, 189, 182, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonDummy2->setStyleSheet( "QPushButton{background-color: rgba(186, 189, 182, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonDummy3->setStyleSheet( "QPushButton{background-color: rgba(186, 189, 182, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonDebug->setStyleSheet( "QPushButton{background-color: rgba(85, 87, 83, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonMusic->setStyleSheet( "QPushButton{background-color: rgba(78, 154, 6, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->pushButtonAndroidAuto->setStyleSheet( "QPushButton{background-color: rgba(48, 140, 198, " + alp + " ); outline-style: dotted; outline-color: #92a8d1; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255); border-bottom: 0px; border-top: 0px;} QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
-        ui_->labelAndroidAutoBottom->setStyleSheet( "background-color: rgba(48, 140, 198, " + alp + " ); border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255); border-top: 0px;");
-        ui_->labelAndroidAutoTop->setStyleSheet( "background-color: rgba(48, 140, 198, " + alp + " ); border-top-left-radius: 4px; border-top-right-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255); border-bottom: 0px;");
-        ui_->pushButtonNoDevice->setStyleSheet( "background-color: rgba(48, 140, 198, " + alp + " ); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);");
-        ui_->pushButtonNoWiFiDevice->setStyleSheet( "background-color: rgba(252, 175, 62, " + alp + " ); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(255,255,255);");
+        double alpha = value / 100.0;
+        QString alp = QString::number(alpha);
+        ui_->pushButtonExit->setStyleSheet(
+            "QPushButton{background-color: rgba(164, 0, 0, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonShutdown->setStyleSheet(
+            "QPushButton{background-color: rgba(239, 41, 41, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonReboot->setStyleSheet(
+            "QPushButton{background-color: rgba(252, 175, 62, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonCancel->setStyleSheet(
+            "QPushButton{background-color: rgba(32, 74, 135, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonBrightness->setStyleSheet(
+            "QPushButton{background-color: rgba(245, 121, 0, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonVolume->setStyleSheet(
+            "QPushButton{background-color: rgba(64, 191, 191, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonLock->setStyleSheet(
+            "QPushButton{background-color: rgba(15, 54, 5, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonSettings->setStyleSheet(
+            "QPushButton{background-color: rgba(138, 226, 52, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonDay->setStyleSheet(
+            "QPushButton{background: rgba(252, 233, 79, " + alp +
+            " );  outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonNight->setStyleSheet(
+            "QPushButton{background-color: rgba(114, 159, 207, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonCameraShow->setStyleSheet(
+            "QPushButton{background-color: rgba(100, 62, 4, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonWifi->setStyleSheet(
+            "QPushButton{background-color: rgba(252, 175, 62, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonToggleGUI->setStyleSheet(
+            "QPushButton{background-color: rgba(237, 164, 255, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButton_c1->setStyleSheet(
+            "QPushButton{background-color: rgba(" + this->custom_button_color_c1 + ", " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px "
+            "solid rgba(125,125,125,0.5);}");
+        ui_->pushButton_c2->setStyleSheet(
+            "QPushButton{background-color: rgba(" + this->custom_button_color_c2 + ", " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px "
+            "solid rgba(125,125,125,0.5);}");
+        ui_->pushButton_c3->setStyleSheet(
+            "QPushButton{background-color: rgba(" + this->custom_button_color_c3 + ", " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px "
+            "solid rgba(125,125,125,0.5);}");
+        ui_->pushButton_c4->setStyleSheet(
+            "QPushButton{background-color: rgba(" + this->custom_button_color_c4 + ", " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px "
+            "solid rgba(125,125,125,0.5);}");
+        ui_->pushButton_c5->setStyleSheet(
+            "QPushButton{background-color: rgba(" + this->custom_button_color_c5 + ", " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px "
+            "solid rgba(125,125,125,0.5);}");
+        ui_->pushButton_c6->setStyleSheet(
+            "QPushButton{background-color: rgba(" + this->custom_button_color_c6 + ", " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px "
+            "solid rgba(125,125,125,0.5);}");
+        ui_->pushButtonDummy1->setStyleSheet(
+            "QPushButton{background-color: rgba(186, 189, 182, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonDummy2->setStyleSheet(
+            "QPushButton{background-color: rgba(186, 189, 182, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonDummy3->setStyleSheet(
+            "QPushButton{background-color: rgba(186, 189, 182, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonDebug->setStyleSheet(
+            "QPushButton{background-color: rgba(85, 87, 83, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5);} QPushButton:focus {border: 2px solid "
+            "rgba(125,125,125,0.5);}");
+        ui_->pushButtonMusic->setStyleSheet(
+            "QPushButton{background-color: rgba(78, 154, 6, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255);} QPushButton:focus {border: 2px "
+            "solid rgba(125,125,125,0.5);}");
+        ui_->pushButtonAndroidAuto->setStyleSheet(
+            "QPushButton{background-color: rgba(48, 140, 198, " + alp +
+            " ); outline-style: dotted; outline-color: #92a8d1; border: 2px solid "
+            "rgba(255,255,255,0.5); color: rgb(255,255,255); border-bottom: 0px; border-top: 0px;} "
+            "QPushButton:focus {border: 2px solid rgba(125,125,125,0.5);}");
+        ui_->labelAndroidAutoBottom->setStyleSheet(
+            "background-color: rgba(48, 140, 198, " + alp +
+            " ); border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; border: 2px "
+            "solid rgba(255,255,255,0.5); color: rgb(255,255,255); border-top: 0px;");
+        ui_->labelAndroidAutoTop->setStyleSheet(
+            "background-color: rgba(48, 140, 198, " + alp +
+            " ); border-top-left-radius: 4px; border-top-right-radius: 4px; border: 2px solid "
+            "rgba(255,255,255,0.5); color: rgb(255,255,255); border-bottom: 0px;");
+        ui_->pushButtonNoDevice->setStyleSheet("background-color: rgba(48, 140, 198, " + alp +
+                                               " ); border-radius: 4px; border: 2px solid "
+                                               "rgba(255,255,255,0.5); color: rgb(255,255,255);");
+        ui_->pushButtonNoWiFiDevice->setStyleSheet(
+            "background-color: rgba(252, 175, 62, " + alp +
+            " ); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: "
+            "rgb(255,255,255);");
         // old style
-        ui_->pushButtonSettings2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonLock2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonMusic2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonBrightness2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonToggleGUI2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonExit2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonShutdown2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonReboot2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonCancel2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonAndroidAuto2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonNoDevice2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonWifi2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonNoWiFiDevice2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonDay2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonNight2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonCameraShow2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonVolume2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
-        ui_->pushButtonDebug2->setStyleSheet( "background-color: rgba(136, 138, 133, " + alp + " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonSettings2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                                " ); color: rgb(255, 255, 255); border-radius: "
+                                                "4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonLock2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                            " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                            "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonMusic2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                             " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                             "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonBrightness2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                                  " ); color: rgb(255, 255, 255); border-radius: "
+                                                  "4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonToggleGUI2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                                 " ); color: rgb(255, 255, 255); border-radius: "
+                                                 "4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonExit2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                            " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                            "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonShutdown2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                                " ); color: rgb(255, 255, 255); border-radius: "
+                                                "4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonReboot2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                              " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                              "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonCancel2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                              " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                              "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonAndroidAuto2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                                   " ); color: rgb(255, 255, 255); border-radius: "
+                                                   "4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonNoDevice2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                                " ); color: rgb(255, 255, 255); border-radius: "
+                                                "4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonWifi2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                            " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                            "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonNoWiFiDevice2->setStyleSheet(
+            "background-color: rgba(136, 138, 133, " + alp +
+            " ); color: rgb(255, 255, 255); border-radius: 4px; border: 2px solid "
+            "rgba(255,255,255,0.5);");
+        ui_->pushButtonDay2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                           " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                           "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonNight2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                             " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                             "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonCameraShow2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                                  " ); color: rgb(255, 255, 255); border-radius: "
+                                                  "4px; border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonVolume2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                              " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                              "border: 2px solid rgba(255,255,255,0.5);");
+        ui_->pushButtonDebug2->setStyleSheet("background-color: rgba(136, 138, 133, " + alp +
+                                             " ); color: rgb(255, 255, 255); border-radius: 4px; "
+                                             "border: 2px solid rgba(255,255,255,0.5);");
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::switchGuiToNight()
-{
-    //MainWindow::on_pushButtonVolume_clicked();
+void f1x::openauto::autoapp::ui::MainWindow::switchGuiToNight() {
+    // MainWindow::on_pushButtonVolume_clicked();
     f1x::openauto::autoapp::ui::MainWindow::updateBG();
     ui_->pushButtonDay->show();
     ui_->pushButtonDay2->show();
@@ -851,9 +995,8 @@ void f1x::openauto::autoapp::ui::MainWindow::switchGuiToNight()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::switchGuiToDay()
-{
-    //MainWindow::on_pushButtonVolume_clicked();
+void f1x::openauto::autoapp::ui::MainWindow::switchGuiToDay() {
+    // MainWindow::on_pushButtonVolume_clicked();
     f1x::openauto::autoapp::ui::MainWindow::updateBG();
     ui_->pushButtonNight->show();
     ui_->pushButtonNight2->show();
@@ -865,8 +1008,7 @@ void f1x::openauto::autoapp::ui::MainWindow::switchGuiToDay()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::cameraControlHide()
-{
+void f1x::openauto::autoapp::ui::MainWindow::cameraControlHide() {
     if (this->cameraButtonForce) {
         ui_->cameraWidget->hide();
         if (!this->oldGUIStyle) {
@@ -877,8 +1019,7 @@ void f1x::openauto::autoapp::ui::MainWindow::cameraControlHide()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::cameraControlShow()
-{
+void f1x::openauto::autoapp::ui::MainWindow::cameraControlShow() {
     if (this->cameraButtonForce) {
         if (!this->oldGUIStyle) {
             ui_->menuWidget->hide();
@@ -902,12 +1043,15 @@ void f1x::openauto::autoapp::ui::MainWindow::cameraControlShow()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::playerShow()
-{
+void f1x::openauto::autoapp::ui::MainWindow::playerShow() {
     if (this->wallpaperEQFileExists) {
-        this->setStyleSheet("QMainWindow { background: url(wallpaper-eq.png); background-repeat: no-repeat; background-position: center; }");
+        this->setStyleSheet(
+            "QMainWindow { background: url(wallpaper-eq.png); background-repeat: no-repeat; "
+            "background-position: center; }");
     } else {
-        this->setStyleSheet("QMainWindow { background: url(:/black.png); background-repeat: no-repeat; background-position: center; }");
+        this->setStyleSheet(
+            "QMainWindow { background: url(:/black.png); background-repeat: no-repeat; "
+            "background-position: center; }");
     }
 
     if (!this->oldGUIStyle) {
@@ -937,8 +1081,7 @@ void f1x::openauto::autoapp::ui::MainWindow::playerShow()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::playerHide()
-{
+void f1x::openauto::autoapp::ui::MainWindow::playerHide() {
     if (!this->oldGUIStyle) {
         ui_->menuWidget->show();
     } else {
@@ -955,8 +1098,7 @@ void f1x::openauto::autoapp::ui::MainWindow::playerHide()
     f1x::openauto::autoapp::ui::MainWindow::tmpChanged();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::toggleExit()
-{
+void f1x::openauto::autoapp::ui::MainWindow::toggleExit() {
     if (!this->exitMenuVisible) {
         ui_->exitWidget->show();
         ui_->buttonWidget->hide();
@@ -972,8 +1114,7 @@ void f1x::openauto::autoapp::ui::MainWindow::toggleExit()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::toggleMuteButton()
-{
+void f1x::openauto::autoapp::ui::MainWindow::toggleMuteButton() {
     if (!this->toggleMute) {
         ui_->pushButtonMute->hide();
         ui_->pushButtonUnMute->show();
@@ -985,11 +1126,10 @@ void f1x::openauto::autoapp::ui::MainWindow::toggleMuteButton()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::toggleGUI()
-{
+void f1x::openauto::autoapp::ui::MainWindow::toggleGUI() {
     // Force update before toggling to clear any stale content
     this->update();
-    
+
     if (!this->oldGUIStyle) {
         ui_->oldmenuWidget->show();
         ui_->menuWidget->hide();
@@ -1012,105 +1152,126 @@ void f1x::openauto::autoapp::ui::MainWindow::toggleGUI()
             ui_->Digital_clock->show();
         }
     }
-    
+
     f1x::openauto::autoapp::ui::MainWindow::updateBG();
     f1x::openauto::autoapp::ui::MainWindow::tmpChanged();
-    
+
     // Force repaint after UI changes
     this->update();
     this->repaint();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::updateBG()
-{
+void f1x::openauto::autoapp::ui::MainWindow::updateBG() {
     // Clear any existing stylesheet before applying new one
     this->setStyleSheet("");
-    
+
     if (this->date_text == "12/24") {
-        this->setStyleSheet("QMainWindow { background: url(:/wallpaper-christmas.png); background-repeat: no-repeat; background-position: center; }");
+        this->setStyleSheet(
+            "QMainWindow { background: url(:/wallpaper-christmas.png); background-repeat: "
+            "no-repeat; background-position: center; }");
         this->holidaybg = true;
-    }
-    else if (this->date_text == "12/31") {
-        this->setStyleSheet("QMainWindow { background: url(:/wallpaper-firework.png); background-repeat: no-repeat; background-position: center; }");
+    } else if (this->date_text == "12/31") {
+        this->setStyleSheet(
+            "QMainWindow { background: url(:/wallpaper-firework.png); background-repeat: "
+            "no-repeat; background-position: center; }");
         this->holidaybg = true;
     }
     if (!this->nightModeEnabled) {
         if (ui_->mediaWidget->isVisible() == true) {
             if (this->wallpaperEQFileExists) {
-                this->setStyleSheet("QMainWindow { background: url(wallpaper-eq.png); background-repeat: no-repeat; background-position: center; }");
+                this->setStyleSheet(
+                    "QMainWindow { background: url(wallpaper-eq.png); background-repeat: "
+                    "no-repeat; background-position: center; }");
             } else {
-                this->setStyleSheet("QMainWindow { background: url(:/black.png); background-repeat: repeat; background-position: center; }");
+                this->setStyleSheet(
+                    "QMainWindow { background: url(:/black.png); background-repeat: repeat; "
+                    "background-position: center; }");
             }
         } else {
             if (this->oldGUIStyle) {
                 if (this->wallpaperClassicDayFileExists) {
-                    this->setStyleSheet("QMainWindow { background: url(wallpaper-classic.png); background-repeat: no-repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(wallpaper-classic.png); background-repeat: "
+                        "no-repeat; background-position: center; }");
                 } else {
-                    this->setStyleSheet("QMainWindow { background: url(:/black.png); background-repeat: repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(:/black.png); background-repeat: repeat; "
+                        "background-position: center; }");
                 }
             } else {
                 if (this->wallpaperDayFileExists) {
-                    this->setStyleSheet("QMainWindow { background: url(wallpaper.png); background-repeat: no-repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(wallpaper.png); background-repeat: "
+                        "no-repeat; background-position: center; }");
                 } else {
-                    this->setStyleSheet("QMainWindow { background: url(:/black.png); background-repeat: repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(:/black.png); background-repeat: repeat; "
+                        "background-position: center; }");
                 }
             }
         }
     } else {
         if (ui_->mediaWidget->isVisible() == true) {
             if (this->wallpaperEQFileExists) {
-                this->setStyleSheet("QMainWindow { background: url(wallpaper-eq.png); background-repeat: no-repeat; background-position: center; }");
+                this->setStyleSheet(
+                    "QMainWindow { background: url(wallpaper-eq.png); background-repeat: "
+                    "no-repeat; background-position: center; }");
             } else {
-                this->setStyleSheet("QMainWindow { background: url(:/black.png); background-repeat: repeat; background-position: center; }");
+                this->setStyleSheet(
+                    "QMainWindow { background: url(:/black.png); background-repeat: repeat; "
+                    "background-position: center; }");
             }
         } else {
             if (this->oldGUIStyle) {
                 if (this->wallpaperClassicNightFileExists) {
-                    this->setStyleSheet( "QMainWindow { background: url(wallpaper-classic-night.png); background-repeat: no-repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(wallpaper-classic-night.png); "
+                        "background-repeat: no-repeat; background-position: center; }");
                 } else {
-                    this->setStyleSheet("QMainWindow { background: url(:/black.png); background-repeat: repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(:/black.png); background-repeat: repeat; "
+                        "background-position: center; }");
                 }
             } else {
                 if (this->wallpaperNightFileExists) {
-                    this->setStyleSheet("QMainWindow { background: url(wallpaper-night.png) stretch stretch; background-repeat: no-repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(wallpaper-night.png) stretch stretch; "
+                        "background-repeat: no-repeat; background-position: center; }");
                 } else {
-                    this->setStyleSheet("QMainWindow { background: url(:/black.png); background-repeat: repeat; background-position: center; }");
+                    this->setStyleSheet(
+                        "QMainWindow { background: url(:/black.png); background-repeat: repeat; "
+                        "background-position: center; }");
                 }
             }
         }
     }
-    
+
     // Force a repaint to ensure background is properly updated
     this->update();
     this->repaint();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::createDebuglog()
-{
+void f1x::openauto::autoapp::ui::MainWindow::createDebuglog() {
     system("/usr/local/bin/crankshaft debuglog &");
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::setPairable()
-{
+void f1x::openauto::autoapp::ui::MainWindow::setPairable() {
     system("/usr/local/bin/crankshaft bluetooth pairable &");
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::setMute()
-{
+void f1x::openauto::autoapp::ui::MainWindow::setMute() {
     system("/usr/local/bin/autoapp_helper setmute &");
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::setUnMute()
-{
+void f1x::openauto::autoapp::ui::MainWindow::setUnMute() {
     system("/usr/local/bin/autoapp_helper setunmute &");
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::showTime()
-{
-    QTime time=QTime::currentTime();
-    QDate date=QDate::currentDate();
-    QString time_text=time.toString("hh : mm : ss");
-    this->date_text=date.toString("MM/dd");
+void f1x::openauto::autoapp::ui::MainWindow::showTime() {
+    QTime time = QTime::currentTime();
+    QDate date = QDate::currentDate();
+    QString time_text = time.toString("hh : mm : ss");
+    this->date_text = date.toString("MM/dd");
 
     if ((time.second() % 2) == 0) {
         time_text[3] = ' ';
@@ -1124,8 +1285,7 @@ void f1x::openauto::autoapp::ui::MainWindow::showTime()
     if (!this->holidaybg) {
         if (this->date_text == "12/24") {
             MainWindow::updateBG();
-        }
-        else if (this->date_text == "12/31") {
+        } else if (this->date_text == "12/31") {
             MainWindow::updateBG();
         }
     }
@@ -1139,9 +1299,9 @@ void f1x::openauto::autoapp::ui::MainWindow::showTime()
 
         int count = btdevices.count();
         if (count > 0) {
-            //QBluetoothAddress btdevice = btdevices[0];
-            //QString btmac = btdevice.toString();
-            //ui_->btDeviceCount->setText(QString::number(count));
+            // QBluetoothAddress btdevice = btdevices[0];
+            // QString btmac = btdevice.toString();
+            // ui_->btDeviceCount->setText(QString::number(count));
             if (ui_->btDevice->isVisible() == false) {
                 ui_->btDevice->show();
             }
@@ -1157,19 +1317,18 @@ void f1x::openauto::autoapp::ui::MainWindow::showTime()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderProgressPlayer_sliderMoved(int position)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderProgressPlayer_sliderMoved(
+    int position) {
     player->setPosition(position);
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderVolumePlayer_sliderMoved(int position)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_horizontalSliderVolumePlayer_sliderMoved(
+    int position) {
     player->setVolume(position);
     ui_->volumeValueLabelPlayer->setText(QString::number(position) + "%");
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonList_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonList_clicked() {
     ui_->mp3selectWidget->show();
     ui_->PlayerPlayingWidget->hide();
     ui_->pushButtonList->hide();
@@ -1189,12 +1348,13 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonList_clicked()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerStop_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerStop_clicked() {
     ui_->mp3List->setCurrentRow(playlist->currentIndex());
     player->stop();
     ui_->pushButtonBack->setIcon(QPixmap("://coverlogo.png"));
-    ui_->pushButtonPlayerPause->setStyleSheet( "background-color: rgb(233, 185, 110); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(0,0,0);");
+    ui_->pushButtonPlayerPause->setStyleSheet(
+        "background-color: rgb(233, 185, 110); border-radius: 4px; border: 2px solid "
+        "rgba(255,255,255,0.5); color: rgb(0,0,0);");
     ui_->mp3selectWidget->show();
     ui_->PlayerPlayingWidget->hide();
     ui_->pushButtonBackToPlayer->hide();
@@ -1214,77 +1374,80 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerStop_clicked()
     ui_->VolumeSliderControlPlayer->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPause_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPause_clicked() {
     {
-        if(player->state() == QMediaPlayer::PlayingState){
+        if (player->state() == QMediaPlayer::PlayingState) {
             player->pause();
-            ui_->pushButtonPlayerPause->setStyleSheet( "background-color: rgb(218, 143, 143); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(0,0,0);");
-        }else{
-            ui_->pushButtonPlayerPause->setStyleSheet( "background-color: rgb(233, 185, 110); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(0,0,0);");
+            ui_->pushButtonPlayerPause->setStyleSheet(
+                "background-color: rgb(218, 143, 143); border-radius: 4px; border: 2px solid "
+                "rgba(255,255,255,0.5); color: rgb(0,0,0);");
+        } else {
+            ui_->pushButtonPlayerPause->setStyleSheet(
+                "background-color: rgb(233, 185, 110); border-radius: 4px; border: 2px solid "
+                "rgba(255,255,255,0.5); color: rgb(0,0,0);");
             player->play();
             player->setPosition(player->position());
         }
-
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_positionChanged(qint64 position)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_positionChanged(qint64 position) {
     ui_->horizontalSliderProgressPlayer->setValue(position);
 
-    //Setting the time
+    // Setting the time
     QString time_elapsed, time_total;
 
     int total_seconds, total_minutes;
 
-    total_seconds = (player->duration()/1000) % 60;
-    total_minutes = (player->duration()/1000) / 60;
+    total_seconds = (player->duration() / 1000) % 60;
+    total_minutes = (player->duration() / 1000) / 60;
 
-    if(total_minutes >= 60){
-        int total_hours = (total_minutes/60);
-        total_minutes = total_minutes - (total_hours*60);
-        time_total = QString("%1").arg(total_hours, 2,10,QChar('0')) + ':' + QString("%1").arg(total_minutes, 2,10,QChar('0')) + ':' + QString("%1").arg(total_seconds, 2,10,QChar('0'));
+    if (total_minutes >= 60) {
+        int total_hours = (total_minutes / 60);
+        total_minutes = total_minutes - (total_hours * 60);
+        time_total = QString("%1").arg(total_hours, 2, 10, QChar('0')) + ':' +
+                     QString("%1").arg(total_minutes, 2, 10, QChar('0')) + ':' +
+                     QString("%1").arg(total_seconds, 2, 10, QChar('0'));
 
-    }else{
-        time_total = QString("%1").arg(total_minutes, 2,10,QChar('0')) + ':' + QString("%1").arg(total_seconds, 2,10,QChar('0'));
-
+    } else {
+        time_total = QString("%1").arg(total_minutes, 2, 10, QChar('0')) + ':' +
+                     QString("%1").arg(total_seconds, 2, 10, QChar('0'));
     }
 
-    //calculate time elapsed
+    // calculate time elapsed
     int seconds, minutes;
 
-    seconds = (position/1000) % 60;
-    minutes = (position/1000) / 60;
+    seconds = (position / 1000) % 60;
+    minutes = (position / 1000) / 60;
 
-    //if minutes is over 60 then we should really display hours
-    if(minutes >= 60){
-        int hours = (minutes/60);
-        minutes = minutes - (hours*60);
-        time_elapsed = QString("%1").arg(hours, 2,10,QChar('0')) + ':' + QString("%1").arg(minutes, 2,10,QChar('0')) + ':' + QString("%1").arg(seconds, 2,10,QChar('0'));
-    }else{
-        time_elapsed = QString("%1").arg(minutes, 2,10,QChar('0')) + ':' + QString("%1").arg(seconds, 2,10,QChar('0'));
+    // if minutes is over 60 then we should really display hours
+    if (minutes >= 60) {
+        int hours = (minutes / 60);
+        minutes = minutes - (hours * 60);
+        time_elapsed = QString("%1").arg(hours, 2, 10, QChar('0')) + ':' +
+                       QString("%1").arg(minutes, 2, 10, QChar('0')) + ':' +
+                       QString("%1").arg(seconds, 2, 10, QChar('0'));
+    } else {
+        time_elapsed = QString("%1").arg(minutes, 2, 10, QChar('0')) + ':' +
+                       QString("%1").arg(seconds, 2, 10, QChar('0'));
     }
     ui_->playerPositionTime->setText(time_elapsed + " / " + time_total);
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_durationChanged(qint64 position)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_durationChanged(qint64 position) {
     ui_->horizontalSliderProgressPlayer->setMaximum(position);
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_mp3List_itemClicked(QListWidgetItem *item)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_mp3List_itemClicked(QListWidgetItem *item) {
     this->selectedMp3file = item->text();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::metaDataChanged()
-{
+void f1x::openauto::autoapp::ui::MainWindow::metaDataChanged() {
     QString fullpathplaying = player->currentMedia().request().url().toString();
     QString filename = QFileInfo(fullpathplaying).fileName();
 
     QImage img = player->metaData(QMediaMetaData::CoverArtImage).value<QImage>();
-    QImage imgscaled = img.scaled(270,270,Qt::IgnoreAspectRatio);
+    QImage imgscaled = img.scaled(270, 270, Qt::IgnoreAspectRatio);
     if (!imgscaled.isNull()) {
         ui_->pushButtonBack->setIcon(QPixmap::fromImage(imgscaled));
     } else {
@@ -1293,7 +1456,7 @@ void f1x::openauto::autoapp::ui::MainWindow::metaDataChanged()
             QString cover = this->musicfolder + "/" + this->albumfolder + "/" + filename + ".png";
             if (check_file_exist(cover.toStdString().c_str())) {
                 QPixmap img = cover;
-                ui_->pushButtonBack->setIcon(img.scaled(270,270,Qt::KeepAspectRatio));
+                ui_->pushButtonBack->setIcon(img.scaled(270, 270, Qt::KeepAspectRatio));
             } else {
                 ui_->pushButtonBack->setIcon(QPixmap("://coverlogo.png"));
             }
@@ -1342,7 +1505,7 @@ void f1x::openauto::autoapp::ui::MainWindow::metaDataChanged()
         }
         ui_->labelCurrentPlaying->setText(currentPlaying);
     }
-    ui_->labelTrack->setText(QString::number(playlist->currentIndex()+1));
+    ui_->labelTrack->setText(QString::number(playlist->currentIndex() + 1));
     ui_->labelTrackCount->setText(QString::number(playlist->mediaCount()));
 
     if (playlist->currentIndex() == -1) {
@@ -1354,16 +1517,16 @@ void f1x::openauto::autoapp::ui::MainWindow::metaDataChanged()
 
         if (check_file_exist(coverpng.toStdString().c_str())) {
             QPixmap img = coverpng;
-            ui_->pushButtonBack->setIcon(img.scaled(270,270,Qt::KeepAspectRatio));
+            ui_->pushButtonBack->setIcon(img.scaled(270, 270, Qt::KeepAspectRatio));
         } else if (check_file_exist(coverjpg.toStdString().c_str())) {
             QPixmap img = coverjpg;
-            ui_->pushButtonBack->setIcon(img.scaled(270,270,Qt::KeepAspectRatio));
+            ui_->pushButtonBack->setIcon(img.scaled(270, 270, Qt::KeepAspectRatio));
         } else if (check_file_exist(coverpngcs.toStdString().c_str())) {
             QPixmap img = coverpngcs;
-            ui_->pushButtonBack->setIcon(img.scaled(270,270,Qt::KeepAspectRatio));
+            ui_->pushButtonBack->setIcon(img.scaled(270, 270, Qt::KeepAspectRatio));
         } else if (check_file_exist(coverjpgcs.toStdString().c_str())) {
             QPixmap img = coverjpgcs;
-            ui_->pushButtonBack->setIcon(img.scaled(270,270,Qt::KeepAspectRatio));
+            ui_->pushButtonBack->setIcon(img.scaled(270, 270, Qt::KeepAspectRatio));
         } else {
             ui_->pushButtonBack->setIcon(QPixmap("://coverlogo.png"));
         }
@@ -1379,8 +1542,7 @@ void f1x::openauto::autoapp::ui::MainWindow::metaDataChanged()
     this->configuration_->save();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPlayList_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPlayList_clicked() {
     player->setPlaylist(this->playlist);
     playlist->setCurrentIndex(this->currentPlaylistIndex);
     player->play();
@@ -1391,10 +1553,12 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPlayList_clicked
     ui_->pushButtonList->show();
     ui_->pushButtonBackToPlayer->hide();
     ui_->pushButtonPlayerStop->show();
-    ui_->pushButtonPlayerPause->setStyleSheet( "background-color: rgb(233, 185, 110); border-radius: 4px; border: 2px solid rgba(255,255,255,0.5); color: rgb(0,0,0);");
+    ui_->pushButtonPlayerPause->setStyleSheet(
+        "background-color: rgb(233, 185, 110); border-radius: 4px; border: 2px solid "
+        "rgba(255,255,255,0.5); color: rgb(0,0,0);");
     ui_->pushButtonPlayerPause->show();
     int currentalbum = ui_->comboBoxAlbum->currentIndex();
-    ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum+1));
+    ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum + 1));
     ui_->Info->show();
     ui_->horizontalSliderProgressPlayer->show();
     ui_->pushButtonAlbum->hide();
@@ -1402,8 +1566,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPlayList_clicked
     ui_->AlbumCoverListView->show();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonAlbum_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonAlbum_clicked() {
     ui_->pushButtonList->hide();
     ui_->pushButtonAlbum->hide();
     ui_->mp3List->hide();
@@ -1411,8 +1574,8 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonAlbum_clicked()
     ui_->pushButtonPlayerPlayList->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_comboBoxAlbum_currentIndexChanged(const QString &arg1)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_comboBoxAlbum_currentIndexChanged(
+    const QString &arg1) {
     this->albumfolder = arg1;
     MainWindow::scanFiles();
     ui_->pushButtonPlayerPause->hide();
@@ -1429,8 +1592,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_comboBoxAlbum_currentIndexChange
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::setTrigger()
-{
+void f1x::openauto::autoapp::ui::MainWindow::setTrigger() {
     this->mediacontentchanged = true;
 
     ui_->SysinfoTopLeft->setText("Media changed - Scanning ...");
@@ -1439,22 +1601,19 @@ void f1x::openauto::autoapp::ui::MainWindow::setTrigger()
     QTimer::singleShot(10000, this, SLOT(scanFolders()));
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::setRetryUSBConnect()
-{
+void f1x::openauto::autoapp::ui::MainWindow::setRetryUSBConnect() {
     ui_->SysinfoTopLeft->setText("Trying USB connect ...");
     ui_->SysinfoTopLeft->show();
 
     QTimer::singleShot(10000, this, SLOT(resetRetryUSBMessage()));
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::resetRetryUSBMessage()
-{
+void f1x::openauto::autoapp::ui::MainWindow::resetRetryUSBMessage() {
     ui_->SysinfoTopLeft->setText("");
     ui_->SysinfoTopLeft->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::scanFolders()
-{
+void f1x::openauto::autoapp::ui::MainWindow::scanFolders() {
     try {
         if (this->mediacontentchanged == true) {
             this->mediacontentchanged = false;
@@ -1464,37 +1623,45 @@ void f1x::openauto::autoapp::ui::MainWindow::scanFolders()
                 cleaner--;
             }
             QDir directory(this->musicfolder);
-            QStringList folders = directory.entryList(QStringList() << "*", QDir::AllDirs, QDir::Name);
+            QStringList folders =
+                directory.entryList(QStringList() << "*", QDir::AllDirs, QDir::Name);
             QStandardItemModel *model = new QStandardItemModel(this);
             foreach (QString foldername, folders) {
                 if (foldername != ".." and foldername != ".") {
                     ui_->comboBoxAlbum->addItem(foldername);
-                    ui_->labelAlbumCount->setText(QString::number(ui_->comboBoxAlbum->count()));                 
+                    ui_->labelAlbumCount->setText(QString::number(ui_->comboBoxAlbum->count()));
 
                     QString coverpng = this->musicfolder + "/" + foldername + "/folder.png";
                     QString coverjpg = this->musicfolder + "/" + foldername + "/folder.jpg";
-                    QString coverpngcs = "/media/USBDRIVES/CSSTORAGE/COVERCACHE/" + foldername + ".png";
-                    QString coverjpgcs = "/media/USBDRIVES/CSSTORAGE/COVERCACHE/" + foldername + ".jpg";
+                    QString coverpngcs =
+                        "/media/USBDRIVES/CSSTORAGE/COVERCACHE/" + foldername + ".png";
+                    QString coverjpgcs =
+                        "/media/USBDRIVES/CSSTORAGE/COVERCACHE/" + foldername + ".jpg";
 
                     if (check_file_exist(coverpng.toStdString().c_str())) {
                         QPixmap img = coverpng;
-                        QStandardItem *item = new QStandardItem(QIcon(img.scaled(270,270,Qt::KeepAspectRatio)),foldername);
-                        model->setItem(ui_->comboBoxAlbum->count(),0,item);
+                        QStandardItem *item = new QStandardItem(
+                            QIcon(img.scaled(270, 270, Qt::KeepAspectRatio)), foldername);
+                        model->setItem(ui_->comboBoxAlbum->count(), 0, item);
                     } else if (check_file_exist(coverjpg.toStdString().c_str())) {
                         QPixmap img = coverjpg;
-                        QStandardItem *item = new QStandardItem(QIcon(img.scaled(270,270,Qt::KeepAspectRatio)),foldername);
-                        model->setItem(ui_->comboBoxAlbum->count(),0,item);
+                        QStandardItem *item = new QStandardItem(
+                            QIcon(img.scaled(270, 270, Qt::KeepAspectRatio)), foldername);
+                        model->setItem(ui_->comboBoxAlbum->count(), 0, item);
                     } else if (check_file_exist(coverpngcs.toStdString().c_str())) {
                         QPixmap img = coverpngcs;
-                        QStandardItem *item = new QStandardItem(QIcon(img.scaled(270,270,Qt::KeepAspectRatio)),foldername);
-                        model->setItem(ui_->comboBoxAlbum->count(),0,item);
+                        QStandardItem *item = new QStandardItem(
+                            QIcon(img.scaled(270, 270, Qt::KeepAspectRatio)), foldername);
+                        model->setItem(ui_->comboBoxAlbum->count(), 0, item);
                     } else if (check_file_exist(coverjpgcs.toStdString().c_str())) {
                         QPixmap img = coverjpgcs;
-                        QStandardItem *item = new QStandardItem(QIcon(img.scaled(270,270,Qt::KeepAspectRatio)),foldername);
-                        model->setItem(ui_->comboBoxAlbum->count(),0,item);
+                        QStandardItem *item = new QStandardItem(
+                            QIcon(img.scaled(270, 270, Qt::KeepAspectRatio)), foldername);
+                        model->setItem(ui_->comboBoxAlbum->count(), 0, item);
                     } else {
-                        QStandardItem *item = new QStandardItem(QIcon(":/coverlogo.png"),foldername);
-                        model->setItem(ui_->comboBoxAlbum->count(),0,item);
+                        QStandardItem *item =
+                            new QStandardItem(QIcon(":/coverlogo.png"), foldername);
+                        model->setItem(ui_->comboBoxAlbum->count(), 0, item);
                     }
                 }
             }
@@ -1502,15 +1669,13 @@ void f1x::openauto::autoapp::ui::MainWindow::scanFolders()
             this->currentPlaylistIndex = 0;
             ui_->SysinfoTopLeft->hide();
         }
-    }
-    catch(...) {
+    } catch (...) {
         ui_->SysinfoTopLeft->hide();
     }
     ui_->mp3List->hide();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::scanFiles()
-{
+void f1x::openauto::autoapp::ui::MainWindow::scanFiles() {
     if (this->mediacontentchanged == false) {
         int cleaner = ui_->mp3List->count();
         while (cleaner > -1) {
@@ -1521,19 +1686,26 @@ void f1x::openauto::autoapp::ui::MainWindow::scanFiles()
 
         QList<QMediaContent> content;
         QDir directory(this->musicfolder + "/" + this->albumfolder);
-        QStringList mp3s = directory.entryList(QStringList() << "*.mp3" << "*.flac" << "*.aac" << "*.ogg" << "*.mp4" << "*.mp4a" << "*.wma" << "*.strm",QDir::Files, QDir::Name);
+        QStringList mp3s =
+            directory.entryList(QStringList() << "*.mp3" << "*.flac" << "*.aac" << "*.ogg"
+                                              << "*.mp4" << "*.mp4a" << "*.wma" << "*.strm",
+                                QDir::Files, QDir::Name);
         foreach (QString filename, mp3s) {
             // add to mediacontent
             if (filename.endsWith(".strm")) {
-                QString url=configuration_->readFileContent(this->musicfolder + "/" + this->albumfolder + "/" + filename);
+                QString url = configuration_->readFileContent(this->musicfolder + "/" +
+                                                              this->albumfolder + "/" + filename);
                 content.push_back(QMediaContent(QUrl(url)));
-                ui_->mp3List->addItem(filename.replace(".strm",""));
+                ui_->mp3List->addItem(filename.replace(".strm", ""));
             } else {
                 // add items to gui
-                content.push_back(QMediaContent(QUrl::fromLocalFile(this->musicfolder + "/" + this->albumfolder + "/" + filename)));
+                content.push_back(QMediaContent(QUrl::fromLocalFile(
+                    this->musicfolder + "/" + this->albumfolder + "/" + filename)));
                 // read metadata using taglib
                 try {
-                    TagLib::FileRef file((this->musicfolder + "/" + this->albumfolder + "/" + filename).toUtf8(),true);
+                    TagLib::FileRef file(
+                        (this->musicfolder + "/" + this->albumfolder + "/" + filename).toUtf8(),
+                        true);
                     TagLib::String artist_string = file.tag()->artist();
                     TagLib::String title_string = file.tag()->title();
                     TagLib::uint track_string = file.tag()->track();
@@ -1557,8 +1729,7 @@ void f1x::openauto::autoapp::ui::MainWindow::scanFiles()
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_mp3List_currentRowChanged(int currentRow)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_mp3List_currentRowChanged(int currentRow) {
     ui_->labelFolderpath->setText(QString::number(currentRow));
     this->currentPlaylistIndex = currentRow;
 
@@ -1567,8 +1738,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_mp3List_currentRowChanged(int cu
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerNextBig_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerNextBig_clicked() {
     playlist->next();
     if (playlist->currentIndex() != -1) {
         player->play();
@@ -1578,8 +1748,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerNextBig_clicked(
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPrevBig_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPrevBig_clicked() {
     playlist->previous();
     if (playlist->currentIndex() != -1) {
         player->play();
@@ -1589,19 +1758,18 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPrevBig_clicked(
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPrevAlbum_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPrevAlbum_clicked() {
     int albumcount = ui_->comboBoxAlbum->count();
     int currentalbum = ui_->comboBoxAlbum->currentIndex();
     if (currentalbum >= 1) {
-        currentalbum = currentalbum-1;
+        currentalbum = currentalbum - 1;
         ui_->comboBoxAlbum->setCurrentIndex(currentalbum);
-        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum+1));
+        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum + 1));
         player->play();
     } else {
-        currentalbum = albumcount-1;
+        currentalbum = albumcount - 1;
         ui_->comboBoxAlbum->setCurrentIndex(currentalbum);
-        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum+1));
+        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum + 1));
         player->play();
     }
     if (ui_->mp3selectWidget->isVisible() == false) {
@@ -1613,19 +1781,18 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerPrevAlbum_clicke
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerNextAlbum_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerNextAlbum_clicked() {
     int albumcount = ui_->comboBoxAlbum->count();
     int currentalbum = ui_->comboBoxAlbum->currentIndex();
-    if (currentalbum < albumcount-1) {
+    if (currentalbum < albumcount - 1) {
         currentalbum = currentalbum + 1;
         ui_->comboBoxAlbum->setCurrentIndex(currentalbum);
-        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum+1));
+        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum + 1));
         player->play();
     } else {
         currentalbum = 0;
         ui_->comboBoxAlbum->setCurrentIndex(currentalbum);
-        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum+1));
+        ui_->labelCurrentAlbumIndex->setText(QString::number(currentalbum + 1));
         player->play();
     }
     if (ui_->mp3selectWidget->isVisible() == false) {
@@ -1637,8 +1804,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonPlayerNextAlbum_clicke
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBackToPlayer_clicked()
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBackToPlayer_clicked() {
     ui_->PlayerPlayingWidget->show();
     ui_->mp3selectWidget->hide();
     ui_->pushButtonBackToPlayer->hide();
@@ -1650,8 +1816,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_pushButtonBackToPlayer_clicked()
     ui_->horizontalSliderProgressPlayer->show();
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_StateChanged(QMediaPlayer::State state)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_StateChanged(QMediaPlayer::State state) {
     if (state == QMediaPlayer::StoppedState || state == QMediaPlayer::PausedState) {
         std::remove("/tmp/media_playing");
     } else {
@@ -1659,9 +1824,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_StateChanged(QMediaPlayer::State
     }
 }
 
-
-bool f1x::openauto::autoapp::ui::MainWindow::check_file_exist(const char *fileName)
-{
+bool f1x::openauto::autoapp::ui::MainWindow::check_file_exist(const char *fileName) {
     std::ifstream ifile(fileName, std::ios::in);
     // file not ok - checking if symlink
     if (!ifile.good()) {
@@ -1677,8 +1840,7 @@ bool f1x::openauto::autoapp::ui::MainWindow::check_file_exist(const char *fileNa
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::keyPressEvent(QKeyEvent *event)
-{
+void f1x::openauto::autoapp::ui::MainWindow::keyPressEvent(QKeyEvent *event) {
     if (configuration_->playerButtonControl()) {
         if (event->key() == Qt::Key_C) {
             on_pushButtonPlayerPause_clicked();
@@ -1710,29 +1872,32 @@ void f1x::openauto::autoapp::ui::MainWindow::keyPressEvent(QKeyEvent *event)
         }
     }
     if (event->key() == Qt::Key_Return) {
-        QApplication::postEvent (QApplication::focusWidget(), new QKeyEvent ( QEvent::KeyPress, Qt::Key_Space, Qt::NoModifier));
-        QApplication::postEvent (QApplication::focusWidget(), new QKeyEvent ( QEvent::KeyRelease, Qt::Key_Space, Qt::NoModifier));
+        QApplication::postEvent(QApplication::focusWidget(),
+                                new QKeyEvent(QEvent::KeyPress, Qt::Key_Space, Qt::NoModifier));
+        QApplication::postEvent(QApplication::focusWidget(),
+                                new QKeyEvent(QEvent::KeyRelease, Qt::Key_Space, Qt::NoModifier));
     }
     if (event->key() == Qt::Key_1) {
-        QApplication::postEvent (QApplication::focusWidget(), new QKeyEvent ( QEvent::KeyPress, Qt::Key_Tab, Qt::ShiftModifier));
+        QApplication::postEvent(QApplication::focusWidget(),
+                                new QKeyEvent(QEvent::KeyPress, Qt::Key_Tab, Qt::ShiftModifier));
     }
     if (event->key() == Qt::Key_2) {
-        QApplication::postEvent (QApplication::focusWidget(), new QKeyEvent ( QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier));
+        QApplication::postEvent(QApplication::focusWidget(),
+                                new QKeyEvent(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier));
     }
-    if(event->key() == Qt::Key_Escape)
-    {
+    if (event->key() == Qt::Key_Escape) {
         if (ui_->mediaWidget->isVisible() == true) {
             playerHide();
         } else if (this->oldGUIStyle == true) {
-            toggleGUI();            
+            toggleGUI();
         } else {
             toggleExit();
         }
-    }    
+    }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::on_AlbumCoverListView_clicked(const QModelIndex &index)
-{
+void f1x::openauto::autoapp::ui::MainWindow::on_AlbumCoverListView_clicked(
+    const QModelIndex &index) {
     QString foldertext = index.data(Qt::DisplayRole).toString();
     ui_->labelAlbumpath->setText(foldertext);
     ui_->comboBoxAlbum->setCurrentIndex(ui_->comboBoxAlbum->findText(foldertext));
@@ -1748,8 +1913,7 @@ void f1x::openauto::autoapp::ui::MainWindow::on_AlbumCoverListView_clicked(const
     }
 }
 
-void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
-{
+void f1x::openauto::autoapp::ui::MainWindow::tmpChanged() {
     try {
         if (std::ifstream("/tmp/entityexit")) {
             MainWindow::TriggerAppStop();
@@ -1854,7 +2018,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
                 linedate = data_date.readLine();
             }
             deviceData.close();
-            ui_->labelAndroidAutoBottom->setText(linedate.simplified().replace("_"," "));
+            ui_->labelAndroidAutoBottom->setText(linedate.simplified().replace("_", " "));
         } catch (...) {
             ui_->labelAndroidAutoBottom->setText("");
         }
@@ -1896,7 +2060,8 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
         }
     }
 
-    if (std::ifstream("/tmp/config_in_progress") || std::ifstream("/tmp/debug_in_progress") || std::ifstream("/tmp/enable_pairing")) {
+    if (std::ifstream("/tmp/config_in_progress") || std::ifstream("/tmp/debug_in_progress") ||
+        std::ifstream("/tmp/enable_pairing")) {
         if (ui_->SysinfoTopLeft2->isVisible() == false) {
             if (std::ifstream("/tmp/config_in_progress")) {
                 ui_->pushButtonSettings->hide();
@@ -1955,7 +2120,6 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
 
     // camera stuff
     if (this->cameraButtonForce) {
-
         // check if dashcam is recording
         this->dashCamRecording = check_file_exist("/tmp/dashcam_is_recording");
 
@@ -1994,14 +2158,15 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
 
     // hide wifi if hotspot disabled and force wifi unselected
     if (!this->hotspotActive && !std::ifstream("/tmp/mobile_hotspot_detected")) {
-        if ((ui_->AAWIFIWidget->isVisible() == true) || (ui_->AAWIFIWidget2->isVisible() == true)){
+        if ((ui_->AAWIFIWidget->isVisible() == true) || (ui_->AAWIFIWidget2->isVisible() == true)) {
             ui_->AAWIFIWidget->hide();
             ui_->AAWIFIWidget2->hide();
             ui_->AAUSBWidget->show();
             ui_->AAUSBWidget2->show();
         }
     } else {
-        if ((ui_->AAWIFIWidget->isVisible() == false) || (ui_->AAWIFIWidget2->isVisible() == false)) {
+        if ((ui_->AAWIFIWidget->isVisible() == false) ||
+            (ui_->AAWIFIWidget2->isVisible() == false)) {
             ui_->AAWIFIWidget->show();
             ui_->AAWIFIWidget2->show();
             ui_->AAUSBWidget->hide();
@@ -2115,7 +2280,9 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
 
     // hide brightness button if enabled in settings
     if (configuration_->hideBrightnessControl()) {
-        if ((ui_->pushButtonBrightness->isVisible() == true) || (ui_->pushButtonBrightness2->isVisible() == true) || (ui_->BrightnessSliderControl->isVisible() == true)) {
+        if ((ui_->pushButtonBrightness->isVisible() == true) ||
+            (ui_->pushButtonBrightness2->isVisible() == true) ||
+            (ui_->BrightnessSliderControl->isVisible() == true)) {
             ui_->pushButtonBrightness->hide();
             ui_->pushButtonBrightness2->hide();
             ui_->BrightnessSliderControl->hide();
@@ -2129,7 +2296,8 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
     } else {
         // Only show brightness buttons if not hidden in config AND not using light sensor
         if (!this->lightsensor) {
-            if ((ui_->pushButtonBrightness->isVisible() == false) || (ui_->pushButtonBrightness2->isVisible() == false)) {
+            if ((ui_->pushButtonBrightness->isVisible() == false) ||
+                (ui_->pushButtonBrightness2->isVisible() == false)) {
                 ui_->pushButtonBrightness->show();
                 ui_->pushButtonBrightness2->show();
                 // also show volume button if brightness visible
@@ -2184,9 +2352,10 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
                 ui_->devlabel_right->show();
             }
         }
-   }
+    }
 
-    if (std::ifstream("/tmp/btdevice") || std::ifstream("/tmp/media_playing") || std::ifstream("/tmp/dev_mode_enabled") || std::ifstream("/tmp/android_device")) {
+    if (std::ifstream("/tmp/btdevice") || std::ifstream("/tmp/media_playing") ||
+        std::ifstream("/tmp/dev_mode_enabled") || std::ifstream("/tmp/android_device")) {
         if (ui_->labelLock->isVisible() == false) {
             ui_->labelLock->show();
             ui_->labelLockDummy->show();

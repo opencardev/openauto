@@ -18,20 +18,18 @@
 
 #pragma once
 
-#include <gps.h>
 #include <aap_protobuf/service/sensorsource/message/DrivingStatus.pb.h>
 #include <aap_protobuf/service/sensorsource/message/SensorType.pb.h>
+#include <gps.h>
 #include <aasdk/Channel/SensorSource/SensorSourceService.hpp>
-#include <f1x/openauto/autoapp/Service/IService.hpp>
-#include <boost/asio/io_service.hpp>
 #include <aasdk/Messenger/IMessenger.hpp>
-
+#include <boost/asio/io_service.hpp>
+#include <f1x/openauto/autoapp/Service/IService.hpp>
 
 namespace f1x::openauto::autoapp::service::sensor {
-  class SensorService :
-      public aasdk::channel::sensorsource::ISensorSourceServiceEventHandler,
-      public IService,
-      public std::enable_shared_from_this<SensorService> {
+class SensorService : public aasdk::channel::sensorsource::ISensorSourceServiceEventHandler,
+                      public IService,
+                      public std::enable_shared_from_this<SensorService> {
   public:
     SensorService(boost::asio::io_service &ioService,
                   aasdk::messenger::IMessenger::Pointer messenger);
@@ -48,9 +46,11 @@ namespace f1x::openauto::autoapp::service::sensor {
 
     void resume() override;
 
-    void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
+    void fillFeatures(
+        aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-    void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
+    void onChannelOpenRequest(
+        const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
     void onSensorStartRequest(
         const aap_protobuf::service::sensorsource::message::SensorRequest &request) override;
@@ -77,9 +77,6 @@ namespace f1x::openauto::autoapp::service::sensor {
     aasdk::channel::sensorsource::SensorSourceService::Pointer channel_;
     struct gps_data_t gpsData_;
     bool gpsEnabled_ = false;
-  };
+};
 
-}
-
-
-
+}  // namespace f1x::openauto::autoapp::service::sensor

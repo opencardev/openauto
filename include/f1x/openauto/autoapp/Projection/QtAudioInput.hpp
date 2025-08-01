@@ -18,24 +18,19 @@
 
 #pragma once
 
-#include <mutex>
-#include <QAudioInput>
 #include <QAudioFormat>
+#include <QAudioInput>
 #include <f1x/openauto/autoapp/Projection/IAudioInput.hpp>
+#include <mutex>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class QtAudioInput: public QObject, public IAudioInput
-{
+class QtAudioInput : public QObject, public IAudioInput {
     Q_OBJECT
-public:
+  public:
     QtAudioInput(uint32_t channelCount, uint32_t sampleSize, uint32_t sampleRate);
 
     bool open() override;
@@ -47,17 +42,17 @@ public:
     uint32_t getChannelCount() const override;
     uint32_t getSampleRate() const override;
 
-signals:
+  signals:
     void startRecording(StartPromise::Pointer promise);
     void stopRecording();
 
-private slots:
+  private slots:
     void createAudioInput();
     void onStartRecording(StartPromise::Pointer promise);
     void onStopRecording();
     void onReadyRead();
 
-private:
+  private:
     QAudioFormat audioFormat_;
     QIODevice* ioDevice_;
     std::unique_ptr<QAudioInput> audioInput_;
@@ -67,7 +62,7 @@ private:
     static constexpr size_t cSampleSize = 2056;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

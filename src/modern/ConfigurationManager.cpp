@@ -32,26 +32,26 @@ ConfigurationManager::~ConfigurationManager() = default;
 
 bool ConfigurationManager::load() {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     if (!std::filesystem::exists(configPath_)) {
         // Config file doesn't exist, use defaults
         return true;
     }
-    
+
     try {
         std::ifstream file(configPath_);
         if (!file.is_open()) {
             return false;
         }
-        
+
         nlohmann::json json;
         file >> json;
-        
+
         values_.clear();
         for (const auto& [key, value] : json.items()) {
             values_[key] = jsonToConfigValue(value);
         }
-        
+
         return true;
     } catch (const std::exception& e) {
         // Log error and keep current values
@@ -61,24 +61,24 @@ bool ConfigurationManager::load() {
 
 bool ConfigurationManager::save() {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     try {
         // Create directory if it doesn't exist
         std::filesystem::path configDir = std::filesystem::path(configPath_).parent_path();
         if (!configDir.empty()) {
             std::filesystem::create_directories(configDir);
         }
-        
+
         std::ofstream file(configPath_);
         if (!file.is_open()) {
             return false;
         }
-        
+
         nlohmann::json json;
         for (const auto& [key, value] : values_) {
             json[key] = configValueToJson(value);
         }
-        
+
         file << json.dump(2);
         return true;
     } catch (const std::exception& e) {
@@ -90,9 +90,10 @@ void ConfigurationManager::reset() {
     std::lock_guard<std::mutex> lock(mutex_);
     values_.clear();
     setDefaultValues();
-    
+
     // Publish event using EventBus singleton
-    auto event = std::make_shared<openauto::modern::Event>(openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
+    auto event = std::make_shared<openauto::modern::Event>(
+        openauto::modern::EventType::CONFIG_CHANGED, "config_manager");
     event->setData("action", std::string("reset"));
     EventBus::getInstance().publish(event);
 }
@@ -102,7 +103,7 @@ void ConfigurationManager::setValue(const std::string& key, const ConfigValue& v
         std::lock_guard<std::mutex> lock(mutex_);
         values_[key] = value;
     }
-    
+
     notifyConfigChanged(key, value);
 }
 
@@ -116,9 +117,10 @@ void ConfigurationManager::removeValue(const std::string& key) {
         std::lock_guard<std::mutex> lock(mutex_);
         values_.erase(key);
     }
-    
+
     // Publish event using EventBus singleton
-    auto event = std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
+    auto event =
+        std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
     event->setData("key", key);
     event->setData("action", std::string("removed"));
     EventBus::getInstance().publish(event);
@@ -134,9 +136,10 @@ void ConfigurationManager::setValues(const std::unordered_map<std::string, Confi
         std::lock_guard<std::mutex> lock(mutex_);
         values_ = values;
     }
-    
+
     // Publish event using EventBus singleton
-    auto event = std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
+    auto event =
+        std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
     event->setData("action", std::string("bulk_update"));
     event->setData("count", static_cast<int>(values.size()));
     EventBus::getInstance().publish(event);
@@ -145,24 +148,23 @@ void ConfigurationManager::setValues(const std::unordered_map<std::string, Confi
 nlohmann::json ConfigurationManager::toJson() const {
     std::lock_guard<std::mutex> lock(mutex_);
     nlohmann::json json;
-    
+
     for (const auto& [key, value] : values_) {
         json[key] = configValueToJson(value);
     }
-    
+
     return json;
 }
 
 void ConfigurationManager::fromJson(const nlohmann::json& json) {
     std::unordered_map<std::string, ConfigValue> newValues;
-    
+
     for (const auto& [key, value] : json.items()) {
         newValues[key] = jsonToConfigValue(value);
     }
-    
+
     setValues(newValues);
 }
-
 
 void ConfigurationManager::setConfigPath(const std::string& path) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -174,28 +176,22 @@ std::string ConfigurationManager::getConfigPath() const {
     return configPath_;
 }
 
-bool ConfigurationManager::isValid() const {
-    return validate().empty();
-}
+bool ConfigurationManager::isValid() const { return validate().empty(); }
 
 std::vector<std::string> ConfigurationManager::validate() const {
     std::vector<std::string> errors;
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     // Add validation rules here
     // Example: Check required keys
-    std::vector<std::string> requiredKeys = {
-        "audio.volume",
-        "video.brightness",
-        "system.language"
-    };
-    
+    std::vector<std::string> requiredKeys = {"audio.volume", "video.brightness", "system.language"};
+
     for (const auto& key : requiredKeys) {
         if (values_.find(key) == values_.end()) {
             errors.push_back("Missing required configuration key: " + key);
         }
     }
-    
+
     return errors;
 }
 
@@ -205,15 +201,14 @@ void ConfigurationManager::loadDefaults() {
 }
 
 void ConfigurationManager::notifyConfigChanged(const std::string& key, const ConfigValue& value) {
-    auto event = std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
+    auto event =
+        std::make_shared<modern::Event>(modern::EventType::CONFIG_CHANGED, "config_manager");
     event->setData("key", key);
     event->setData("action", std::string("changed"));
-    
+
     // Add the actual value based on its type
-    std::visit([event](const auto& v) {
-        event->setData("value", modern::EventValue(v));
-    }, value);
-    
+    std::visit([event](const auto& v) { event->setData("value", modern::EventValue(v)); }, value);
+
     EventBus::getInstance().publish(event);
 }
 
@@ -233,45 +228,43 @@ ConfigValue ConfigurationManager::jsonToConfigValue(const nlohmann::json& value)
 }
 
 nlohmann::json ConfigurationManager::configValueToJson(const ConfigValue& value) const {
-    return std::visit([](const auto& v) -> nlohmann::json {
-        return v;
-    }, value);
+    return std::visit([](const auto& v) -> nlohmann::json { return v; }, value);
 }
 
 void ConfigurationManager::setDefaultValues() {
     // Audio settings
     values_["audio.volume"] = 50;
     values_["audio.muted"] = false;
-    
+
     // Video settings
     values_["video.brightness"] = 75;
     values_["video.day_mode"] = true;
     values_["video.resolution"] = std::string("1920x1080");
-    
+
     // System settings
     values_["system.language"] = std::string("en_US");
     values_["system.timezone"] = std::string("UTC");
     values_["system.auto_start_android_auto"] = true;
-    
+
     // Network settings
     values_["network.wifi_enabled"] = true;
     values_["network.hotspot_enabled"] = false;
     values_["network.bluetooth_enabled"] = true;
-    
+
     // Camera settings
     values_["camera.enabled"] = true;
     values_["camera.auto_record"] = false;
     values_["camera.quality"] = std::string("high");
-    
+
     // API settings
     values_["api.enabled"] = true;
     values_["api.port"] = 8080;
     values_["api.bind_address"] = std::string("127.0.0.1");
-    
+
     // Debug settings
     values_["debug.log_level"] = std::string("info");
     values_["debug.enable_event_logging"] = false;
 }
 
-} // namespace modern
-} // namespace openauto
+}  // namespace modern
+}  // namespace openauto

@@ -18,22 +18,22 @@
 
 #pragma once
 
-#include <memory>
-#include <QMainWindow>
 #include <QFile>
+#include <QMainWindow>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
+#include <memory>
 
-#include <QMediaPlayer>
-#include <QListWidgetItem>
-#include <QListWidget>
-#include <QMediaMetaData>
 #include <QDir>
 #include <QDirIterator>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QMediaMetaData>
+#include <QMediaPlayer>
 
-#include <QMediaService>
-#include <QMediaPlaylist>
-#include <QVideoProbe>
 #include <QAudioProbe>
+#include <QMediaPlaylist>
+#include <QMediaService>
+#include <QVideoProbe>
 
 #include <QFileDialog>
 
@@ -45,33 +45,28 @@
 #include <QKeyEvent>
 
 #include <QBluetoothLocalDevice>
-//#include <QtBluetooth>
+// #include <QtBluetooth>
 
-namespace Ui
-{
+namespace Ui {
 class MainWindow;
 }
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace ui
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace ui {
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
-public:
-    explicit MainWindow(configuration::IConfiguration::Pointer configuration, QWidget *parent = nullptr);
+  public:
+    explicit MainWindow(configuration::IConfiguration::Pointer configuration,
+                        QWidget *parent = nullptr);
     ~MainWindow() override;
-    QMediaPlayer* player;
-    QFileSystemWatcher* watcher;
-    QFileSystemWatcher* watcher_tmp; 
+    QMediaPlayer *player;
+    QFileSystemWatcher *watcher;
+    QFileSystemWatcher *watcher_tmp;
 
-signals:
+  signals:
     void exit();
     void reboot();
     void openSettings();
@@ -101,12 +96,12 @@ signals:
     void TriggerAppStop();
     void CloseAllDialogs();
 
-private slots:
+  private slots:
     void on_horizontalSliderBrightness_valueChanged(int value);
     void on_horizontalSliderVolume_valueChanged(int value);
     void updateAlpha();
 
-private slots:
+  private slots:
     void on_pushButtonBrightness_clicked();
     void on_pushButtonBrightness2_clicked();
     void on_pushButtonVolume_clicked();
@@ -161,13 +156,13 @@ private slots:
     bool check_file_exist(const char *filename);
     void hostModeStateChanged(QBluetoothLocalDevice::HostMode);
 
-    //void on_AlbumCoverListView_clicked(const QModelIndex &index);
+    // void on_AlbumCoverListView_clicked(const QModelIndex &index);
     void on_AlbumCoverListView_clicked(const QModelIndex &index);
 
     void on_pushButtonAlbum_clicked();
 
-private:
-    Ui::MainWindow* ui_;
+  private:
+    Ui::MainWindow *ui_;
     configuration::IConfiguration::Pointer configuration_;
 
     QString brightnessFilename = "/sys/class/backlight/rpi_backlight/brightness";
@@ -273,12 +268,11 @@ private:
 
     QBluetoothLocalDevice *localDevice;
 
-protected:
+  protected:
     void keyPressEvent(QKeyEvent *event);
-
 };
 
-}
-}
-}
-}
+}  // namespace ui
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

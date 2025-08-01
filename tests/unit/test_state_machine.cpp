@@ -1,15 +1,15 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <modern/StateMachine.hpp>
-#include <modern/EventBus.hpp>
-#include <thread>
+#include <gtest/gtest.h>
 #include <chrono>
+#include <modern/EventBus.hpp>
+#include <modern/StateMachine.hpp>
+#include <thread>
 
 using namespace openauto::modern;
 using namespace testing;
 
 class StateMachineTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         eventBus = std::make_shared<EventBus>();
         stateMachine = std::make_unique<StateMachine>(eventBus);
@@ -69,7 +69,7 @@ TEST_F(StateMachineTest, ErrorStateTransitionsTest) {
 TEST_F(StateMachineTest, ShutdownStateTransitionsTest) {
     // Transition to READY first
     stateMachine->transitionTo(SystemState::READY);
-    
+
     // From any state, should be able to go to SHUTDOWN
     EXPECT_TRUE(stateMachine->transitionTo(SystemState::SHUTDOWN));
     EXPECT_EQ(stateMachine->getCurrentState(), SystemState::SHUTDOWN);
@@ -96,24 +96,23 @@ TEST_F(StateMachineTest, InvalidStateTransitionsTest) {
 // Test state change events
 TEST_F(StateMachineTest, StateChangeEventsTest) {
     std::shared_ptr<Event> lastEvent;
-    
-    eventBus->subscribe(EventType::STATE_CHANGED, [&lastEvent](std::shared_ptr<Event> event) {
-        lastEvent = event;
-    });
+
+    eventBus->subscribe(EventType::STATE_CHANGED,
+                        [&lastEvent](std::shared_ptr<Event> event) { lastEvent = event; });
 
     // Transition should trigger event
     stateMachine->transitionTo(SystemState::READY);
-    
+
     // Wait for event processing
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    
+
     ASSERT_NE(lastEvent, nullptr);
     EXPECT_EQ(lastEvent->getType(), EventType::STATE_CHANGED);
     EXPECT_EQ(lastEvent->getSource(), "state_machine");
-    
+
     auto fromState = lastEvent->getData<int>("from_state");
     auto toState = lastEvent->getData<int>("to_state");
-    
+
     ASSERT_TRUE(fromState.has_value());
     ASSERT_TRUE(toState.has_value());
     EXPECT_EQ(fromState.value(), static_cast<int>(SystemState::INITIALIZING));
@@ -130,10 +129,10 @@ TEST_F(StateMachineTest, StateHistoryTest) {
     stateMachine->transitionTo(SystemState::READY);
 
     auto history = stateMachine->getStateHistory();
-    
+
     // Should have at least the transitions we made
     EXPECT_GE(history.size(), 5);
-    
+
     // Check the last few states
     auto it = history.rbegin();
     EXPECT_EQ(it->state, SystemState::READY);
@@ -147,12 +146,12 @@ TEST_F(StateMachineTest, StateHistoryTest) {
 TEST_F(StateMachineTest, ConcurrentTransitionsTest) {
     // Move to READY state first
     stateMachine->transitionTo(SystemState::READY);
-    
+
     std::atomic<int> successfulTransitions{0};
     std::atomic<int> failedTransitions{0};
-    
+
     std::vector<std::thread> threads;
-    
+
     // Create multiple threads trying to transition simultaneously
     for (int i = 0; i < 10; ++i) {
         threads.emplace_back([this, &successfulTransitions, &failedTransitions]() {
@@ -163,12 +162,12 @@ TEST_F(StateMachineTest, ConcurrentTransitionsTest) {
             }
         });
     }
-    
+
     // Wait for all threads to complete
     for (auto& thread : threads) {
         thread.join();
     }
-    
+
     // Only one transition should succeed
     EXPECT_EQ(successfulTransitions.load(), 1);
     EXPECT_EQ(failedTransitions.load(), 9);
@@ -179,20 +178,20 @@ TEST_F(StateMachineTest, ConcurrentTransitionsTest) {
 TEST_F(StateMachineTest, StateTimeoutTest) {
     // Move to READY
     stateMachine->transitionTo(SystemState::READY);
-    
+
     auto history = stateMachine->getStateHistory();
     ASSERT_FALSE(history.empty());
-    
+
     auto currentStateEntry = history.back();
     auto entryTime = currentStateEntry.timestamp;
-    
+
     // Wait a bit
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    
+
     // Check if we can calculate time in state
     auto now = std::chrono::steady_clock::now();
     auto timeInState = std::chrono::duration_cast<std::chrono::milliseconds>(now - entryTime);
-    
+
     EXPECT_GE(timeInState.count(), 100);
 }
 
@@ -204,10 +203,10 @@ TEST_F(StateMachineTest, StateValidationTest) {
     EXPECT_FALSE(stateMachine->canTransitionTo(SystemState::PROJECTING));
     EXPECT_TRUE(stateMachine->canTransitionTo(SystemState::ERROR));
     EXPECT_TRUE(stateMachine->canTransitionTo(SystemState::SHUTDOWN));
-    
+
     // After transitioning to READY
     stateMachine->transitionTo(SystemState::READY);
-    
+
     EXPECT_FALSE(stateMachine->canTransitionTo(SystemState::INITIALIZING));
     EXPECT_TRUE(stateMachine->canTransitionTo(SystemState::CONNECTED));
     EXPECT_FALSE(stateMachine->canTransitionTo(SystemState::PROJECTING));
@@ -219,7 +218,7 @@ TEST_F(StateMachineTest, StateValidationTest) {
 TEST_F(StateMachineTest, ForceTransitionTest) {
     // Normal transition that would fail
     EXPECT_FALSE(stateMachine->transitionTo(SystemState::CONNECTED));
-    
+
     // Force transition should work
     stateMachine->forceTransition(SystemState::CONNECTED);
     EXPECT_EQ(stateMachine->getCurrentState(), SystemState::CONNECTED);
@@ -231,9 +230,10 @@ TEST_F(StateMachineTest, StateCallbacksTest) {
     bool onExitCalled = false;
     SystemState enteredState = SystemState::INITIALIZING;
     SystemState exitedState = SystemState::INITIALIZING;
-    
+
     // Set up callbacks
-    stateMachine->setStateCallback(SystemState::READY, 
+    stateMachine->setStateCallback(
+        SystemState::READY,
         [&onEnterCalled, &enteredState](SystemState state) {
             onEnterCalled = true;
             enteredState = state;
@@ -241,18 +241,17 @@ TEST_F(StateMachineTest, StateCallbacksTest) {
         [&onExitCalled, &exitedState](SystemState state) {
             onExitCalled = true;
             exitedState = state;
-        }
-    );
-    
+        });
+
     // Transition to READY
     stateMachine->transitionTo(SystemState::READY);
-    
+
     EXPECT_TRUE(onEnterCalled);
     EXPECT_EQ(enteredState, SystemState::READY);
-    
+
     // Transition away from READY
     stateMachine->transitionTo(SystemState::CONNECTED);
-    
+
     EXPECT_TRUE(onExitCalled);
     EXPECT_EQ(exitedState, SystemState::READY);
 }
@@ -263,14 +262,14 @@ TEST_F(StateMachineTest, ResetTest) {
     stateMachine->transitionTo(SystemState::READY);
     stateMachine->transitionTo(SystemState::CONNECTED);
     stateMachine->transitionTo(SystemState::PROJECTING);
-    
+
     EXPECT_EQ(stateMachine->getCurrentState(), SystemState::PROJECTING);
-    
+
     // Reset should go back to INITIALIZING
     stateMachine->reset();
     EXPECT_EQ(stateMachine->getCurrentState(), SystemState::INITIALIZING);
-    
+
     // History should be cleared
     auto history = stateMachine->getStateHistory();
-    EXPECT_EQ(history.size(), 1); // Only the current INITIALIZING state
+    EXPECT_EQ(history.size(), 1);  // Only the current INITIALIZING state
 }

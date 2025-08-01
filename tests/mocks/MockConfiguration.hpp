@@ -6,7 +6,7 @@
 namespace f1x::openauto::autoapp::configuration {
 
 class MockConfiguration : public IConfiguration {
-public:
+  public:
     MOCK_METHOD(void, load, (), (override));
     MOCK_METHOD(void, reset, (), (override));
     MOCK_METHOD(void, save, (), (override));

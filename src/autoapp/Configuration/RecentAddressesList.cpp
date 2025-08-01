@@ -17,42 +17,28 @@
 */
 
 #include <boost/property_tree/ini_parser.hpp>
-#include <modern/Logger.hpp>
 #include <f1x/openauto/autoapp/Configuration/RecentAddressesList.hpp>
+#include <modern/Logger.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace configuration
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace configuration {
 
 const std::string RecentAddressesList::cConfigFileName = "openauto_wifi_recent.ini";
 const std::string RecentAddressesList::cRecentEntiresCount = "Recent.EntiresCount";
 const std::string RecentAddressesList::cRecentEntryPrefix = "Recent.Entry_";
 
-RecentAddressesList::RecentAddressesList(size_t maxListSize)
-    : maxListSize_(maxListSize)
-{
+RecentAddressesList::RecentAddressesList(size_t maxListSize) : maxListSize_(maxListSize) {}
 
-}
+void RecentAddressesList::read() { this->load(); }
 
-void RecentAddressesList::read()
-{
-    this->load();
-}
-
-void RecentAddressesList::insertAddress(const std::string& address)
-{
-    if(std::find(list_.begin(), list_.end(), address) != list_.end())
-    {
+void RecentAddressesList::insertAddress(const std::string& address) {
+    if (std::find(list_.begin(), list_.end(), address) != list_.end()) {
         return;
     }
 
-    if(list_.size() >= maxListSize_)
-    {
+    if (list_.size() >= maxListSize_) {
         list_.pop_back();
     }
 
@@ -60,49 +46,39 @@ void RecentAddressesList::insertAddress(const std::string& address)
     this->save();
 }
 
-RecentAddressesList::RecentAddresses RecentAddressesList::getList() const
-{
-    return list_;
-}
+RecentAddressesList::RecentAddresses RecentAddressesList::getList() const { return list_; }
 
-void RecentAddressesList::load()
-{
+void RecentAddressesList::load() {
     boost::property_tree::ptree iniConfig;
 
-    try
-    {
+    try {
         boost::property_tree::ini_parser::read_ini(cConfigFileName, iniConfig);
 
         const auto listSize = std::min(maxListSize_, iniConfig.get<size_t>(cRecentEntiresCount, 0));
 
-        for(size_t i = 0; i < listSize; ++i)
-        {
+        for (size_t i = 0; i < listSize; ++i) {
             const auto key = cRecentEntryPrefix + std::to_string(i);
-            const auto address = iniConfig.get<RecentAddresses::value_type>(key, RecentAddresses::value_type());
+            const auto address =
+                iniConfig.get<RecentAddresses::value_type>(key, RecentAddresses::value_type());
 
-            if(!address.empty())
-            {
+            if (!address.empty()) {
                 list_.push_back(address);
             }
         }
-    }
-    catch(const boost::property_tree::ini_parser_error& e)
-    {
-        LOG_WARN_STREAM(CONFIG, "[RecentAddressesList] failed to read configuration file: " << cConfigFileName
-                            << ", error: " << e.what()
-                            << ". Empty list will be used.");
+    } catch (const boost::property_tree::ini_parser_error& e) {
+        LOG_WARN_STREAM(CONFIG, "[RecentAddressesList] failed to read configuration file: "
+                                    << cConfigFileName << ", error: " << e.what()
+                                    << ". Empty list will be used.");
     }
 }
 
-void RecentAddressesList::save()
-{
+void RecentAddressesList::save() {
     boost::property_tree::ptree iniConfig;
 
     const auto entiresCount = std::min(maxListSize_, list_.size());
     iniConfig.put<size_t>(cRecentEntiresCount, entiresCount);
 
-    for(size_t i = 0; i < entiresCount; ++i)
-    {
+    for (size_t i = 0; i < entiresCount; ++i) {
         const auto key = cRecentEntryPrefix + std::to_string(i);
         iniConfig.put<RecentAddresses::value_type>(key, list_.at(i));
     }
@@ -110,7 +86,7 @@ void RecentAddressesList::save()
     boost::property_tree::ini_parser::write_ini(cConfigFileName, iniConfig);
 }
 
-}
-}
-}
-}
+}  // namespace configuration
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

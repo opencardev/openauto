@@ -19,22 +19,17 @@
 #pragma once
 
 #include <QIODevice>
-#include <mutex>
-#include <boost/circular_buffer.hpp>
 #include <aasdk/Common/Data.hpp>
+#include <boost/circular_buffer.hpp>
+#include <mutex>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class SequentialBuffer: public QIODevice
-{
-public:
+class SequentialBuffer : public QIODevice {
+  public:
     SequentialBuffer();
     bool isSequential() const override;
     qint64 size() const override;
@@ -46,16 +41,16 @@ public:
     qint64 bytesAvailable() const override;
     bool open(OpenMode mode) override;
 
-protected:
+  protected:
     qint64 readData(char *data, qint64 maxlen) override;
     qint64 writeData(const char *data, qint64 len) override;
 
-private:
+  private:
     boost::circular_buffer<aasdk::common::Data::value_type> data_;
     mutable std::mutex mutex_;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

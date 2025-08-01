@@ -1,31 +1,26 @@
 #pragma once
 
 #include <QDialog>
-#include <QFileSystemWatcher>
 #include <QDir>
+#include <QFileInfo>
+#include <QFileSystemWatcher>
+#include <QKeyEvent>
 #include <QStringList>
 #include <QTimer>
-#include <QFileInfo>
-#include <QKeyEvent>
 
 namespace Ui {
 class UpdateDialog;
 }
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace ui
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace ui {
 
-class UpdateDialog : public QDialog
-{
+class UpdateDialog : public QDialog {
     Q_OBJECT
 
-public:
+  public:
     explicit UpdateDialog(QWidget *parent = nullptr);
     ~UpdateDialog() override;
 
@@ -33,7 +28,7 @@ public:
     void downloadCheck();
     void updateProgress();
 
-private slots:
+  private slots:
     void on_pushButtonUpdateCsmt_clicked();
     void on_pushButtonUpdateUdev_clicked();
     void on_pushButtonUpdateOpenauto_clicked();
@@ -41,16 +36,16 @@ private slots:
     void on_pushButtonUpdateCheck_clicked();
     void on_pushButtonUpdateCancel_clicked();
 
-protected:
+  protected:
     void keyPressEvent(QKeyEvent *event);
 
-private:
+  private:
     Ui::UpdateDialog *ui_;
-    QFileSystemWatcher* watcher_tmp;
-    QFileSystemWatcher* watcher_download;
+    QFileSystemWatcher *watcher_tmp;
+    QFileSystemWatcher *watcher_download;
 };
 
-}
-}
-}
-}
+}  // namespace ui
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

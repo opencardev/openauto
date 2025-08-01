@@ -16,82 +16,85 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <modern/Logger.hpp>
+#include <QString>
 #include <f1x/openauto/autoapp/Service/MediaPlaybackStatus/MediaPlaybackStatusService.hpp>
 #include <fstream>
-#include <QString>
+#include <modern/Logger.hpp>
 
 namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace mediaplaybackstatus {
+namespace openauto {
+namespace autoapp {
+namespace service {
+namespace mediaplaybackstatus {
 
-          MediaPlaybackStatusService::MediaPlaybackStatusService(boost::asio::io_service &ioService,
-                                                       aasdk::messenger::IMessenger::Pointer messenger)
-              : strand_(ioService),
-                timer_(ioService),
-                channel_(std::make_shared<aasdk::channel::mediaplaybackstatus::MediaPlaybackStatusService>(strand_, std::move(messenger))) {
+MediaPlaybackStatusService::MediaPlaybackStatusService(
+    boost::asio::io_service &ioService, aasdk::messenger::IMessenger::Pointer messenger)
+    : strand_(ioService),
+      timer_(ioService),
+      channel_(std::make_shared<aasdk::channel::mediaplaybackstatus::MediaPlaybackStatusService>(
+          strand_, std::move(messenger))) {}
 
-          }
-
-          void MediaPlaybackStatusService::start() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] start()");
-            });
-          }
-
-          void MediaPlaybackStatusService::stop() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] stop()");
-            });
-          }
-
-          void MediaPlaybackStatusService::pause() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] pause()");
-            });
-          }
-
-          void MediaPlaybackStatusService::resume() {
-            strand_.dispatch([this, self = this->shared_from_this()]() {
-              LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] resume()");
-            });
-          }
-
-          void MediaPlaybackStatusService::fillFeatures(
-              aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-            LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] fillFeatures()");
-
-            auto *service = response.add_channels();
-            service->set_id(static_cast<uint32_t>(channel_->getId()));
-
-            auto *mediaPlaybackStatus = service->mutable_media_playback_service();
-            (void)mediaPlaybackStatus; // Suppress unused variable warning
-          }
-
-          void MediaPlaybackStatusService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-            LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] onChannelOpenRequest()");
-            LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] Channel Id: " + std::to_string(request.service_id()) + ", Priority: " + std::to_string(request.priority()));
-
-            aap_protobuf::service::control::message::ChannelOpenResponse response;
-            const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
-            response.set_status(status);
-
-            auto promise = aasdk::channel::SendPromise::defer(strand_);
-            promise->then([]() {}, std::bind(&MediaPlaybackStatusService::onChannelError, this->shared_from_this(),
-                                             std::placeholders::_1));
-            channel_->sendChannelOpenResponse(response, std::move(promise));
-
-            channel_->receive(this->shared_from_this());
-          }
-
-
-          void MediaPlaybackStatusService::onChannelError(const aasdk::error::Error &e) {
-            LOG_ERROR(ANDROID_AUTO, "[MediaPlaybackStatusService] onChannelError(): " + std::string(e.what()));
-          }
-        }
-      }
-    }
-  }
+void MediaPlaybackStatusService::start() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] start()");
+    });
 }
+
+void MediaPlaybackStatusService::stop() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] stop()");
+    });
+}
+
+void MediaPlaybackStatusService::pause() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] pause()");
+    });
+}
+
+void MediaPlaybackStatusService::resume() {
+    strand_.dispatch([this, self = this->shared_from_this()]() {
+        LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] resume()");
+    });
+}
+
+void MediaPlaybackStatusService::fillFeatures(
+    aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
+    LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] fillFeatures()");
+
+    auto *service = response.add_channels();
+    service->set_id(static_cast<uint32_t>(channel_->getId()));
+
+    auto *mediaPlaybackStatus = service->mutable_media_playback_service();
+    (void)mediaPlaybackStatus;  // Suppress unused variable warning
+}
+
+void MediaPlaybackStatusService::onChannelOpenRequest(
+    const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
+    LOG_INFO(ANDROID_AUTO, "[MediaPlaybackStatusService] onChannelOpenRequest()");
+    LOG_INFO(ANDROID_AUTO,
+             "[MediaPlaybackStatusService] Channel Id: " + std::to_string(request.service_id()) +
+                 ", Priority: " + std::to_string(request.priority()));
+
+    aap_protobuf::service::control::message::ChannelOpenResponse response;
+    const aap_protobuf::shared::MessageStatus status =
+        aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
+    response.set_status(status);
+
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {}, std::bind(&MediaPlaybackStatusService::onChannelError,
+                                     this->shared_from_this(), std::placeholders::_1));
+    channel_->sendChannelOpenResponse(response, std::move(promise));
+
+    channel_->receive(this->shared_from_this());
+}
+
+void MediaPlaybackStatusService::onChannelError(const aasdk::error::Error &e) {
+    LOG_ERROR(ANDROID_AUTO,
+              "[MediaPlaybackStatusService] onChannelError(): " + std::string(e.what()));
+}
+}  // namespace mediaplaybackstatus
+}  // namespace service
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

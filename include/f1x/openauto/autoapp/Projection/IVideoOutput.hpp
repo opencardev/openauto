@@ -18,25 +18,20 @@
 
 #pragma once
 
-#include <memory>
+#include <aap_protobuf/service/media/sink/message/VideoCodecResolutionType.pb.h>
+#include <aap_protobuf/service/media/sink/message/VideoFrameRateType.pb.h>
 #include <QRect>
 #include <aasdk/Common/Data.hpp>
 #include <aasdk/Messenger/Timestamp.hpp>
-#include <aap_protobuf/service/media/sink/message/VideoFrameRateType.pb.h>
-#include <aap_protobuf/service/media/sink/message/VideoCodecResolutionType.pb.h>
+#include <memory>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class IVideoOutput
-{
-public:
+class IVideoOutput {
+  public:
     typedef std::shared_ptr<IVideoOutput> Pointer;
 
     IVideoOutput() = default;
@@ -44,17 +39,18 @@ public:
 
     virtual bool open() = 0;
     virtual bool init() = 0;
-    virtual void write(aasdk::messenger::Timestamp::ValueType timestamp, const aasdk::common::DataConstBuffer& buffer) = 0;
+    virtual void write(aasdk::messenger::Timestamp::ValueType timestamp,
+                       const aasdk::common::DataConstBuffer& buffer) = 0;
     virtual void stop() = 0;
 
     virtual aap_protobuf::service::media::sink::message::VideoFrameRateType getVideoFPS() const = 0;
-    virtual aap_protobuf::service::media::sink::message::VideoCodecResolutionType getVideoResolution() const = 0;
+    virtual aap_protobuf::service::media::sink::message::VideoCodecResolutionType
+    getVideoResolution() const = 0;
     virtual size_t getScreenDPI() const = 0;
     virtual QRect getVideoMargins() const = 0;
-
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

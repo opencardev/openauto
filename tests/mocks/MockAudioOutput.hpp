@@ -6,9 +6,12 @@
 namespace f1x::openauto::autoapp::projection {
 
 class MockAudioOutput : public IAudioOutput {
-public:
+  public:
     MOCK_METHOD(bool, open, (), (override));
-    MOCK_METHOD(void, write, (aasdk::messenger::Timestamp::ValueType timestamp, const aasdk::common::DataConstBuffer& buffer), (override));
+    MOCK_METHOD(void, write,
+                (aasdk::messenger::Timestamp::ValueType timestamp,
+                 const aasdk::common::DataConstBuffer& buffer),
+                (override));
     MOCK_METHOD(void, start, (), (override));
     MOCK_METHOD(void, stop, (), (override));
     MOCK_METHOD(void, suspend, (), (override));

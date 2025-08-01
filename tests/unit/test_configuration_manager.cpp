@@ -1,21 +1,21 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <modern/ConfigurationManager.hpp>
-#include <modern/EventBus.hpp>
+#include <gtest/gtest.h>
 #include <filesystem>
 #include <fstream>
+#include <modern/ConfigurationManager.hpp>
+#include <modern/EventBus.hpp>
 
 using namespace openauto::modern;
 using namespace testing;
 
 class ConfigurationManagerTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         testConfigPath = "test_config.json";
-        
+
         // Clean up any existing test files
         std::filesystem::remove(testConfigPath);
-        
+
         configManager = std::make_unique<ConfigurationManager>(testConfigPath);
         eventBus = std::make_shared<EventBus>();
         configManager->setEventBus(eventBus);
@@ -24,7 +24,7 @@ protected:
     void TearDown() override {
         configManager.reset();
         eventBus.reset();
-        
+
         // Clean up test files
         std::filesystem::remove(testConfigPath);
     }
@@ -73,7 +73,7 @@ TEST_F(ConfigurationManagerTest, DefaultValues) {
 // Test hasValue functionality
 TEST_F(ConfigurationManagerTest, HasValueTest) {
     EXPECT_FALSE(configManager->hasValue("nonexistent"));
-    
+
     configManager->setValue("existing_key", std::string("value"));
     EXPECT_TRUE(configManager->hasValue("existing_key"));
 }
@@ -82,7 +82,7 @@ TEST_F(ConfigurationManagerTest, HasValueTest) {
 TEST_F(ConfigurationManagerTest, RemoveValueTest) {
     configManager->setValue("to_remove", std::string("value"));
     EXPECT_TRUE(configManager->hasValue("to_remove"));
-    
+
     configManager->removeValue("to_remove");
     EXPECT_FALSE(configManager->hasValue("to_remove"));
 }
@@ -119,12 +119,12 @@ TEST_F(ConfigurationManagerTest, JsonSerializationTest) {
 
     // Get as JSON
     auto json = configManager->toJson();
-    
+
     // Verify JSON structure
     EXPECT_TRUE(json.contains("key1"));
     EXPECT_TRUE(json.contains("key2"));
     EXPECT_TRUE(json.contains("key3"));
-    
+
     EXPECT_EQ(json["key1"], "value1");
     EXPECT_EQ(json["key2"], 42);
     EXPECT_EQ(json["key3"], true);
@@ -133,9 +133,9 @@ TEST_F(ConfigurationManagerTest, JsonSerializationTest) {
     nlohmann::json newJson;
     newJson["new_key1"] = "new_value1";
     newJson["new_key2"] = 999;
-    
+
     configManager->fromJson(newJson);
-    
+
     EXPECT_EQ(configManager->getValue<std::string>("new_key1", ""), "new_value1");
     EXPECT_EQ(configManager->getValue<int>("new_key2", 0), 999);
 }
@@ -146,8 +146,7 @@ TEST_F(ConfigurationManagerTest, BulkOperationsTest) {
         {"bulk_key1", std::string("bulk_value1")},
         {"bulk_key2", 100},
         {"bulk_key3", false},
-        {"bulk_key4", 9.99}
-    };
+        {"bulk_key4", 9.99}};
 
     configManager->setValues(values);
 
@@ -174,10 +173,10 @@ TEST_F(ConfigurationManagerTest, ResetTest) {
 
     // Reset should restore defaults and remove custom values
     configManager->reset();
-    
+
     // Custom key should be gone
     EXPECT_FALSE(configManager->hasValue("custom_key"));
-    
+
     // Default values should be present
     EXPECT_TRUE(configManager->hasValue("audio.volume"));
     EXPECT_TRUE(configManager->hasValue("video.brightness"));
@@ -207,16 +206,16 @@ TEST_F(ConfigurationManagerTest, ValidationTest) {
 
     // Should be valid
     EXPECT_TRUE(configManager->isValid());
-    
+
     auto errors = configManager->validate();
     EXPECT_TRUE(errors.empty());
 
     // Remove a required value
     configManager->removeValue("audio.volume");
-    
+
     // Should not be valid
     EXPECT_FALSE(configManager->isValid());
-    
+
     errors = configManager->validate();
     EXPECT_FALSE(errors.empty());
     EXPECT_THAT(errors, Contains(HasSubstr("audio.volume")));
@@ -225,24 +224,23 @@ TEST_F(ConfigurationManagerTest, ValidationTest) {
 // Test event notifications
 TEST_F(ConfigurationManagerTest, EventNotificationTest) {
     std::shared_ptr<Event> lastEvent;
-    
-    eventBus->subscribe(EventType::CONFIG_CHANGED, [&lastEvent](std::shared_ptr<Event> event) {
-        lastEvent = event;
-    });
+
+    eventBus->subscribe(EventType::CONFIG_CHANGED,
+                        [&lastEvent](std::shared_ptr<Event> event) { lastEvent = event; });
 
     // Setting a value should trigger an event
     configManager->setValue("test_key", std::string("test_value"));
-    
+
     // Wait for event processing
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    
+
     ASSERT_NE(lastEvent, nullptr);
     EXPECT_EQ(lastEvent->getType(), EventType::CONFIG_CHANGED);
     EXPECT_EQ(lastEvent->getSource(), "config_manager");
-    
+
     auto key = lastEvent->getData<std::string>("key");
     auto action = lastEvent->getData<std::string>("action");
-    
+
     ASSERT_TRUE(key.has_value());
     ASSERT_TRUE(action.has_value());
     EXPECT_EQ(key.value(), "test_key");
@@ -253,11 +251,11 @@ TEST_F(ConfigurationManagerTest, EventNotificationTest) {
 TEST_F(ConfigurationManagerTest, TypeSafetyTest) {
     // Set an integer value
     configManager->setValue("type_test", 42);
-    
+
     // Try to get as string - should return default
     auto stringVal = configManager->getValue<std::string>("type_test", "default");
     EXPECT_EQ(stringVal, "default");
-    
+
     // Get as correct type should work
     auto intVal = configManager->getValue<int>("type_test", 0);
     EXPECT_EQ(intVal, 42);
@@ -266,11 +264,11 @@ TEST_F(ConfigurationManagerTest, TypeSafetyTest) {
 // Test configuration path management
 TEST_F(ConfigurationManagerTest, ConfigPathTest) {
     EXPECT_EQ(configManager->getConfigPath(), testConfigPath);
-    
+
     std::string newPath = "new_test_config.json";
     configManager->setConfigPath(newPath);
     EXPECT_EQ(configManager->getConfigPath(), newPath);
-    
+
     // Clean up
     std::filesystem::remove(newPath);
 }

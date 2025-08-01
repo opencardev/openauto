@@ -21,45 +21,40 @@
 #include <QMediaPlayer>
 #include <QVideoWidget>
 #include <boost/noncopyable.hpp>
-#include <f1x/openauto/autoapp/Projection/VideoOutput.hpp>
 #include <f1x/openauto/autoapp/Projection/SequentialBuffer.hpp>
+#include <f1x/openauto/autoapp/Projection/VideoOutput.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class QtVideoOutput: public QObject, public VideoOutput, boost::noncopyable
-{
+class QtVideoOutput : public QObject, public VideoOutput, boost::noncopyable {
     Q_OBJECT
 
-public:
+  public:
     QtVideoOutput(configuration::IConfiguration::Pointer configuration);
     bool open() override;
     bool init() override;
     void write(uint64_t timestamp, const aasdk::common::DataConstBuffer& buffer) override;
     void stop() override;
 
-signals:
+  signals:
     void startPlayback();
     void stopPlayback();
 
-protected slots:
+  protected slots:
     void createVideoOutput();
     void onStartPlayback();
     void onStopPlayback();
 
-private:
+  private:
     SequentialBuffer videoBuffer_;
     std::unique_ptr<QVideoWidget> videoWidget_;
     std::unique_ptr<QMediaPlayer> mediaPlayer_;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

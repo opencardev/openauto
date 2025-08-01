@@ -18,27 +18,26 @@
 
 #pragma once
 
-#include <f1x/openauto/autoapp/Service/MediaSink/VideoMediaSinkService.hpp>
 #include <aasdk/Channel/MediaSink/Video/Channel/VideoChannel.hpp>
-
+#include <f1x/openauto/autoapp/Service/MediaSink/VideoMediaSinkService.hpp>
 
 namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace mediasink {
-          class VideoService : public VideoMediaSinkService {
-          public:
-            VideoService(boost::asio::io_service &ioService,
-                               aasdk::messenger::IMessenger::Pointer messenger,
-                               projection::IVideoOutput::Pointer videoOutput);
+namespace openauto {
+namespace autoapp {
+namespace service {
+namespace mediasink {
+class VideoService : public VideoMediaSinkService {
+  public:
+    VideoService(boost::asio::io_service &ioService,
+                 aasdk::messenger::IMessenger::Pointer messenger,
+                 projection::IVideoOutput::Pointer videoOutput);
 
-          protected:
-            projection::IVideoOutput::Pointer videoOutput;
-          };
+  protected:
+    projection::IVideoOutput::Pointer videoOutput;
+};
 
-        }
-      }
-    }
-  }
-}
+}  // namespace mediasink
+}  // namespace service
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

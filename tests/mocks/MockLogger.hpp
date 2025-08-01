@@ -8,8 +8,9 @@ namespace modern {
 namespace test {
 
 class MockLogger {
-public:
-    MOCK_METHOD(void, log, (LogLevel level, const std::string& message, const std::string& component));
+  public:
+    MOCK_METHOD(void, log,
+                (LogLevel level, const std::string& message, const std::string& component));
     MOCK_METHOD(void, debug, (const std::string& message, const std::string& component));
     MOCK_METHOD(void, info, (const std::string& message, const std::string& component));
     MOCK_METHOD(void, warning, (const std::string& message, const std::string& component));
@@ -22,6 +23,6 @@ public:
     MOCK_METHOD(void, flush, ());
 };
 
-} // namespace test
-} // namespace modern
-} // namespace openauto
+}  // namespace test
+}  // namespace modern
+}  // namespace openauto

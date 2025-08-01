@@ -19,73 +19,69 @@
 #pragma once
 
 #include <aasdk/Channel/MediaSource/IMediaSourceService.hpp>
-#include <aasdk/Channel/MediaSource/MediaSourceService.hpp>
 #include <aasdk/Channel/MediaSource/IMediaSourceServiceEventHandler.hpp>
-#include <f1x/openauto/autoapp/Service/IService.hpp>
+#include <aasdk/Channel/MediaSource/MediaSourceService.hpp>
 #include <f1x/openauto/autoapp/Projection/IAudioInput.hpp>
+#include <f1x/openauto/autoapp/Service/IService.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace service
-{
-  namespace mediasource {
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace service {
+namespace mediasource {
 
+class MediaSourceService : public aasdk::channel::mediasource::IMediaSourceServiceEventHandler,
+                           public IService,
+                           public std::enable_shared_from_this<MediaSourceService> {
+  public:
+    typedef std::shared_ptr<MediaSourceService> Pointer;
 
-    class MediaSourceService
-        : public aasdk::channel::mediasource::IMediaSourceServiceEventHandler,
-          public IService,
-          public std::enable_shared_from_this<MediaSourceService> {
-    public:
-      typedef std::shared_ptr<MediaSourceService> Pointer;
+    // General Constructor
+    MediaSourceService(boost::asio::io_service &ioService,
+                       aasdk::channel::mediasource::IMediaSourceService::Pointer channel,
+                       projection::IAudioInput::Pointer audioInput);
 
-      // General Constructor
-      MediaSourceService(boost::asio::io_service& ioService,
-      aasdk::channel::mediasource::IMediaSourceService::Pointer channel, projection::IAudioInput::Pointer audioInput);
+    void start() override;
 
-      void start() override;
+    void stop() override;
 
-      void stop() override;
+    void pause() override;
 
-      void pause() override;
+    void resume() override;
 
-      void resume() override;
+    void fillFeatures(
+        aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-      void fillFeatures(
-          aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
+    void onChannelOpenRequest(
+        const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
-      void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
+    void onMediaChannelSetupRequest(
+        const aap_protobuf::service::media::shared::message::Setup &request) override;
 
-      void onMediaChannelSetupRequest(
-          const aap_protobuf::service::media::shared::message::Setup &request) override;
+    void onMediaSourceOpenRequest(
+        const aap_protobuf::service::media::source::message::MicrophoneRequest &request) override;
 
-      void onMediaSourceOpenRequest(
-          const aap_protobuf::service::media::source::message::MicrophoneRequest &request) override;
+    void onMediaChannelAckIndication(
+        const aap_protobuf::service::media::source::message::Ack &indication) override;
 
-      void onMediaChannelAckIndication(
-          const aap_protobuf::service::media::source::message::Ack &indication) override;
+    void onChannelError(const aasdk::error::Error &e) override;
 
-      void onChannelError(const aasdk::error::Error &e) override;
+  protected:
+    using std::enable_shared_from_this<MediaSourceService>::shared_from_this;
 
-    protected:
-      using std::enable_shared_from_this<MediaSourceService>::shared_from_this;
+    void onMediaSourceOpenSuccess();
 
-      void onMediaSourceOpenSuccess();
+    void onMediaSourceDataReady(aasdk::common::Data data);
 
-      void onMediaSourceDataReady(aasdk::common::Data data);
+    void readMediaSource();
 
-      void readMediaSource();
-
-      boost::asio::io_service::strand strand_;
-      aasdk::channel::mediasource::IMediaSourceService::Pointer channel_;
-      projection::IAudioInput::Pointer audioInput_;
-      int32_t session_;
-    };
-  }
-}
-}
-}
-}
+    boost::asio::io_service::strand strand_;
+    aasdk::channel::mediasource::IMediaSourceService::Pointer channel_;
+    projection::IAudioInput::Pointer audioInput_;
+    int32_t session_;
+};
+}  // namespace mediasource
+}  // namespace service
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

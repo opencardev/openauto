@@ -18,12 +18,12 @@
 
 #pragma once
 
+#include <filesystem>
+#include <mutex>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 #include <variant>
-#include <mutex>
-#include <filesystem>
-#include <nlohmann/json.hpp>
 #include "Event.hpp"
 #include "EventBus.hpp"
 
@@ -33,61 +33,61 @@ namespace modern {
 using ConfigValue = std::variant<std::string, int, double, bool>;
 
 class ConfigurationManager {
-public:
+  public:
     ConfigurationManager(const std::string& configPath = "config.json");
     ~ConfigurationManager();
-    
+
     // Configuration management
     bool load();
     bool save();
     void reset();
-    
+
     // Value access
-    template<typename T>
+    template <typename T>
     T getValue(const std::string& key, const T& defaultValue = T{}) const;
-    
+
     void setValue(const std::string& key, const ConfigValue& value);
     bool hasValue(const std::string& key) const;
     void removeValue(const std::string& key);
-    
+
     // Bulk operations
     std::unordered_map<std::string, ConfigValue> getAllValues() const;
     void setValues(const std::unordered_map<std::string, ConfigValue>& values);
-    
+
     // JSON operations
     nlohmann::json toJson() const;
     void fromJson(const nlohmann::json& json);
-    
+
     // Path management
     void setConfigPath(const std::string& path);
     std::string getConfigPath() const;
-    
+
     // Validation
     bool isValid() const;
     std::vector<std::string> validate() const;
-    
+
     // Default configuration
     void loadDefaults();
 
-private:
+  private:
     mutable std::mutex mutex_;
     std::string configPath_;
     std::unordered_map<std::string, ConfigValue> values_;
-    
+
     // Helper methods
     void notifyConfigChanged(const std::string& key, const ConfigValue& value);
     ConfigValue jsonToConfigValue(const nlohmann::json& value);
     nlohmann::json configValueToJson(const ConfigValue& value) const;
-    
+
     // Default values
     void setDefaultValues();
 };
 
 // Template implementation
-template<typename T>
+template <typename T>
 T ConfigurationManager::getValue(const std::string& key, const T& defaultValue) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     auto it = values_.find(key);
     if (it != values_.end()) {
         try {
@@ -97,9 +97,9 @@ T ConfigurationManager::getValue(const std::string& key, const T& defaultValue) 
             return defaultValue;
         }
     }
-    
+
     return defaultValue;
 }
 
-} // namespace modern
-} // namespace openauto
+}  // namespace modern
+}  // namespace openauto

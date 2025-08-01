@@ -21,25 +21,20 @@
 #include <deque>
 #include <f1x/openauto/autoapp/Configuration/IRecentAddressesList.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace configuration
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace configuration {
 
-class RecentAddressesList: public IRecentAddressesList
-{
-public:
+class RecentAddressesList : public IRecentAddressesList {
+  public:
     RecentAddressesList(size_t maxListSize);
 
     void read() override;
     void insertAddress(const std::string& address) override;
     RecentAddresses getList() const override;
 
-private:
+  private:
     void load();
     void save();
 
@@ -51,7 +46,7 @@ private:
     static const std::string cRecentEntryPrefix;
 };
 
-}
-}
-}
-}
+}  // namespace configuration
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

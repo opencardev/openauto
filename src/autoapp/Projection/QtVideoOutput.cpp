@@ -20,55 +20,41 @@
 #include <f1x/openauto/autoapp/Projection/QtVideoOutput.hpp>
 #include <modern/Logger.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
 QtVideoOutput::QtVideoOutput(configuration::IConfiguration::Pointer configuration)
-    : VideoOutput(std::move(configuration))
-{
+    : VideoOutput(std::move(configuration)) {
     this->moveToThread(QApplication::instance()->thread());
-    connect(this, &QtVideoOutput::startPlayback, this, &QtVideoOutput::onStartPlayback, Qt::QueuedConnection);
-    connect(this, &QtVideoOutput::stopPlayback, this, &QtVideoOutput::onStopPlayback, Qt::QueuedConnection);
+    connect(this, &QtVideoOutput::startPlayback, this, &QtVideoOutput::onStartPlayback,
+            Qt::QueuedConnection);
+    connect(this, &QtVideoOutput::stopPlayback, this, &QtVideoOutput::onStopPlayback,
+            Qt::QueuedConnection);
     QMetaObject::invokeMethod(this, "createVideoOutput", Qt::BlockingQueuedConnection);
 }
 
-void QtVideoOutput::createVideoOutput()
-{
+void QtVideoOutput::createVideoOutput() {
     LOG_INFO(VIDEO, "[QtVideoOutput] createVideoOutput()");
     videoWidget_ = std::make_unique<QVideoWidget>();
     mediaPlayer_ = std::make_unique<QMediaPlayer>(nullptr, QMediaPlayer::StreamPlayback);
 }
 
+bool QtVideoOutput::open() { return videoBuffer_.open(QIODevice::ReadWrite); }
 
-bool QtVideoOutput::open()
-{
-    return videoBuffer_.open(QIODevice::ReadWrite);
-}
-
-bool QtVideoOutput::init()
-{
+bool QtVideoOutput::init() {
     emit startPlayback();
     return true;
 }
 
-void QtVideoOutput::stop()
-{
-    emit stopPlayback();
-}
+void QtVideoOutput::stop() { emit stopPlayback(); }
 
-void QtVideoOutput::write(uint64_t, const aasdk::common::DataConstBuffer& buffer)
-{
+void QtVideoOutput::write(uint64_t, const aasdk::common::DataConstBuffer& buffer) {
     videoBuffer_.write(reinterpret_cast<const char*>(buffer.cdata), buffer.size);
 }
 
-void QtVideoOutput::onStartPlayback()
-{
+void QtVideoOutput::onStartPlayback() {
     videoWidget_->setAttribute(Qt::WA_OpaquePaintEvent, true);
     videoWidget_->setAttribute(Qt::WA_NoSystemBackground, true);
     videoWidget_->setAspectRatioMode(Qt::IgnoreAspectRatio);
@@ -87,15 +73,14 @@ void QtVideoOutput::onStartPlayback()
     LOG_DEBUG_STREAM(VIDEO, "Player error state -> " + mediaPlayer_->errorString().toStdString());
 }
 
-void QtVideoOutput::onStopPlayback()
-{
+void QtVideoOutput::onStopPlayback() {
     videoWidget_->hide();
     videoWidget_->clearFocus();
     mediaPlayer_->stop();
     mediaPlayer_->setMedia(QMediaContent());
 }
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

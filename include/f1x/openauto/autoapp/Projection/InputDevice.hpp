@@ -18,26 +18,22 @@
 
 #pragma once
 
-#include <QObject>
 #include <QKeyEvent>
-#include <f1x/openauto/autoapp/Projection/IInputDevice.hpp>
+#include <QObject>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
+#include <f1x/openauto/autoapp/Projection/IInputDevice.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class InputDevice: public QObject, public IInputDevice, boost::noncopyable
-{
+class InputDevice : public QObject, public IInputDevice, boost::noncopyable {
     Q_OBJECT
 
-public:
-    InputDevice(QObject& parent, configuration::IConfiguration::Pointer configuration, const QRect& touchscreenGeometry, const QRect& videoGeometry);
+  public:
+    InputDevice(QObject& parent, configuration::IConfiguration::Pointer configuration,
+                const QRect& touchscreenGeometry, const QRect& videoGeometry);
 
     void start(IInputDeviceEventHandler& eventHandler) override;
     void stop() override;
@@ -46,7 +42,7 @@ public:
     bool hasTouchscreen() const override;
     QRect getTouchscreenGeometry() const override;
 
-private:
+  private:
     void setVideoGeometry();
     bool handleKeyEvent(QEvent* event, QKeyEvent* key);
     void dispatchKeyEvent(ButtonEvent event);
@@ -60,7 +56,7 @@ private:
     std::mutex mutex_;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

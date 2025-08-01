@@ -20,24 +20,19 @@
 
 #include <boost/property_tree/ini_parser.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 
 #include <stdio.h>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace configuration
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace configuration {
 
-class Configuration: public IConfiguration
-{
-public:
+class Configuration : public IConfiguration {
+  public:
     Configuration();
 
     void load() override;
@@ -90,9 +85,12 @@ public:
     QString getParamFromFile(QString fileName, QString searchString) const override;
 
     aap_protobuf::service::media::sink::message::VideoFrameRateType getVideoFPS() const override;
-    void setVideoFPS(aap_protobuf::service::media::sink::message::VideoFrameRateType value) override;
-    aap_protobuf::service::media::sink::message::VideoCodecResolutionType getVideoResolution() const override;
-    void setVideoResolution(aap_protobuf::service::media::sink::message::VideoCodecResolutionType value) override;
+    void setVideoFPS(
+        aap_protobuf::service::media::sink::message::VideoFrameRateType value) override;
+    aap_protobuf::service::media::sink::message::VideoCodecResolutionType getVideoResolution()
+        const override;
+    void setVideoResolution(
+        aap_protobuf::service::media::sink::message::VideoCodecResolutionType value) override;
     size_t getScreenDPI() const override;
     void setScreenDPI(size_t value) override;
     void setOMXLayerIndex(int32_t value) override;
@@ -125,9 +123,11 @@ public:
 
     AudioOutputBackendType getAudioOutputBackendType() const override;
     void setAudioOutputBackendType(AudioOutputBackendType value) override;
-private:
+
+  private:
     void readButtonCodes(boost::property_tree::ptree& iniConfig);
-    void insertButtonCode(boost::property_tree::ptree& iniConfig, const std::string& buttonCodeKey, aap_protobuf::service::media::sink::message::KeyCode buttonCode);
+    void insertButtonCode(boost::property_tree::ptree& iniConfig, const std::string& buttonCodeKey,
+                          aap_protobuf::service::media::sink::message::KeyCode buttonCode);
     void writeButtonCodes(boost::property_tree::ptree& iniConfig);
 
     HandednessOfTrafficType handednessOfTrafficType_;
@@ -232,7 +232,7 @@ private:
     static const std::string cInputNavButtonKey;
 };
 
-}
-}
-}
-}
+}  // namespace configuration
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

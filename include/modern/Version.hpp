@@ -27,26 +27,20 @@ constexpr const char* GIT_BRANCH = OPENAUTO_GIT_BRANCH;
 constexpr const char* GIT_DESCRIBE = OPENAUTO_GIT_DESCRIBE;
 
 // Convenience functions
-inline std::string getVersionString() {
-    return std::string(VERSION_STRING);
-}
+inline std::string getVersionString() { return std::string(VERSION_STRING); }
 
 inline std::string getFullVersionInfo() {
-    return std::string(VERSION_STRING) + 
-           " (branch: " + std::string(GIT_BRANCH) + 
-           ", commit: " + std::string(GIT_COMMIT) + 
-           ", built: " + std::string(BUILD_DATE) + ")";
+    return std::string(VERSION_STRING) + " (branch: " + std::string(GIT_BRANCH) +
+           ", commit: " + std::string(GIT_COMMIT) + ", built: " + std::string(BUILD_DATE) + ")";
 }
 
 inline std::string getBuildInfo() {
-    return "OpenAuto " + std::string(VERSION_STRING) +
-           "\nBranch: " + std::string(GIT_BRANCH) +
+    return "OpenAuto " + std::string(VERSION_STRING) + "\nBranch: " + std::string(GIT_BRANCH) +
            "\nCommit: " + std::string(GIT_COMMIT_FULL) +
-           "\nDescribe: " + std::string(GIT_DESCRIBE) +
-           "\nBuild Date: " + std::string(BUILD_DATE);
+           "\nDescribe: " + std::string(GIT_DESCRIBE) + "\nBuild Date: " + std::string(BUILD_DATE);
 }
 
-} // namespace modern
-} // namespace openauto
+}  // namespace modern
+}  // namespace openauto
 
-#endif // OPENAUTO_MODERN_VERSION_H
+#endif  // OPENAUTO_MODERN_VERSION_H

@@ -19,43 +19,44 @@
 #pragma once
 
 #include <aasdk/Channel/MediaBrowser/MediaBrowserService.hpp>
-#include <f1x/openauto/autoapp/Service/IService.hpp>
-#include <boost/asio/io_service.hpp>
 #include <aasdk/Messenger/IMessenger.hpp>
+#include <boost/asio/io_service.hpp>
+#include <f1x/openauto/autoapp/Service/IService.hpp>
 
 namespace f1x {
-  namespace openauto {
-    namespace autoapp {
-      namespace service {
-        namespace mediabrowser {
+namespace openauto {
+namespace autoapp {
+namespace service {
+namespace mediabrowser {
 
-          class MediaBrowserService :
-              public aasdk::channel::mediabrowser::IMediaBrowserServiceEventHandler,
-              public IService,
-              public std::enable_shared_from_this<MediaBrowserService> {
-          public:
-            MediaBrowserService(boost::asio::io_service &ioService, aasdk::messenger::IMessenger::Pointer messenger);
+class MediaBrowserService : public aasdk::channel::mediabrowser::IMediaBrowserServiceEventHandler,
+                            public IService,
+                            public std::enable_shared_from_this<MediaBrowserService> {
+  public:
+    MediaBrowserService(boost::asio::io_service &ioService,
+                        aasdk::messenger::IMessenger::Pointer messenger);
 
-            void start() override;
-            void stop() override;
-            void pause() override;
-            void resume() override;
-            void fillFeatures(aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
+    void start() override;
+    void stop() override;
+    void pause() override;
+    void resume() override;
+    void fillFeatures(
+        aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) override;
 
-            void onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
+    void onChannelOpenRequest(
+        const aap_protobuf::service::control::message::ChannelOpenRequest &request) override;
 
-            void onChannelError(const aasdk::error::Error &e) override;
+    void onChannelError(const aasdk::error::Error &e) override;
 
+  private:
+    using std::enable_shared_from_this<MediaBrowserService>::shared_from_this;
+    boost::asio::io_service::strand strand_;
+    boost::asio::deadline_timer timer_;
+    aasdk::channel::mediabrowser::MediaBrowserService::Pointer channel_;
+};
 
-          private:
-            using std::enable_shared_from_this<MediaBrowserService>::shared_from_this;
-            boost::asio::io_service::strand strand_;
-            boost::asio::deadline_timer timer_;
-            aasdk::channel::mediabrowser::MediaBrowserService::Pointer channel_;
-          };
-
-        }
-      }
-    }
-  }
-}
+}  // namespace mediabrowser
+}  // namespace service
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

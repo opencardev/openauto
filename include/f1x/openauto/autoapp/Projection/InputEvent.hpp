@@ -18,49 +18,33 @@
 
 #pragma once
 
-#include <aap_protobuf/service/media/sink/message/KeyCode.pb.h>
 #include <aap_protobuf/service/inputsource/message/PointerAction.pb.h>
+#include <aap_protobuf/service/media/sink/message/KeyCode.pb.h>
 #include <aasdk/IO/Promise.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-enum class ButtonEventType
-{
-    NONE,
-    PRESS,
-    RELEASE
-};
+enum class ButtonEventType { NONE, PRESS, RELEASE };
 
-enum class WheelDirection
-{
-    NONE,
-    LEFT,
-    RIGHT
-};
+enum class WheelDirection { NONE, LEFT, RIGHT };
 
-struct ButtonEvent
-{
+struct ButtonEvent {
     ButtonEventType type;
     WheelDirection wheelDirection;
     aap_protobuf::service::media::sink::message::KeyCode code;
 };
 
-struct TouchEvent
-{
+struct TouchEvent {
     aap_protobuf::service::inputsource::message::PointerAction type;
     uint32_t x;
     uint32_t y;
     uint32_t pointerId;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

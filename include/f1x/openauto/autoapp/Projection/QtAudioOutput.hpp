@@ -18,28 +18,24 @@
 
 #pragma once
 
-#include <QAudioOutput>
 #include <QAudioFormat>
+#include <QAudioOutput>
 #include <f1x/openauto/autoapp/Projection/IAudioOutput.hpp>
 #include <f1x/openauto/autoapp/Projection/SequentialBuffer.hpp>
 
-namespace f1x
-{
-namespace openauto
-{
-namespace autoapp
-{
-namespace projection
-{
+namespace f1x {
+namespace openauto {
+namespace autoapp {
+namespace projection {
 
-class QtAudioOutput: public QObject, public IAudioOutput
-{
+class QtAudioOutput : public QObject, public IAudioOutput {
     Q_OBJECT
 
-public:
+  public:
     QtAudioOutput(uint32_t channelCount, uint32_t sampleSize, uint32_t sampleRate);
     bool open() override;
-    void write(aasdk::messenger::Timestamp::ValueType, const aasdk::common::DataConstBuffer& buffer) override;
+    void write(aasdk::messenger::Timestamp::ValueType,
+               const aasdk::common::DataConstBuffer& buffer) override;
     void start() override;
     void stop() override;
     void suspend() override;
@@ -47,25 +43,25 @@ public:
     uint32_t getChannelCount() const override;
     uint32_t getSampleRate() const override;
 
-signals:
+  signals:
     void startPlayback();
     void suspendPlayback();
     void stopPlayback();
 
-protected slots:
+  protected slots:
     void createAudioOutput();
     void onStartPlayback();
     void onSuspendPlayback();
     void onStopPlayback();
 
-private:
+  private:
     QAudioFormat audioFormat_;
-    QIODevice * audioBuffer_;
+    QIODevice* audioBuffer_;
     std::unique_ptr<QAudioOutput> audioOutput_;
     bool playbackStarted_;
 };
 
-}
-}
-}
-}
+}  // namespace projection
+}  // namespace autoapp
+}  // namespace openauto
+}  // namespace f1x

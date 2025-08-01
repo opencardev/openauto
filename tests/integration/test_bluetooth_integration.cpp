@@ -1,11 +1,11 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace testing;
 
 // Integration tests for Bluetooth functionality
 class BluetoothIntegrationTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // Set up Bluetooth integration test environment
         // Note: These tests require actual Bluetooth hardware or proper mocks
@@ -23,7 +23,7 @@ TEST_F(BluetoothIntegrationTest, ServiceInitializationTest) {
     // - Bluetooth adapter discovery
     // - Service registration
     // - Initial pairing state
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test Bluetooth device pairing flow
@@ -34,7 +34,7 @@ TEST_F(BluetoothIntegrationTest, DevicePairingTest) {
     // - Pairing initiation
     // - Authentication
     // - Connection establishment
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test Bluetooth communication
@@ -44,7 +44,7 @@ TEST_F(BluetoothIntegrationTest, CommunicationTest) {
     // - Data transmission
     // - Error handling
     // - Disconnection/reconnection
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test Bluetooth integration with Android Auto
@@ -54,7 +54,7 @@ TEST_F(BluetoothIntegrationTest, AndroidAutoIntegrationTest) {
     // - Phone call handling
     // - Audio routing
     // - Hands-free operation
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }
 
 // Test Bluetooth error recovery
@@ -64,5 +64,5 @@ TEST_F(BluetoothIntegrationTest, ErrorRecoveryTest) {
     // - Connection loss handling
     // - Automatic reconnection
     // - Service recovery
-    EXPECT_TRUE(true); // Placeholder
+    EXPECT_TRUE(true);  // Placeholder
 }

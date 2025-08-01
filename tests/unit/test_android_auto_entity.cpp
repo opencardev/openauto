@@ -1,8 +1,8 @@
 // Placeholder unit tests for AndroidAutoEntity and other legacy components
 // These tests will focus on the modernized components and their integration
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace testing;
 
@@ -11,7 +11,7 @@ using namespace testing;
 // these tests would require extensive mocking infrastructure
 
 class AndroidAutoEntityTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // TODO: Set up mocks for:
         // - aasdk components
@@ -29,48 +29,40 @@ TEST_F(AndroidAutoEntityTest, CompilationTest) {
 
 // Placeholder for ServiceFactory tests
 class ServiceFactoryTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // TODO: Set up service factory test environment
     }
 };
 
-TEST_F(ServiceFactoryTest, CompilationTest) {
-    EXPECT_TRUE(true);
-}
+TEST_F(ServiceFactoryTest, CompilationTest) { EXPECT_TRUE(true); }
 
-// Placeholder for Bluetooth handler tests  
+// Placeholder for Bluetooth handler tests
 class BluetoothHandlerTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // TODO: Set up Bluetooth test environment
     }
 };
 
-TEST_F(BluetoothHandlerTest, CompilationTest) {
-    EXPECT_TRUE(true);
-}
+TEST_F(BluetoothHandlerTest, CompilationTest) { EXPECT_TRUE(true); }
 
 // Placeholder for WiFi projection tests
 class WifiProjectionTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // TODO: Set up WiFi projection test environment
     }
 };
 
-TEST_F(WifiProjectionTest, CompilationTest) {
-    EXPECT_TRUE(true);
-}
+TEST_F(WifiProjectionTest, CompilationTest) { EXPECT_TRUE(true); }
 
 // Placeholder for vendor extension tests
 class VendorExtensionTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // TODO: Set up vendor extension test environment
     }
 };
 
-TEST_F(VendorExtensionTest, CompilationTest) {
-    EXPECT_TRUE(true);
-}
+TEST_F(VendorExtensionTest, CompilationTest) { EXPECT_TRUE(true); }

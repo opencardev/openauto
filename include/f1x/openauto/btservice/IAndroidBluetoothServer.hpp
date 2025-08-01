@@ -18,20 +18,18 @@
 
 #pragma once
 
-#include <memory>
 #include <QBluetoothAddress>
+#include <memory>
 
 namespace f1x::openauto::btservice {
 
-  class IAndroidBluetoothServer {
+class IAndroidBluetoothServer {
   public:
     typedef std::shared_ptr<IAndroidBluetoothServer> Pointer;
 
     virtual ~IAndroidBluetoothServer() = default;
 
     virtual uint16_t start(const QBluetoothAddress &address) = 0;
-  };
+};
 
-}
-
-
+}  // namespace f1x::openauto::btservice
