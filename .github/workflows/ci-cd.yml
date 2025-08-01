@@ -218,6 +218,7 @@ jobs:
             qtmultimedia5-dev \
             qtdeclarative5-dev \
             qtquickcontrols2-5-dev \
+            qtconnectivity5-dev \
             libusb-1.0-0-dev \
             libtag1-dev \
             librtaudio-dev \
@@ -226,17 +227,38 @@ jobs:
             libblkid-dev \
             libgps-dev \
             libssl-dev \
-            uuid-dev
+            uuid-dev \
+            pngcheck
 
       - name: Install cpp-httplib
         run: |
-          git clone https://github.com/yhirose/cpp-httplib.git /tmp/cpp-httplib
-          cd /tmp/cpp-httplib
-          mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DHTTPLIB_COMPILE=ON
-          make -j$(nproc)
-          sudo make install
-          sudo ldconfig
+          # Try to install from package first
+          if apt-get update && apt-get install -y libcpp-httplib-dev; then
+            echo "Installed cpp-httplib from package"
+          else
+            echo "Building cpp-httplib from source"
+            git clone https://github.com/yhirose/cpp-httplib.git /tmp/cpp-httplib
+            cd /tmp/cpp-httplib
+            mkdir build && cd build
+            cmake .. \
+              -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DHTTPLIB_COMPILE=ON \
+              -DHTTPLIB_USE_OPENSSL_IF_AVAILABLE=ON \
+              -DHTTPLIB_USE_ZLIB_IF_AVAILABLE=ON \
+              -DBUILD_SHARED_LIBS=ON
+            make -j$(nproc)
+            sudo make install
+            sudo ldconfig
+            
+            # Create a symlink if the library has a different name
+            if [ -f /usr/local/lib/libcpp-httplib.so ] && [ ! -f /usr/local/lib/libhttplib.so ]; then
+              sudo ln -sf /usr/local/lib/libcpp-httplib.so /usr/local/lib/libhttplib.so
+            fi
+          fi
+          
+          # Verify installation
+          ls -la /usr/local/include/httplib.h /usr/include/httplib.h 2>/dev/null || echo "Header not found in standard locations"
+          ls -la /usr/local/lib/lib*httplib* /usr/lib/*/lib*httplib* 2>/dev/null || echo "Library not found"
 
       - name: Build AASDK
         run: |
@@ -367,6 +389,7 @@ jobs:
             qtmultimedia5-dev \
             qtdeclarative5-dev \
             qtquickcontrols2-5-dev \
+            qtconnectivity5-dev \
             libusb-1.0-0-dev \
             libtag1-dev \
             librtaudio-dev \
@@ -378,17 +401,39 @@ jobs:
             uuid-dev \
             debhelper \
             fakeroot \
-            devscripts
+            devscripts \
+            pngcheck
 
       - name: Install cpp-httplib (AMD64 only)
         if: steps.check_arch.outputs.should_build == 'true' && matrix.arch == 'amd64'
         run: |
-          git clone https://github.com/yhirose/cpp-httplib.git /tmp/cpp-httplib
-          cd /tmp/cpp-httplib
-          mkdir build && cd build
-          cmake ..
-          make -j$(nproc)
-          sudo make install
+          # Try to install from package first
+          if apt-get update && apt-get install -y libcpp-httplib-dev; then
+            echo "Installed cpp-httplib from package"
+          else
+            echo "Building cpp-httplib from source"
+            git clone https://github.com/yhirose/cpp-httplib.git /tmp/cpp-httplib
+            cd /tmp/cpp-httplib
+            mkdir build && cd build
+            cmake .. \
+              -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DHTTPLIB_COMPILE=ON \
+              -DHTTPLIB_USE_OPENSSL_IF_AVAILABLE=ON \
+              -DHTTPLIB_USE_ZLIB_IF_AVAILABLE=ON \
+              -DBUILD_SHARED_LIBS=ON
+            make -j$(nproc)
+            sudo make install
+            sudo ldconfig
+            
+            # Create a symlink if the library has a different name
+            if [ -f /usr/local/lib/libcpp-httplib.so ] && [ ! -f /usr/local/lib/libhttplib.so ]; then
+              sudo ln -sf /usr/local/lib/libcpp-httplib.so /usr/local/lib/libhttplib.so
+            fi
+          fi
+          
+          # Verify installation
+          ls -la /usr/local/include/httplib.h /usr/include/httplib.h 2>/dev/null || echo "Header not found in standard locations"
+          ls -la /usr/local/lib/lib*httplib* /usr/lib/*/lib*httplib* 2>/dev/null || echo "Library not found"
 
       - name: Build AASDK (AMD64 only)
         if: steps.check_arch.outputs.should_build == 'true' && matrix.arch == 'amd64'
