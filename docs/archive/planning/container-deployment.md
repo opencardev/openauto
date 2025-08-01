@@ -99,9 +99,9 @@ RUN apt-get update && apt-get install -y \
 
 # Build AASDK
 WORKDIR /tmp/aasdk
-RUN git clone https://github.com/f1xpl/aasdk.git . && \
+RUN git clone https://github.com/opencardev/aasdk.git . && \
     mkdir build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DTARGET_ARCH=amd64 && \
     make -j$(nproc) && \
     make install
 

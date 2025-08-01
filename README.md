@@ -37,7 +37,7 @@ Copyrights (c) 2018 f1x.studio (Michal Szwaj)
 *AndroidAuto is registered trademark of Google Inc.*
 
 ### Used software
- - [aasdk](https://github.com/f1xpl/aasdk)
+ - [aasdk](https://github.com/opencardev/aasdk)
  - [Boost libraries](http://www.boost.org/)
  - [Qt libraries](https://www.qt.io/)
  - [CMake](https://cmake.org/)

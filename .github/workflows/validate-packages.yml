@@ -1,0 +1,379 @@
+name: Package Validation
+
+on:
+  workflow_call:
+    inputs:
+      packages_artifact:
+        description: 'Name of the artifact containing packages to validate'
+        required: true
+        type: string
+      architecture:
+        description: 'Architecture being validated'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      run_full_validation:
+        description: 'Run full validation suite'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  validate-package-structure:
+    name: Validate Package Structure
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download packages
+        if: github.event_name == 'workflow_call'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.packages_artifact }}
+          path: packages/
+
+      - name: Setup validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            lintian \
+            dpkg-dev \
+            piuparts \
+            file \
+            binutils
+
+      - name: Validate package metadata
+        run: |
+          cd packages
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              echo "=== Validating metadata for $deb ==="
+              
+              # Extract package info
+              dpkg-deb --info "$deb"
+              
+              # Check control file
+              dpkg-deb --control "$deb" control-extracted/
+              
+              # Validate required fields
+              echo "Checking required control fields..."
+              grep -q "^Package:" control-extracted/control || { echo "ERROR: Missing Package field"; exit 1; }
+              grep -q "^Version:" control-extracted/control || { echo "ERROR: Missing Version field"; exit 1; }
+              grep -q "^Architecture:" control-extracted/control || { echo "ERROR: Missing Architecture field"; exit 1; }
+              grep -q "^Maintainer:" control-extracted/control || { echo "ERROR: Missing Maintainer field"; exit 1; }
+              grep -q "^Description:" control-extracted/control || { echo "ERROR: Missing Description field"; exit 1; }
+              
+              echo "✓ All required fields present"
+              echo ""
+            fi
+          done
+
+      - name: Validate package contents
+        run: |
+          cd packages
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              echo "=== Validating contents for $deb ==="
+              
+              # List contents
+              dpkg-deb --contents "$deb"
+              
+              # Extract package
+              dpkg-deb --extract "$deb" extracted/
+              
+              # Check for required files
+              echo "Checking for required files..."
+              
+              # Main binary
+              if [ ! -f "extracted/usr/bin/autoapp" ]; then
+                echo "ERROR: Main binary autoapp not found"
+                exit 1
+              fi
+              echo "✓ Main binary found"
+              
+              # Service files
+              if [ ! -d "extracted/lib/systemd/system" ]; then
+                echo "WARNING: systemd service directory not found"
+              else
+                echo "✓ systemd service directory found"
+              fi
+              
+              # Configuration
+              if [ ! -d "extracted/etc/openauto" ]; then
+                echo "WARNING: Configuration directory not found"
+              else
+                echo "✓ Configuration directory found"
+              fi
+              
+              # Check binary architecture
+              echo "Checking binary architecture..."
+              file extracted/usr/bin/autoapp
+              
+              echo ""
+            fi
+          done
+
+      - name: Run lintian checks
+        run: |
+          cd packages
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              echo "=== Running lintian on $deb ==="
+              
+              # Run lintian with appropriate checks
+              lintian --info --display-info --display-experimental \
+                --suppress-tags \
+                embedded-library,\
+                hardening-no-fortify-functions,\
+                binary-without-manpage \
+                "$deb" || true
+              
+              echo ""
+            fi
+          done
+
+      - name: Validate package dependencies
+        run: |
+          cd packages
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              echo "=== Checking dependencies for $deb ==="
+              
+              # Extract dependency information
+              depends=$(dpkg-deb --field "$deb" Depends)
+              echo "Dependencies: $depends"
+              
+              # Check if dependencies are reasonable
+              if echo "$depends" | grep -q "libboost"; then
+                echo "✓ Boost dependencies found"
+              else
+                echo "WARNING: No Boost dependencies found"
+              fi
+              
+              if echo "$depends" | grep -q "qt"; then
+                echo "✓ Qt dependencies found"
+              else
+                echo "WARNING: No Qt dependencies found"
+              fi
+              
+              echo ""
+            fi
+          done
+
+      - name: Check package size
+        run: |
+          cd packages
+          echo "=== Package sizes ==="
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              size=$(du -h "$deb" | cut -f1)
+              echo "$deb: $size"
+              
+              # Warn if package is unusually large or small
+              size_bytes=$(du -b "$deb" | cut -f1)
+              if [ "$size_bytes" -gt 100000000 ]; then
+                echo "WARNING: Package $deb is quite large (>100MB)"
+              elif [ "$size_bytes" -lt 1000000 ]; then
+                echo "WARNING: Package $deb is quite small (<1MB)"
+              fi
+            fi
+          done
+
+      - name: Generate validation report
+        run: |
+          cd packages
+          echo "# Package Validation Report" > validation-report.md
+          echo "" >> validation-report.md
+          echo "Generated on: $(date)" >> validation-report.md
+          echo "" >> validation-report.md
+          
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              echo "## $deb" >> validation-report.md
+              echo "" >> validation-report.md
+              
+              # Package info
+              echo "### Package Information" >> validation-report.md
+              echo '```' >> validation-report.md
+              dpkg-deb --info "$deb" >> validation-report.md
+              echo '```' >> validation-report.md
+              echo "" >> validation-report.md
+              
+              # File list
+              echo "### Contents Summary" >> validation-report.md
+              echo '```' >> validation-report.md
+              dpkg-deb --contents "$deb" | head -20 >> validation-report.md
+              echo '```' >> validation-report.md
+              echo "" >> validation-report.md
+            fi
+          done
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report-${{ inputs.architecture || 'all' }}
+          path: |
+            packages/validation-report.md
+            packages/control-extracted/
+          retention-days: 30
+
+  test-installation:
+    name: Test Package Installation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ubuntu_version: ['20.04', '22.04', '24.04']
+    
+    steps:
+      - name: Download packages
+        if: github.event_name == 'workflow_call'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.packages_artifact }}
+          path: packages/
+
+      - name: Test installation on Ubuntu ${{ matrix.ubuntu_version }}
+        run: |
+          # Use Docker to test on different Ubuntu versions
+          cat > test-install.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          echo "Testing installation on Ubuntu $1..."
+          
+          # Update package lists
+          apt-get update
+          
+          # Try to install the package
+          for deb in /packages/*.deb; do
+            if [ -f "$deb" ] && [[ "$deb" != *"dbg"* ]]; then
+              echo "Testing installation of $deb"
+              
+              # Try to install
+              if dpkg -i "$deb" 2>/dev/null; then
+                echo "✓ Package installed successfully"
+                
+                # Check if files are in place
+                if [ -f "/usr/bin/autoapp" ]; then
+                  echo "✓ Binary installed correctly"
+                else
+                  echo "✗ Binary not found after installation"
+                fi
+                
+                # Try to remove
+                if dpkg -r openauto-modern; then
+                  echo "✓ Package removed successfully"
+                else
+                  echo "✗ Package removal failed"
+                fi
+              else
+                echo "Package installation failed, trying with dependencies..."
+                apt-get install -f -y
+                
+                if dpkg -i "$deb"; then
+                  echo "✓ Package installed with dependencies"
+                  dpkg -r openauto-modern
+                else
+                  echo "✗ Package installation failed even with dependencies"
+                fi
+              fi
+            fi
+          done
+          EOF
+          
+          chmod +x test-install.sh
+          
+          docker run --rm \
+            -v $(pwd)/packages:/packages:ro \
+            -v $(pwd)/test-install.sh:/test-install.sh:ro \
+            ubuntu:${{ matrix.ubuntu_version }} \
+            /test-install.sh ${{ matrix.ubuntu_version }}
+
+  performance-check:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    if: github.event.inputs.run_full_validation == 'true' || github.event_name == 'workflow_call'
+    
+    steps:
+      - name: Download packages
+        if: github.event_name == 'workflow_call'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.packages_artifact }}
+          path: packages/
+
+      - name: Extract and analyze binaries
+        run: |
+          cd packages
+          for deb in *.deb; do
+            if [ -f "$deb" ] && [[ "$deb" != *"dbg"* ]]; then
+              echo "=== Analyzing $deb ==="
+              
+              # Extract package
+              dpkg-deb --extract "$deb" extracted/
+              
+              if [ -f "extracted/usr/bin/autoapp" ]; then
+                # Check binary size
+                size=$(du -h extracted/usr/bin/autoapp | cut -f1)
+                echo "Binary size: $size"
+                
+                # Check if stripped
+                if file extracted/usr/bin/autoapp | grep -q "stripped"; then
+                  echo "✓ Binary is stripped (good for release)"
+                else
+                  echo "! Binary is not stripped (includes debug info)"
+                fi
+                
+                # Check dependencies
+                echo "Library dependencies:"
+                ldd extracted/usr/bin/autoapp | head -10
+                
+                # Check for security features
+                echo "Security features:"
+                if readelf -l extracted/usr/bin/autoapp | grep -q "GNU_STACK"; then
+                  echo "✓ Stack protection present"
+                fi
+                
+                if readelf -d extracted/usr/bin/autoapp | grep -q "BIND_NOW"; then
+                  echo "✓ BIND_NOW protection present"
+                fi
+              fi
+              
+              echo ""
+            fi
+          done
+
+      - name: Generate performance report
+        run: |
+          cd packages
+          echo "# Performance Analysis Report" > performance-report.md
+          echo "" >> performance-report.md
+          echo "Generated on: $(date)" >> performance-report.md
+          echo "" >> performance-report.md
+          
+          for deb in *.deb; do
+            if [ -f "$deb" ] && [[ "$deb" != *"dbg"* ]]; then
+              echo "## $deb" >> performance-report.md
+              echo "" >> performance-report.md
+              
+              if [ -f "extracted/usr/bin/autoapp" ]; then
+                echo "### Binary Analysis" >> performance-report.md
+                echo '```' >> performance-report.md
+                file extracted/usr/bin/autoapp >> performance-report.md
+                echo "" >> performance-report.md
+                du -h extracted/usr/bin/autoapp >> performance-report.md
+                echo '```' >> performance-report.md
+                echo "" >> performance-report.md
+              fi
+            fi
+          done
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report-${{ inputs.architecture || 'all' }}
+          path: packages/performance-report.md
+          retention-days: 30

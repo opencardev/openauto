@@ -1,0 +1,341 @@
+name: Manual Release Creation
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+      draft:
+        description: 'Create as draft'
+        required: false
+        default: false
+        type: boolean
+      release_notes:
+        description: 'Custom release notes (optional)'
+        required: false
+        type: string
+      build_architectures:
+        description: 'Architectures to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - amd64
+          - arm64
+          - armhf
+          - amd64,arm64
+          - amd64,armhf
+          - arm64,armhf
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # Generate release information
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+      package_version: ${{ steps.version.outputs.package_version }}
+      architectures: ${{ steps.arch.outputs.architectures }}
+      release_notes: ${{ steps.notes.outputs.release_notes }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version information
+        id: version
+        run: |
+          # Date-based versioning: YYYY.MM.DD+commit
+          BUILD_DATE=$(date +%Y.%m.%d)
+          GIT_COMMIT=$(git rev-parse --short HEAD)
+          VERSION="${BUILD_DATE}+${GIT_COMMIT}"
+          TAG_NAME="v${VERSION}"
+          PACKAGE_VERSION="${BUILD_DATE}~${GIT_COMMIT}"
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "package_version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
+          
+          echo "Generated version: ${VERSION}"
+          echo "Tag name: ${TAG_NAME}"
+
+      - name: Parse architectures
+        id: arch
+        run: |
+          INPUT="${{ github.event.inputs.build_architectures }}"
+          if [ "$INPUT" = "all" ]; then
+            ARCHS='["amd64", "arm64", "armhf"]'
+          else
+            # Convert comma-separated string to JSON array
+            ARCHS=$(echo "$INPUT" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+          fi
+          echo "architectures=${ARCHS}" >> $GITHUB_OUTPUT
+          echo "Building for architectures: ${ARCHS}"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          if [ -n "${{ github.event.inputs.release_notes }}" ]; then
+            # Use custom release notes
+            NOTES="${{ github.event.inputs.release_notes }}"
+          else
+            # Generate automatic release notes
+            cat > release_notes.md << 'EOF'
+          # OpenAuto Modern ${{ steps.version.outputs.version }}
+
+          **Release Date:** $(date '+%Y-%m-%d')  
+          **Build Date:** $(date +%Y.%m.%d)  
+          **Git Commit:** $(git rev-parse --short HEAD)  
+          **Git Branch:** $(git rev-parse --abbrev-ref HEAD)
+
+          ## 🚀 What's New
+
+          This is a manual release of OpenAuto Modern with the latest improvements and bug fixes.
+
+          ## 📦 Package Information
+
+          This release provides pre-built packages for the following architectures:
+          $(echo '${{ steps.arch.outputs.architectures }}' | jq -r '.[]' | sed 's/^/- **/' | sed 's/$/** - Pre-built package available/')
+
+          ## 🔧 Installation
+
+          ### Debian/Ubuntu Systems
+          ```bash
+          # Download the appropriate package for your architecture
+          wget https://github.com/opencardev/openauto/releases/download/${{ steps.version.outputs.tag_name }}/openauto-modern_${{ steps.version.outputs.package_version }}_<arch>.deb
+
+          # Install the package
+          sudo dpkg -i openauto-modern_${{ steps.version.outputs.package_version }}_<arch>.deb
+
+          # Install dependencies if needed
+          sudo apt-get install -f
+          ```
+
+          ## 📝 Changelog
+
+          ### Changes since last release:
+          EOF
+
+            # Add git log since last tag
+            if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
+              git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> release_notes.md
+            else
+              git log --pretty=format:"- %s (%h)" --max-count=10 >> release_notes.md
+            fi
+
+            cat >> release_notes.md << 'EOF'
+
+          ## 🔗 Links
+
+          - **Documentation:** [Build Guide](https://github.com/opencardev/openauto/blob/main/docs/build-guide.md)
+          - **Configuration:** [Integration Guide](https://github.com/opencardev/openauto/blob/main/docs/integration-guide.md)
+          - **Support:** [GitHub Issues](https://github.com/opencardev/openauto/issues)
+
+          ## 📄 License
+
+          This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+          EOF
+
+            NOTES=$(cat release_notes.md)
+          fi
+          
+          # Save release notes to output
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # Build packages for selected architectures
+  build-packages:
+    name: Build Packages
+    needs: prepare-release
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ${{ fromJSON(needs.prepare-release.outputs.architectures) }}
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up QEMU for cross-compilation
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build packages using script
+        run: |
+          chmod +x scripts/build-multiarch.sh
+          
+          # Use Docker for cross-compilation
+          if [ "${{ matrix.arch }}" != "amd64" ]; then
+            scripts/build-multiarch.sh --arch ${{ matrix.arch }} --docker --type Release
+          else
+            scripts/build-multiarch.sh --arch ${{ matrix.arch }} --type Release
+          fi
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.arch }}
+          path: |
+            packages/*.deb
+          retention-days: 30
+
+  # Validate packages
+  validate-packages:
+    name: Validate Packages
+    needs: [prepare-release, build-packages]
+    strategy:
+      matrix:
+        arch: ${{ fromJSON(needs.prepare-release.outputs.architectures) }}
+    
+    uses: ./.github/workflows/validate-packages.yml
+    with:
+      packages_artifact: packages-${{ matrix.arch }}
+      architecture: ${{ matrix.arch }}
+
+  # Create the release
+  create-release:
+    name: Create Release
+    needs: [prepare-release, build-packages, validate-packages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: release-packages/
+
+      - name: Organize release assets
+        run: |
+          mkdir -p release-assets
+          cd release-packages
+          
+          # Copy all packages to release assets
+          find . -name "*.deb" -exec cp {} ../release-assets/ \;
+          
+          # Create checksums
+          cd ../release-assets
+          sha256sum *.deb > checksums.sha256
+          
+          # Create package inventory
+          echo "# Package Inventory - OpenAuto Modern ${{ needs.prepare-release.outputs.version }}" > package-inventory.md
+          echo "" >> package-inventory.md
+          echo "## Available Packages" >> package-inventory.md
+          echo "" >> package-inventory.md
+          echo "| Package | Architecture | Size | SHA256 |" >> package-inventory.md
+          echo "|---------|-------------|------|--------|" >> package-inventory.md
+          
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              arch=$(echo "$deb" | sed -n 's/.*_\([^_]*\)\.deb$/\1/p')
+              size=$(du -h "$deb" | cut -f1)
+              sha256=$(sha256sum "$deb" | cut -d' ' -f1)
+              echo "| $deb | $arch | $size | \`${sha256:0:16}...\` |" >> package-inventory.md
+            fi
+          done
+
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create and push tag
+          git tag -a "${{ needs.prepare-release.outputs.tag_name }}" -m "Release ${{ needs.prepare-release.outputs.version }}"
+          git push origin "${{ needs.prepare-release.outputs.tag_name }}"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.prepare-release.outputs.tag_name }}
+          name: "OpenAuto Modern ${{ needs.prepare-release.outputs.version }}"
+          body: ${{ needs.prepare-release.outputs.release_notes }}
+          files: |
+            release-assets/*.deb
+            release-assets/checksums.sha256
+            release-assets/package-inventory.md
+          draft: ${{ github.event.inputs.draft }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+          generate_release_notes: false
+
+  # Post-release tasks
+  post-release:
+    name: Post-Release Tasks
+    needs: [prepare-release, create-release]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update documentation
+        run: |
+          # Update any version references in documentation
+          echo "TODO: Update documentation with new version"
+
+      - name: Notify stakeholders
+        run: |
+          echo "Release ${{ needs.prepare-release.outputs.version }} created successfully"
+          echo "Tag: ${{ needs.prepare-release.outputs.tag_name }}"
+          echo "Architectures: ${{ needs.prepare-release.outputs.architectures }}"
+          # Add notification logic here (Discord, Slack, email, etc.)
+
+      - name: Clean up old artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Clean up old workflow artifacts to save space
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            
+            console.log(`Found ${artifacts.data.artifacts.length} artifacts for this run`);
+            
+            // Optionally clean up artifacts from previous runs older than 30 days
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            
+            for (const artifact of artifacts.data.artifacts) {
+              const createdAt = new Date(artifact.created_at);
+              if (createdAt < thirtyDaysAgo) {
+                console.log(`Deleting old artifact: ${artifact.name}`);
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+              }
+            }

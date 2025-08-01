@@ -158,16 +158,16 @@ vcpkg install nlohmann-json:x64-windows
 ### Android Auto Specific Dependencies
 
 #### AASDK (Android Auto SDK)
-- **Repository**: https://github.com/f1xpl/aasdk
+- **Repository**: https://github.com/opencardev/aasdk
 - **Purpose**: Android Auto protocol implementation
 - **Build**: Must be built from source
 
 ```bash
 # Clone and build AASDK
-git clone https://github.com/f1xpl/aasdk.git
+git clone https://github.com/opencardev/aasdk.git
 cd aasdk
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DTARGET_ARCH=amd64
 make -j$(nproc)
 sudo make install
 ```
@@ -351,12 +351,12 @@ HunterGate(
 ### Dependency Version Matrix
 
 | Component | Ubuntu 18.04 | Ubuntu 20.04 | Ubuntu 22.04 | CentOS 8 | Windows | macOS |
-|-----------|---------------|---------------|---------------|----------|---------|-------|
-| CMake | 3.10.2 | 3.16.3 | 3.22.1 | 3.20.2 | 3.24+ | 3.24+ |
-| GCC | 7.5.0 | 9.4.0 | 11.2.0 | 8.5.0 | - | - |
-| Boost | 1.65.1 | 1.71.0 | 1.74.0 | 1.66.0 | 1.79+ | 1.79+ |
-| Qt5 | 5.9.5 | 5.12.8 | 5.15.3 | 5.15.2 | 5.15+ | 5.15+ |
-| Protobuf | 3.0.0 | 3.6.1 | 3.12.4 | 3.5.0 | 3.17+ | 3.17+ |
+| --------- | ------------ | ------------ | ------------ | -------- | ------- | ----- |
+| CMake     | 3.10.2       | 3.16.3       | 3.22.1       | 3.20.2   | 3.24+   | 3.24+ |
+| GCC       | 7.5.0        | 9.4.0        | 11.2.0       | 8.5.0    | -       | -     |
+| Boost     | 1.65.1       | 1.71.0       | 1.74.0       | 1.66.0   | 1.79+   | 1.79+ |
+| Qt5       | 5.9.5        | 5.12.8       | 5.15.3       | 5.15.2   | 5.15+   | 5.15+ |
+| Protobuf  | 3.0.0        | 3.6.1        | 3.12.4       | 3.5.0    | 3.17+   | 3.17+ |
 
 ### Version Constraint Handling
 
