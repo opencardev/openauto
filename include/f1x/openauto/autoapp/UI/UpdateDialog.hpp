@@ -37,7 +37,7 @@ class UpdateDialog : public QDialog {
     void on_pushButtonUpdateCancel_clicked();
 
   protected:
-    void keyPressEvent(QKeyEvent *event);
+    void keyPressEvent(QKeyEvent *event) override;
 
   private:
     Ui::UpdateDialog *ui_;

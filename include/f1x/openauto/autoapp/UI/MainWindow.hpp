@@ -269,7 +269,7 @@ class MainWindow : public QMainWindow {
     QBluetoothLocalDevice *localDevice;
 
   protected:
-    void keyPressEvent(QKeyEvent *event);
+    void keyPressEvent(QKeyEvent *event) override;
 };
 
 }  // namespace ui

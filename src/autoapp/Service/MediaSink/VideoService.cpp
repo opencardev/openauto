@@ -30,7 +30,7 @@ VideoService::VideoService(boost::asio::io_service &ioService,
     : VideoMediaSinkService(
           ioService,
           std::make_shared<aasdk::channel::mediasink::video::channel::VideoChannel>(
-              strand_, std::move(messenger)),
+              ioService, std::move(messenger)),
           std::move(videoOutput)) {}
 }  // namespace mediasink
 }  // namespace service

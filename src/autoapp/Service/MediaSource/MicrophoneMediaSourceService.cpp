@@ -26,6 +26,6 @@ MicrophoneMediaSourceService::MicrophoneMediaSourceService(
     : MediaSourceService(
           ioService,
           std::make_shared<aasdk::channel::mediasource::audio::MicrophoneAudioChannel>(
-              strand_, std::move(messenger)),
+              ioService, std::move(messenger)),
           std::move(audioOutput)) {}
 }  // namespace f1x::openauto::autoapp::service::mediasource

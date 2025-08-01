@@ -30,7 +30,7 @@ TelephonyAudioService::TelephonyAudioService(boost::asio::io_service &ioService,
     : AudioMediaSinkService(
           ioService,
           std::make_shared<aasdk::channel::mediasink::audio::channel::TelephonyAudioChannel>(
-              strand_, std::move(messenger)),
+              ioService, std::move(messenger)),
           std::move(audioOutput)) {}
 }  // namespace mediasink
 }  // namespace service

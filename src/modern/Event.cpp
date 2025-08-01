@@ -59,7 +59,9 @@ nlohmann::json Event::toJson() const {
             .count();
 
     nlohmann::json dataJson;
-    for (const auto& [key, value] : data_) {
+    for (const auto& pair : data_) {
+        const auto& key = pair.first;
+        const auto& value = pair.second;
         std::visit([&](const auto& v) { dataJson[key] = v; }, value);
     }
     json["data"] = dataJson;
