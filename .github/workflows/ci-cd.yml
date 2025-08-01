@@ -228,12 +228,13 @@ jobs:
             libgps-dev \
             libssl-dev \
             uuid-dev \
-            pngcheck
+            pngcheck \
+            libzstd-dev
 
       - name: Install cpp-httplib
         run: |
           # Try to install from package first
-          if apt-get update && apt-get install -y libcpp-httplib-dev; then
+          if sudo apt-get update && sudo apt-get install -y libcpp-httplib-dev; then
             echo "Installed cpp-httplib from package"
           else
             echo "Building cpp-httplib from source"
@@ -245,6 +246,7 @@ jobs:
               -DHTTPLIB_COMPILE=ON \
               -DHTTPLIB_USE_OPENSSL_IF_AVAILABLE=ON \
               -DHTTPLIB_USE_ZLIB_IF_AVAILABLE=ON \
+              -DHTTPLIB_USE_ZSTD_IF_AVAILABLE=ON \
               -DBUILD_SHARED_LIBS=ON
             make -j$(nproc)
             sudo make install
@@ -402,13 +404,14 @@ jobs:
             debhelper \
             fakeroot \
             devscripts \
-            pngcheck
+            pngcheck \
+            libzstd-dev
 
       - name: Install cpp-httplib (AMD64 only)
         if: steps.check_arch.outputs.should_build == 'true' && matrix.arch == 'amd64'
         run: |
           # Try to install from package first
-          if apt-get update && apt-get install -y libcpp-httplib-dev; then
+          if sudo apt-get update && sudo apt-get install -y libcpp-httplib-dev; then
             echo "Installed cpp-httplib from package"
           else
             echo "Building cpp-httplib from source"
@@ -420,6 +423,7 @@ jobs:
               -DHTTPLIB_COMPILE=ON \
               -DHTTPLIB_USE_OPENSSL_IF_AVAILABLE=ON \
               -DHTTPLIB_USE_ZLIB_IF_AVAILABLE=ON \
+              -DHTTPLIB_USE_ZSTD_IF_AVAILABLE=ON \
               -DBUILD_SHARED_LIBS=ON
             make -j$(nproc)
             sudo make install
