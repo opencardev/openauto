@@ -222,7 +222,21 @@ jobs:
             libtag1-dev \
             librtaudio-dev \
             libasound2-dev \
-            libpulse-dev
+            libpulse-dev \
+            libblkid-dev \
+            libgps-dev \
+            libssl-dev \
+            uuid-dev
+
+      - name: Install cpp-httplib
+        run: |
+          git clone https://github.com/yhirose/cpp-httplib.git /tmp/cpp-httplib
+          cd /tmp/cpp-httplib
+          mkdir build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DHTTPLIB_COMPILE=ON
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
 
       - name: Build AASDK
         run: |
@@ -358,9 +372,23 @@ jobs:
             librtaudio-dev \
             libasound2-dev \
             libpulse-dev \
+            libblkid-dev \
+            libgps-dev \
+            libssl-dev \
+            uuid-dev \
             debhelper \
             fakeroot \
             devscripts
+
+      - name: Install cpp-httplib (AMD64 only)
+        if: steps.check_arch.outputs.should_build == 'true' && matrix.arch == 'amd64'
+        run: |
+          git clone https://github.com/yhirose/cpp-httplib.git /tmp/cpp-httplib
+          cd /tmp/cpp-httplib
+          mkdir build && cd build
+          cmake ..
+          make -j$(nproc)
+          sudo make install
 
       - name: Build AASDK (AMD64 only)
         if: steps.check_arch.outputs.should_build == 'true' && matrix.arch == 'amd64'
@@ -469,6 +497,10 @@ jobs:
               librtaudio-dev \\
               libasound2-dev \\
               libpulse-dev \\
+              libblkid-dev \\
+              libgps-dev \\
+              libssl-dev \\
+              uuid-dev \\
               debhelper \\
               fakeroot \\
               devscripts \\
