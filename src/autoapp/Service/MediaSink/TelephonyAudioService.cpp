@@ -29,8 +29,11 @@ TelephonyAudioService::TelephonyAudioService(boost::asio::io_service &ioService,
                                              projection::IAudioOutput::Pointer audioOutput)
     : AudioMediaSinkService(
           ioService,
-          std::make_shared<aasdk::channel::mediasink::audio::channel::TelephonyAudioChannel>(
-              ioService, std::move(messenger)),
+          [&ioService, &messenger]() {
+              boost::asio::io_service::strand strand(ioService);
+              return std::make_shared<aasdk::channel::mediasink::audio::channel::TelephonyAudioChannel>(
+                  strand, std::move(messenger));
+          }(),
           std::move(audioOutput)) {}
 }  // namespace mediasink
 }  // namespace service

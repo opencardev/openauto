@@ -24,7 +24,10 @@ MediaAudioService::MediaAudioService(boost::asio::io_service &ioService,
                                      projection::IAudioOutput::Pointer audioOutput)
     : AudioMediaSinkService(
           ioService,
-          std::make_shared<aasdk::channel::mediasink::audio::channel::MediaAudioChannel>(
-              ioService, std::move(messenger)),
+          [&ioService, &messenger]() {
+              boost::asio::io_service::strand strand(ioService);
+              return std::make_shared<aasdk::channel::mediasink::audio::channel::MediaAudioChannel>(
+                  strand, std::move(messenger));
+          }(),
           std::move(audioOutput)) {}
 }  // namespace f1x::openauto::autoapp::service::mediasink
