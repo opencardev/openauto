@@ -31,7 +31,8 @@ TelephonyAudioService::TelephonyAudioService(boost::asio::io_service &ioService,
           ioService,
           [&ioService, &messenger]() {
               boost::asio::io_service::strand strand(ioService);
-              return std::make_shared<aasdk::channel::mediasink::audio::channel::TelephonyAudioChannel>(
+              return std::make_shared<
+                  aasdk::channel::mediasink::audio::channel::TelephonyAudioChannel>(
                   strand, std::move(messenger));
           }(),
           std::move(audioOutput)) {}

@@ -27,7 +27,8 @@ SystemAudioService::SystemAudioService(boost::asio::io_service &ioService,
           ioService,
           [&ioService, &messenger]() {
               boost::asio::io_service::strand strand(ioService);
-              return std::make_shared<aasdk::channel::mediasink::audio::channel::SystemAudioChannel>(
+              return std::make_shared<
+                  aasdk::channel::mediasink::audio::channel::SystemAudioChannel>(
                   strand, std::move(messenger));
           }(),
           std::move(audioOutput)) {}
