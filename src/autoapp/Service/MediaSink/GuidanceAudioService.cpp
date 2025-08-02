@@ -30,8 +30,7 @@ GuidanceAudioService::GuidanceAudioService(boost::asio::io_service &ioService,
           ioService,
           [&ioService, &messenger]() {
               boost::asio::io_service::strand strand(ioService);
-              return std::make_shared<GuidanceAudioChannel>(
-                  strand, std::move(messenger));
+              return std::make_shared<GuidanceAudioChannel>(strand, std::move(messenger));
           }(),
           std::move(audioOutput)) {}
 }  // namespace f1x::openauto::autoapp::service::mediasink
