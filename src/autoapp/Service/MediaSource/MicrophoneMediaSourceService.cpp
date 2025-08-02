@@ -25,7 +25,10 @@ MicrophoneMediaSourceService::MicrophoneMediaSourceService(
     projection::IAudioInput::Pointer audioOutput)
     : MediaSourceService(
           ioService,
-          std::make_shared<aasdk::channel::mediasource::audio::MicrophoneAudioChannel>(
-              ioService, std::move(messenger)),
+          [&ioService, &messenger]() {
+              auto strand = boost::asio::io_service::strand(ioService);
+              return std::make_shared<aasdk::channel::mediasource::audio::MicrophoneAudioChannel>(
+                  strand, std::move(messenger));
+          }(),
           std::move(audioOutput)) {}
 }  // namespace f1x::openauto::autoapp::service::mediasource

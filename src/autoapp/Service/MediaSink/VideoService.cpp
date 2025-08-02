@@ -29,8 +29,11 @@ VideoService::VideoService(boost::asio::io_service &ioService,
                            projection::IVideoOutput::Pointer videoOutput)
     : VideoMediaSinkService(
           ioService,
-          std::make_shared<aasdk::channel::mediasink::video::channel::VideoChannel>(
-              ioService, std::move(messenger)),
+          [&ioService, &messenger]() {
+              auto strand = boost::asio::io_service::strand(ioService);
+              return std::make_shared<aasdk::channel::mediasink::video::channel::VideoChannel>(
+                  strand, std::move(messenger));
+          }(),
           std::move(videoOutput)) {}
 }  // namespace mediasink
 }  // namespace service
