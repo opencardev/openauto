@@ -18,7 +18,12 @@
 
 #pragma once
 
-#include <RtAudio.h>
+#if __has_include(<rtaudio/RtAudio.h>)
+#  include <rtaudio/RtAudio.h>
+#elif __has_include(<RtAudio.h>)
+#  include <RtAudio.h>
+#endif
+
 #include <f1x/openauto/autoapp/Projection/IAudioOutput.hpp>
 #include <f1x/openauto/autoapp/Projection/SequentialBuffer.hpp>
 
