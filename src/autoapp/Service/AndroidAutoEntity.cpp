@@ -176,7 +176,7 @@ namespace f1x {
           aap_protobuf::service::control::message::ServiceDiscoveryResponse serviceDiscoveryResponse;
           serviceDiscoveryResponse.mutable_channels()->Reserve(256);
           serviceDiscoveryResponse.set_driver_position(aap_protobuf::service::control::message::DriverPosition::DRIVER_POSITION_RIGHT);
-          serviceDiscoveryResponse.set_can_play_native_media_during_vr(false);
+          // serviceDiscoveryResponse.set_can_play_native_media_during_vr(false); // Deprecated function removed
           serviceDiscoveryResponse.set_display_name("Crankshaft-NG");
           serviceDiscoveryResponse.set_probe_for_support(false);
 

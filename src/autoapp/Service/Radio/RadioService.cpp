@@ -63,6 +63,7 @@ namespace f1x::openauto::autoapp::service::radio {
     service->set_id(static_cast<uint32_t>(channel_->getId()));
 
     auto *radio = service->mutable_radio_service();
+    (void)radio; // Suppress unused variable warning
   }
 
   void RadioService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {

@@ -64,6 +64,7 @@ namespace f1x::openauto::autoapp::service::navigationstatus {
     service->set_id(static_cast<uint32_t>(channel_->getId()));
 
     auto *navigationStatus = service->mutable_navigation_status_service();
+    (void)navigationStatus; // Suppress unused variable warning
   }
 
   void NavigationStatusService::onChannelOpenRequest(

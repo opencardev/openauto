@@ -86,6 +86,11 @@ MainWindow::MainWindow(configuration::IConfiguration::Pointer configuration, QWi
     this->wallpaperEQFileExists = check_file_exist("wallpaper-eq.png");
 
     ui_->setupUi(this);
+    
+    // Configure window attributes to prevent ghosting
+    this->setAttribute(Qt::WA_OpaquePaintEvent, true);
+    this->setAttribute(Qt::WA_NoSystemBackground, false);
+    this->setAutoFillBackground(true);
 
     connect(ui_->pushButtonSettings, &QPushButton::clicked, this, &MainWindow::openSettings);
     connect(ui_->pushButtonSettings2, &QPushButton::clicked, this, &MainWindow::openSettings);
@@ -982,6 +987,9 @@ void f1x::openauto::autoapp::ui::MainWindow::toggleMuteButton()
 
 void f1x::openauto::autoapp::ui::MainWindow::toggleGUI()
 {
+    // Force update before toggling to clear any stale content
+    this->update();
+    
     if (!this->oldGUIStyle) {
         ui_->oldmenuWidget->show();
         ui_->menuWidget->hide();
@@ -1004,12 +1012,20 @@ void f1x::openauto::autoapp::ui::MainWindow::toggleGUI()
             ui_->Digital_clock->show();
         }
     }
+    
     f1x::openauto::autoapp::ui::MainWindow::updateBG();
     f1x::openauto::autoapp::ui::MainWindow::tmpChanged();
+    
+    // Force repaint after UI changes
+    this->update();
+    this->repaint();
 }
 
 void f1x::openauto::autoapp::ui::MainWindow::updateBG()
 {
+    // Clear any existing stylesheet before applying new one
+    this->setStyleSheet("");
+    
     if (this->date_text == "12/24") {
         this->setStyleSheet("QMainWindow { background: url(:/wallpaper-christmas.png); background-repeat: no-repeat; background-position: center; }");
         this->holidaybg = true;
@@ -1063,6 +1079,10 @@ void f1x::openauto::autoapp::ui::MainWindow::updateBG()
             }
         }
     }
+    
+    // Force a repaint to ensure background is properly updated
+    this->update();
+    this->repaint();
 }
 
 void f1x::openauto::autoapp::ui::MainWindow::createDebuglog()
@@ -2093,9 +2113,9 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
         ui_->pushButtonToggleGUI2->show();
     }
 
-    // hide brightness button if eanbled in settings
+    // hide brightness button if enabled in settings
     if (configuration_->hideBrightnessControl()) {
-        if ((ui_->pushButtonBrightness->isVisible() == true) || (ui_->pushButtonBrightness->isVisible() == true) || (ui_->BrightnessSliderControl->isVisible() == true)) {
+        if ((ui_->pushButtonBrightness->isVisible() == true) || (ui_->pushButtonBrightness2->isVisible() == true) || (ui_->BrightnessSliderControl->isVisible() == true)) {
             ui_->pushButtonBrightness->hide();
             ui_->pushButtonBrightness2->hide();
             ui_->BrightnessSliderControl->hide();
@@ -2107,8 +2127,9 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
             }
         }
     } else {
+        // Only show brightness buttons if not hidden in config AND not using light sensor
         if (!this->lightsensor) {
-            if ((ui_->pushButtonBrightness->isVisible() == false) || (ui_->pushButtonBrightness->isVisible() == false)) {
+            if ((ui_->pushButtonBrightness->isVisible() == false) || (ui_->pushButtonBrightness2->isVisible() == false)) {
                 ui_->pushButtonBrightness->show();
                 ui_->pushButtonBrightness2->show();
                 // also show volume button if brightness visible

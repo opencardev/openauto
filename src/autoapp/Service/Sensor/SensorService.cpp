@@ -178,11 +178,15 @@ namespace f1x::openauto::autoapp::service::sensor {
     auto *locInd = indication.add_location_data();
 
     // epoch seconds
+    // Note: set_timestamp() is deprecated but still needed for compatibility
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #if GPSD_API_MAJOR_VERSION >= 7
     locInd->set_timestamp(this->gpsData_.fix.time.tv_sec);
 #else
     locInd->set_timestamp(this->gpsData_.fix.time);
 #endif
+    #pragma GCC diagnostic pop
     // degrees
     locInd->set_latitude_e7(this->gpsData_.fix.latitude * 1e7);
     locInd->set_longitude_e7(this->gpsData_.fix.longitude * 1e7);

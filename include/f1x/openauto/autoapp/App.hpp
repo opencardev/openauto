@@ -59,11 +59,11 @@ private:
     boost::asio::io_service& ioService_;
     aasdk::usb::USBWrapper& usbWrapper_;
     aasdk::tcp::ITCPWrapper& tcpWrapper_;
-    boost::asio::ip::tcp::acceptor acceptor_;
     boost::asio::io_service::strand strand_;
     service::IAndroidAutoEntityFactory& androidAutoEntityFactory_;
     aasdk::usb::IUSBHub::Pointer usbHub_;
     aasdk::usb::IConnectedAccessoriesEnumerator::Pointer connectedAccessoriesEnumerator_;
+    boost::asio::ip::tcp::acceptor acceptor_;
     service::IAndroidAutoEntity::Pointer androidAutoEntity_;
     bool isStopped_;
 

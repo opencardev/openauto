@@ -64,6 +64,7 @@ namespace f1x::openauto::autoapp::service::genericnotification {
     service->set_id(static_cast<uint32_t>(channel_->getId()));
 
     auto *genericNotification = service->mutable_wifi_projection_service();
+    (void)genericNotification; // Suppress unused variable warning
   }
 
   void GenericNotificationService::onChannelOpenRequest(

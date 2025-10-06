@@ -67,6 +67,7 @@ namespace f1x {
             service->set_id(static_cast<uint32_t>(channel_->getId()));
 
             auto *mediaPlaybackStatus = service->mutable_media_playback_service();
+            (void)mediaPlaybackStatus; // Suppress unused variable warning
           }
 
           void MediaPlaybackStatusService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {

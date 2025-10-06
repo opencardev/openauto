@@ -67,6 +67,7 @@ namespace f1x {
             service->set_id(static_cast<uint32_t>(channel_->getId()));
 
             auto *phoneStatus = service->mutable_phone_status_service();
+            (void)phoneStatus; // Suppress unused variable warning
           }
 
           void PhoneStatusService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
