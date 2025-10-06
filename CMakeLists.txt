@@ -10,17 +10,78 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-# Set Compile Versions
-string(TIMESTAMP OPENAUTO_BUILD_DATE "%Y%m%d")  # Dynamic Binary Release Build Date
-set(OPENAUTO_BUILD_MAJOR_RELEASE 4)             # Binary Release Build Major Number
-set(OPENAUTO_BUILD_MINOR_RELEASE 1)             # Binary Release Build Minor Number
-set(OPENAUTO_BUILD_INCREMENTAL 0)               # Binary Build Version - Increment for Each Build
+# Set Compile Versions (Date-based versioning: YYYY.MM.DD+gitcommit)
+string(TIMESTAMP OPENAUTO_BUILD_YEAR "%Y")      # Year as major version
+string(TIMESTAMP OPENAUTO_BUILD_MONTH "%m")     # Month as minor version (01-12)
+string(TIMESTAMP OPENAUTO_BUILD_DAY "%d")       # Day as patch version (01-31)
+string(TIMESTAMP OPENAUTO_BUILD_DATE "%Y%m%d")  # Full date for compatibility
+
+# Get git commit information
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_COMMIT_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_COMMIT_FULL
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --dirty --always
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_DESCRIBE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE OPENAUTO_GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+else()
+    set(OPENAUTO_GIT_COMMIT_SHORT "unknown")
+    set(OPENAUTO_GIT_COMMIT_FULL "unknown")
+    set(OPENAUTO_GIT_DESCRIBE "unknown")
+    set(OPENAUTO_GIT_BRANCH "unknown")
+    message(WARNING "Git not found. Version will not include commit information.")
+endif()
+
+# Set version numbers using date-based scheme
+set(OPENAUTO_BUILD_MAJOR_RELEASE ${OPENAUTO_BUILD_YEAR})   # Year (e.g., 2025)
+set(OPENAUTO_BUILD_MINOR_RELEASE ${OPENAUTO_BUILD_MONTH})  # Month (01-12)
+set(OPENAUTO_BUILD_INCREMENTAL ${OPENAUTO_BUILD_DAY})      # Day (01-31)
+
+# Create program version string
+set(PROGRAM_VERSION_STRING "${OPENAUTO_BUILD_MAJOR_RELEASE}.${OPENAUTO_BUILD_MINOR_RELEASE}.${OPENAUTO_BUILD_INCREMENTAL}+${OPENAUTO_GIT_COMMIT_SHORT}")
 
 # Configure CMAKE
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -Wall -pedantic -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-g -O3")
+
+# Add version and git information as compile definitions
+add_definitions(-DOPENAUTO_VERSION_MAJOR=${OPENAUTO_BUILD_MAJOR_RELEASE})
+add_definitions(-DOPENAUTO_VERSION_MINOR=${OPENAUTO_BUILD_MINOR_RELEASE})
+add_definitions(-DOPENAUTO_VERSION_PATCH=${OPENAUTO_BUILD_INCREMENTAL})
+add_definitions(-DOPENAUTO_VERSION_STRING="${PROGRAM_VERSION_STRING}")
+add_definitions(-DOPENAUTO_GIT_COMMIT="${OPENAUTO_GIT_COMMIT_SHORT}")
+add_definitions(-DOPENAUTO_GIT_COMMIT_FULL="${OPENAUTO_GIT_COMMIT_FULL}")
+add_definitions(-DOPENAUTO_GIT_BRANCH="${OPENAUTO_GIT_BRANCH}")
+add_definitions(-DOPENAUTO_GIT_DESCRIBE="${OPENAUTO_GIT_DESCRIBE}")
+add_definitions(-DOPENAUTO_BUILD_DATE="${OPENAUTO_BUILD_DATE}")
 
 # Default to Release mode unless overridden with -DCMAKE_BUILD_TYPE=Debug on cmake command
 if(NOT CMAKE_BUILD_TYPE)
@@ -44,6 +105,104 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
+
+# PNG Profile Check and Fix Function
+function(check_and_fix_png_profiles ASSETS_DIR)
+    message(STATUS "🔧 Checking PNG files for problematic iCCP profiles...")
+    
+    # Find all PNG files
+    file(GLOB PNG_FILES "${ASSETS_DIR}/*.png")
+    
+    # Check if required tools are available
+    find_program(PNGCHECK_EXECUTABLE pngcheck)
+    find_program(PNGCRUSH_EXECUTABLE pngcrush)
+    find_program(CONVERT_EXECUTABLE convert)
+    
+    if(NOT PNGCHECK_EXECUTABLE)
+        message(WARNING "⚠️  pngcheck not found. Install with: sudo apt-get install pngcheck")
+        return()
+    endif()
+    
+    set(PROBLEMATIC_FILES "")
+    set(FIXED_COUNT 0)
+    
+    foreach(PNG_FILE ${PNG_FILES})
+        get_filename_component(FILENAME ${PNG_FILE} NAME)
+        
+        # Check if file has iCCP profile
+        execute_process(
+            COMMAND ${PNGCHECK_EXECUTABLE} -v ${PNG_FILE}
+            OUTPUT_VARIABLE PNGCHECK_OUTPUT
+            ERROR_VARIABLE PNGCHECK_ERROR
+            RESULT_VARIABLE PNGCHECK_RESULT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        
+        if(PNGCHECK_OUTPUT MATCHES "iCCP")
+            list(APPEND PROBLEMATIC_FILES ${PNG_FILE})
+            message(WARNING "🚨 PROBLEMATIC PNG DETECTED:")
+            message(WARNING "   📄 File: ${FILENAME}")
+            message(WARNING "   📁 Path: ${PNG_FILE}")
+            message(WARNING "   ⚠️  This file contains an incorrect sRGB profile that will cause:")
+            message(WARNING "      'libpng warning: iCCP: known incorrect sRGB profile'")
+            message(WARNING "   🔧 Attempting automatic fix...")
+            
+            # Try to fix with pngcrush
+            if(PNGCRUSH_EXECUTABLE)
+                execute_process(
+                    COMMAND ${PNGCRUSH_EXECUTABLE} -rem iCCP ${PNG_FILE} ${PNG_FILE}.tmp
+                    OUTPUT_QUIET
+                    ERROR_QUIET
+                    RESULT_VARIABLE PNGCRUSH_RESULT
+                )
+                
+                if(PNGCRUSH_RESULT EQUAL 0)
+                    file(RENAME ${PNG_FILE}.tmp ${PNG_FILE})
+                    message(STATUS "   ✅ Fixed ${FILENAME} using pngcrush")
+                    math(EXPR FIXED_COUNT "${FIXED_COUNT} + 1")
+                elseif(CONVERT_EXECUTABLE)
+                    # Fallback to ImageMagick
+                    execute_process(
+                        COMMAND ${CONVERT_EXECUTABLE} ${PNG_FILE} -strip ${PNG_FILE}.tmp
+                        OUTPUT_QUIET
+                        ERROR_QUIET
+                        RESULT_VARIABLE CONVERT_RESULT
+                    )
+                    
+                    if(CONVERT_RESULT EQUAL 0)
+                        file(RENAME ${PNG_FILE}.tmp ${PNG_FILE})
+                        message(STATUS "   ✅ Fixed ${FILENAME} using ImageMagick")
+                        math(EXPR FIXED_COUNT "${FIXED_COUNT} + 1")
+                    else()
+                        message(WARNING "   ❌ Failed to fix ${FILENAME}")
+                        file(REMOVE_IF_EXISTS ${PNG_FILE}.tmp)
+                    endif()
+                endif()
+            else()
+                message(WARNING "   ❌ pngcrush not available. Install with: sudo apt-get install pngcrush")
+            endif()
+        endif()
+    endforeach()
+    
+    list(LENGTH PROBLEMATIC_FILES PROBLEMATIC_COUNT)
+    if(PROBLEMATIC_COUNT GREATER 0)
+        message(STATUS "🎯 PNG Profile Check Summary:")
+        message(STATUS "   📊 Problematic files found: ${PROBLEMATIC_COUNT}")
+        message(STATUS "   🔧 Files automatically fixed: ${FIXED_COUNT}")
+        
+        if(FIXED_COUNT LESS PROBLEMATIC_COUNT)
+            message(WARNING "⚠️  Some PNG files still have problematic profiles!")
+            message(WARNING "   Install fixing tools: sudo apt-get install pngcrush imagemagick")
+        else()
+            message(STATUS "✅ All PNG profile issues resolved!")
+        endif()
+    else()
+        message(STATUS "✅ All PNG files are clean - no profile issues found")
+    endif()
+endfunction()
+
+# Run PNG profile check on assets
+check_and_fix_png_profiles(${resources_directory})
 
 # Configure Boost
 set(Boost_USE_STATIC_LIBS OFF)
@@ -147,9 +306,12 @@ target_link_libraries(autoapp PUBLIC
         ${AAP_PROTOBUF_LIB_DIR}
         ${AASDK_LIB_DIR})
 
-set(PROGRAM_VERSION_STRING "${OPENAUTO_BUILD_MAJOR_RELEASE}.${OPENAUTO_BUILD_MINOR_RELEASE}.${OPENAUTO_BUILD_INCREMENTAL}+${OPENAUTO_BUILD_DATE}")
-
 message(STATUS "Project Version: ${PROGRAM_VERSION_STRING}")
+message(STATUS "Git Information:")
+message(STATUS "  Branch: ${OPENAUTO_GIT_BRANCH}")
+message(STATUS "  Commit: ${OPENAUTO_GIT_COMMIT_SHORT} (${OPENAUTO_GIT_COMMIT_FULL})")
+message(STATUS "  Describe: ${OPENAUTO_GIT_DESCRIBE}")
+message(STATUS "  Build Date: ${OPENAUTO_BUILD_DATE}")
 
 set(btservice_sources_directory ${sources_directory}/btservice)
 
@@ -168,6 +330,9 @@ target_link_libraries(btservice PUBLIC
         ${AAP_PROTOBUF_LIB_DIR})
 
 set_target_properties(autoapp
+        PROPERTIES VERSION ${PROGRAM_VERSION_STRING} SOVERSION ${OPENAUTO_BUILD_INCREMENTAL})
+
+set_target_properties(btservice
         PROPERTIES VERSION ${PROGRAM_VERSION_STRING} SOVERSION ${OPENAUTO_BUILD_INCREMENTAL})
 
 # Install rules
