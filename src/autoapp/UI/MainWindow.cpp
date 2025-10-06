@@ -1708,7 +1708,7 @@ void f1x::openauto::autoapp::ui::MainWindow::scanFiles() {
                         true);
                     TagLib::String artist_string = file.tag()->artist();
                     TagLib::String title_string = file.tag()->title();
-                    TagLib::uint track_string = file.tag()->track();
+                    unsigned int track_string = file.tag()->track();
                     QString artistid3 = QString::fromStdWString(artist_string.toCWString());
                     QString titleid3 = QString::fromStdWString(title_string.toCWString());
                     QString trackid3 = QString::number(track_string);

@@ -95,6 +95,53 @@ clean_build() {
     mkdir -p "$build_dir"
 }
 
+# Function to check available memory and warn if low
+check_memory() {
+    local available_mem_mb=$(free -m | awk '/^Mem:/{print $7}')
+    if [ "$available_mem_mb" -lt 1000 ]; then
+        echo -e "${RED}⚠️  Critical: Very low memory (${available_mem_mb}MB available)${NC}"
+        echo -e "${YELLOW}💡 Consider:${NC}"
+        echo -e "${YELLOW}   1. Closing other applications${NC}"
+        echo -e "${YELLOW}   2. Increasing swap space${NC}"
+        echo -e "${YELLOW}   3. Building on a machine with more RAM${NC}"
+        read -p "Continue anyway? (y/N): " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${RED}❌ Build cancelled by user${NC}"
+            exit 1
+        fi
+    elif [ "$available_mem_mb" -lt 2000 ]; then
+        echo -e "${YELLOW}⚠️  Low memory detected (${available_mem_mb}MB available)${NC}"
+        echo -e "${YELLOW}💡 Will use single-threaded compilation with memory optimization${NC}"
+    fi
+}
+
+# Function to create a memory-optimized make wrapper
+memory_optimized_make() {
+    local jobs=$1
+    local build_type=$2
+    
+    if [ "$jobs" -eq 1 ] && [ "$(free -m | awk '/^Mem:/{print $7}')" -lt 2000 ]; then
+        echo -e "${YELLOW}⚙️  Using ultra-conservative memory build mode...${NC}"
+        
+        # Get list of source files to compile them one by one if needed
+        local cpp_files=$(find ../src -name "*.cpp" | wc -l)
+        echo -e "${YELLOW}⚙️  Found ${cpp_files} C++ source files to compile${NC}"
+        
+        # Try normal make first, but with strict memory monitoring
+        if ! timeout 1800 make -j1 VERBOSE=0; then
+            echo -e "${RED}⚠️  Normal build failed, trying ultra-conservative approach...${NC}"
+            
+            # If that fails, try building with even more conservative settings
+            export CXXFLAGS="${CXXFLAGS} -Os -fno-inline-functions -fno-omit-frame-pointer"
+            echo -e "${YELLOW}⚙️  Retrying with size optimization and reduced inlining...${NC}"
+            make clean
+            timeout 2400 make -j1 VERBOSE=0
+        fi
+    else
+        make -j${jobs}
+    fi
+}
+
 # Function to configure and build
 build_package() {
     local build_dir=$1
@@ -102,6 +149,9 @@ build_package() {
     local cmake_flags=$3
     
     echo -e "${BLUE}📦 Building ${build_type} package...${NC}"
+    
+    # Check memory before starting
+    check_memory
     
     cd "$build_dir"
     
@@ -119,7 +169,39 @@ build_package() {
     
     # Build
     echo -e "${YELLOW}🔨 Compiling ${build_type} build...${NC}"
-    make -j$(nproc)
+    # Use very conservative parallelism to avoid OOM issues on systems with limited RAM
+    local available_mem_mb=$(free -m | awk '/^Mem:/{print $7}')
+    local jobs=1
+    
+    # More conservative memory-based job calculation
+    if [ "$available_mem_mb" -gt 6000 ]; then
+        jobs=$(nproc)
+    elif [ "$available_mem_mb" -gt 4000 ]; then
+        jobs=2
+    elif [ "$available_mem_mb" -gt 2000 ]; then
+        jobs=1
+    else
+        jobs=1
+        echo -e "${RED}⚠️  Warning: Very low memory detected (${available_mem_mb}MB available)${NC}"
+        echo -e "${YELLOW}⚙️  Consider closing other applications or increasing swap space${NC}"
+    fi
+    
+    echo -e "${YELLOW}⚙️  Using ${jobs} parallel job(s) (available memory: $(free -h | awk '/^Mem:/{print $7}'))${NC}"
+    
+    # Add memory monitoring during build
+    if [ "$jobs" -eq 1 ]; then
+        echo -e "${YELLOW}⚙️  Building with single-threaded compilation to conserve memory...${NC}"
+        # For very memory-constrained builds, we use aggressive memory optimization
+        export CXXFLAGS="${CXXFLAGS} -pipe -fno-debug-info-for-profiling"
+        export CPPFLAGS="${CPPFLAGS} -DNDEBUG"
+        
+        # Use make with memory-conserving options
+        echo -e "${YELLOW}⚙️  Using memory-conserving compilation flags...${NC}"
+        # Use the memory-optimized make function
+        memory_optimized_make ${jobs} ${build_type}
+    else
+        make -j${jobs}
+    fi
     
     # Create package
     echo -e "${YELLOW}📦 Creating ${build_type} package...${NC}"

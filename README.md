@@ -50,7 +50,7 @@ Copyrights (c) 2018 f1x.studio (Michal Szwaj)
 ### Installation (Debian Package)
 ```bash
 # Build and install package
-./build-package.sh
+./build-packages.sh
 sudo apt install ./build-package/openauto-modern*.deb
 
 # Services start automatically

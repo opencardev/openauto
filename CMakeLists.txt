@@ -562,23 +562,8 @@ else()
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "all")
 endif()
 
-# Dependencies (different for debug vs release)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # Debug packages include development tools and debugging libraries
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-        "libboost-all-dev (>= 1.81), libprotobuf-dev (>= 3.6), libssl-dev (>= 1.1), libusb-1.0-0-dev (>= 1.0), libudev-dev (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2-dev (>= 1.1), libpulse-dev (>= 12.0), librtaudio-dev (>= 5.0), nlohmann-json3-dev (>= 3.6), libevent-dev (>= 2.1), systemd (>= 237), gdb, valgrind, strace, libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-arm64 | libaasdk-arm64-dbg, libaasdk-arm64-dev")
-    
-    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools, build-essential, cmake")
-    set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq, wireshark, tcpdump")
-else()
-    # Production packages only need runtime libraries
-    # Use flexible versioning to support multiple library versions
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-        "libboost-system1.81.0, libboost-log1.81.0, libprotobuf32, libssl3 | libssl1.1, libusb-1.0-0 (>= 1.0), libudev1 (>= 237), qtbase5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qtconnectivity5-dev (>= 5.11), libasound2 (>= 1.1), libpulse0 (>= 12.0), librtaudio6 | librtaudio5 (>= 5.0), systemd (>= 237), libtag1-dev (>= 1.11), libgps-dev (>= 3.20), libaasdk-arm64 | libaasdk-arm64-dbg, libaasdk-arm64-dbg")
-    
-    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools")
-    set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq")
-endif()
+# Dependencies will be set later using dynamic lookup system
+# (see dynamic dependency detection section below)
 
 # Package conflicts - debug and release packages conflict with each other
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -596,6 +581,50 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 else()
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
         "${CMAKE_SOURCE_DIR}/packaging/debian/preinst;${CMAKE_SOURCE_DIR}/packaging/debian/postinst;${CMAKE_SOURCE_DIR}/packaging/debian/prerm;${CMAKE_SOURCE_DIR}/packaging/debian/postrm")
+endif()
+
+# Detect Boost version for dependencies (same logic as aasdk)
+# Use the already found Boost version from earlier in the file
+if(Boost_VERSION)
+    string(REPLACE "." ";" BOOST_VERSION_LIST ${Boost_VERSION})
+    list(GET BOOST_VERSION_LIST 0 BOOST_MAJOR)
+    list(GET BOOST_VERSION_LIST 1 BOOST_MINOR)
+    set(BOOST_PACKAGE_VERSION "${BOOST_MAJOR}.${BOOST_MINOR}.0")
+    message(STATUS "Detected Boost version for packaging: ${BOOST_PACKAGE_VERSION}")
+else()
+    # Fallback to common versions if detection fails
+    set(BOOST_PACKAGE_VERSION "1.83.0")
+    message(WARNING "Could not detect Boost version, using fallback: ${BOOST_PACKAGE_VERSION}")
+endif()
+
+# Build dynamic dependencies string with detected Boost version
+set(BOOST_SYSTEM_DEP "libboost-system${BOOST_PACKAGE_VERSION}")
+set(BOOST_LOG_DEP "libboost-log${BOOST_PACKAGE_VERSION}")
+
+# Add fallback for common versions to ensure compatibility
+if(BOOST_PACKAGE_VERSION VERSION_EQUAL "1.83.0")
+    set(BOOST_SYSTEM_FALLBACK " | libboost-system1.81.0 | libboost-system1.74.0")
+    set(BOOST_LOG_FALLBACK " | libboost-log1.81.0 | libboost-log1.74.0")
+elseif(BOOST_PACKAGE_VERSION VERSION_EQUAL "1.81.0")
+    set(BOOST_SYSTEM_FALLBACK " | libboost-system1.74.0 | libboost-system1.83.0")
+    set(BOOST_LOG_FALLBACK " | libboost-log1.74.0 | libboost-log1.83.0")
+else()
+    set(BOOST_SYSTEM_FALLBACK " | libboost-system1.83.0 | libboost-system1.81.0 | libboost-system1.74.0")
+    set(BOOST_LOG_FALLBACK " | libboost-log1.83.0 | libboost-log1.81.0 | libboost-log1.74.0")
+endif()
+
+# Set dependencies - based on what's actually installed on the system
+# Use the same pattern as aasdk for Boost, and add other required libraries
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Debug packages include development tools and debugging libraries
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaasdk-arm64-dev (>= 2025.10.05), libusb-1.0-0-dev (>= 1.0), ${BOOST_SYSTEM_DEP}${BOOST_SYSTEM_FALLBACK}, ${BOOST_LOG_DEP}${BOOST_LOG_FALLBACK}, libssl-dev (>= 3.0.0), libprotobuf-dev (>= 3.21.0), librtaudio-dev (>= 5.0), libtag-dev (>= 1.9), libblkid-dev (>= 2.0), libgps-dev (>= 3.20), qtbase5-dev (>= 5.11), build-essential, cmake, gdb, valgrind")
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio, bluez, bluez-tools, build-essential, cmake")
+    set(CPACK_DEBIAN_PACKAGE_SUGGESTS "hostapd, dnsmasq, wireshark, tcpdump")
+else()
+    # Production packages only need runtime libraries
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaasdk-arm64 (>= 2025.10.05), libusb-1.0-0 (>= 1.0.0), ${BOOST_SYSTEM_DEP}${BOOST_SYSTEM_FALLBACK}, ${BOOST_LOG_DEP}${BOOST_LOG_FALLBACK}, libssl3 (>= 3.0.0), libprotobuf32 (>= 3.21.0), librtaudio7 | librtaudio6 | librtaudio5 (>= 5.0), libtag2 | libtag1v5 (>= 1.9), libblkid1 (>= 2.0), libgps29 | libgps28 | libgps30, qt6-base-dev | qtbase5-dev")
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pulseaudio")
+    set(CPACK_DEBIAN_PACKAGE_SUGGESTS "bluez-tools")
 endif()
 
 # Enable CPack for package generation (must be after setting all CPACK variables)
