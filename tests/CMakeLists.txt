@@ -13,9 +13,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
-# Add GMock support (disabled for Phase 1)
-# set(GMOCK_LIBRARIES gmock gmock_main)
-# include_directories(/usr/include)
+# Add GMock support (re-enabled for Phase 2)
+find_package(GMock QUIET)
+if(GMOCK_FOUND)
+    set(GMOCK_LIBRARIES gmock gmock_main)
+    message(STATUS "   ✅ GMock found and enabled")
+else()
+    # Fallback to system GMock libraries
+    set(GMOCK_LIBRARIES gmock gmock_main)
+    message(STATUS "   ⚠️  GMock not found via find_package, using system libraries")
+endif()
+include_directories(/usr/include)
 
 # Find required packages
 find_package(aasdk REQUIRED)
@@ -50,6 +58,14 @@ add_executable(unit_tests
     unit/ProjectionTests.cpp
     unit/ServiceTests.cpp
     unit/ConfigurationTests.cpp
+    unit/MockBasedTests.cpp
+    unit/AdvancedMockTests.cpp
+    unit/ServiceFactoryTests.cpp
+    unit/ProjectionLayerTests.cpp
+    unit/IntegrationTests.cpp
+    unit/AdvancedIntegrationTests.cpp
+    unit/PerformanceTests.cpp
+    unit/RealWorldScenarioTests.cpp
 )
 
 # Phase 1: Integration tests disabled - they require complex UI dependencies
@@ -60,10 +76,11 @@ add_executable(unit_tests
 #     integration/UIIntegrationTests.cpp
 # )
 
-# Link test executable against Google Test and required libraries (Phase 1: minimal dependencies)
+# Link test executable against Google Test and required libraries (Phase 2: with mocks)
 target_link_libraries(unit_tests
     ${GTEST_LIBRARIES}
     ${GTEST_MAIN_LIBRARIES}
+    ${GMOCK_LIBRARIES}
     pthread
     ${aasdk_LIBRARIES}
     ${Boost_LIBRARIES}
