@@ -4,9 +4,9 @@
 #include <chrono>
 
 #include <f1x/openauto/autoapp/App.hpp>
-#include "../../mocks/MockAndroidAutoEntity.hpp"
-#include "../../mocks/MockAndroidAutoEntityFactory.hpp"
-#include "../../mocks/MockConfiguration.hpp"
+#include "MockAndroidAutoEntity.hpp"
+#include "MockAndroidAutoEntityFactory.hpp"
+#include "MockConfiguration.hpp"
 
 using ::testing::_;
 using ::testing::Return;

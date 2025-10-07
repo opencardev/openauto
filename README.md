@@ -91,10 +91,10 @@ Or to run specific test categories:
 
 ```bash
 cd build
-# Run unit tests
+# Run unit tests (if available)
 ./tests/unit/openauto_unit_tests
 
-# Run integration tests
+# Run integration tests (if available)
 ./tests/integration/openauto_integration_tests
 ```
 
@@ -105,9 +105,9 @@ You can generate test coverage reports using:
 ```bash
 cd build
 cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_COVERAGE=ON ..
-make
-make test
-make coverage
+cmake --build . -j$(($(nproc) - 1))
+ctest
+cmake --build . --target coverage
 ```
 
 This will generate coverage reports in the `coverage` directory.

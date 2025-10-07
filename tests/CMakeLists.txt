@@ -1,17 +1,26 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
+
+# Set CMake policies to avoid warnings
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)  # Use BoostConfig.cmake instead of FindBoost.cmake
+endif()
 
 # Google Test requires at least C++11
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Locate GTest
+# Locate GTest and GMock
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
+
+# Add GMock support
+set(GMOCK_LIBRARIES gmock gmock_main)
+include_directories(/usr/include)
 
 # Find required packages
 find_package(aasdk REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system log program_options thread)
-find_package(Qt5 REQUIRED COMPONENTS Multimedia MultimediaWidgets Bluetooth Network)
+find_package(Qt5 REQUIRED COMPONENTS Multimedia MultimediaWidgets Bluetooth Network Test)
 find_package(Protobuf REQUIRED)
 find_package(libusb-1.0 REQUIRED)
 find_package(rtaudio REQUIRED)
@@ -19,15 +28,17 @@ find_package(aap_protobuf REQUIRED)
 
 # Include main project directories
 include_directories(
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/mocks
     ${aasdk_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${Qt5Multimedia_INCLUDE_DIRS}
     ${Qt5MultimediaWidgets_INCLUDE_DIRS}
     ${Qt5Bluetooth_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Test_INCLUDE_DIRS}
     ${PROTOBUF_INCLUDE_DIRS}
-    ${aap_protobuf_INCLUDE_DIRS}
     ${LIBUSB_1_INCLUDE_DIRS}
     ${RTAUDIO_INCLUDE_DIRS}
 )
@@ -52,6 +63,7 @@ add_executable(integration_tests
 target_link_libraries(unit_tests
     ${GTEST_LIBRARIES}
     ${GTEST_MAIN_LIBRARIES}
+    ${GMOCK_LIBRARIES}
     pthread
     openauto
     ${aasdk_LIBRARIES}
@@ -60,6 +72,7 @@ target_link_libraries(unit_tests
     ${Qt5MultimediaWidgets_LIBRARIES}
     ${Qt5Bluetooth_LIBRARIES}
     ${Qt5Network_LIBRARIES}
+    ${Qt5Test_LIBRARIES}
     ${PROTOBUF_LIBRARIES}
     ${LIBUSB_1_LIBRARIES}
     ${RTAUDIO_LIBRARIES}
@@ -69,6 +82,7 @@ target_link_libraries(unit_tests
 target_link_libraries(integration_tests
     ${GTEST_LIBRARIES}
     ${GTEST_MAIN_LIBRARIES}
+    ${GMOCK_LIBRARIES}
     pthread
     openauto
     ${aasdk_LIBRARIES}
@@ -77,6 +91,7 @@ target_link_libraries(integration_tests
     ${Qt5MultimediaWidgets_LIBRARIES}
     ${Qt5Bluetooth_LIBRARIES}
     ${Qt5Network_LIBRARIES}
+    ${Qt5Test_LIBRARIES}
     ${PROTOBUF_LIBRARIES}
     ${LIBUSB_1_LIBRARIES}
     ${RTAUDIO_LIBRARIES}

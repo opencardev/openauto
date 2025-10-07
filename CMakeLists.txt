@@ -1,6 +1,11 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 project(openauto CXX)
+
+# Set CMake policies to avoid warnings
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)  # Use BoostConfig.cmake instead of FindBoost.cmake
+endif()
 
 message(STATUS "OpenAuto")
 
@@ -92,6 +97,42 @@ if(NOT CMAKE_BUILD_TYPE)
 
     # Set the possible values of build type for cmake-gui
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
+# Coverage support
+option(WITH_COVERAGE "Enable coverage reporting" OFF)
+if(WITH_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "🧪 Enabling coverage reporting")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} --coverage")
+    
+    # Find gcov and lcov for coverage reports
+    find_program(GCOV_EXECUTABLE gcov)
+    find_program(LCOV_EXECUTABLE lcov)
+    find_program(GENHTML_EXECUTABLE genhtml)
+    
+    if(GCOV_EXECUTABLE AND LCOV_EXECUTABLE AND GENHTML_EXECUTABLE)
+        message(STATUS "   ✅ Coverage tools found: gcov, lcov, genhtml")
+        
+        # Add coverage target
+        add_custom_target(coverage
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
+            COMMAND ${CMAKE_COMMAND} -E echo "Coverage Report Generation"
+            COMMAND ${CMAKE_COMMAND} -E echo "To generate coverage data, first run tests or application"
+            COMMAND ${LCOV_EXECUTABLE} --directory . --capture --output-file ${CMAKE_BINARY_DIR}/coverage/app.info --ignore-errors empty
+            COMMAND ${LCOV_EXECUTABLE} --remove ${CMAKE_BINARY_DIR}/coverage/app.info '/usr/*' --output-file ${CMAKE_BINARY_DIR}/coverage/app.info
+            COMMAND ${GENHTML_EXECUTABLE} -o ${CMAKE_BINARY_DIR}/coverage ${CMAKE_BINARY_DIR}/coverage/app.info
+            COMMAND ${CMAKE_COMMAND} -E echo "Coverage report generated: ${CMAKE_BINARY_DIR}/coverage/index.html"
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Generating coverage report..."
+        )
+    else()
+        message(WARNING "   ⚠️  Coverage tools not found. Install with: sudo apt-get install gcov lcov")
+    endif()
+else()
+    if(WITH_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(WARNING "⚠️  Coverage requires Debug build type. Use -DCMAKE_BUILD_TYPE=Debug")
+    endif()
 endif()
 
 # Paths
@@ -334,6 +375,25 @@ set_target_properties(autoapp
 
 set_target_properties(btservice
         PROPERTIES VERSION ${PROGRAM_VERSION_STRING} SOVERSION ${OPENAUTO_BUILD_INCREMENTAL})
+
+# Testing support
+option(BUILD_TESTS "Build test suite" OFF)
+if(BUILD_TESTS)
+    message(STATUS "🧪 Enabling test suite")
+    enable_testing()
+    
+    # Check for GoogleTest
+    find_package(GTest QUIET)
+    if(GTEST_FOUND)
+        message(STATUS "   ✅ GoogleTest found")
+        add_subdirectory(tests)
+    else()
+        message(STATUS "   ⚠️  GoogleTest not found. Install with: sudo apt-get install libgtest-dev")
+        message(STATUS "   ⚠️  Then build GoogleTest: cd /usr/src/gtest && sudo cmake . && sudo make && sudo cp lib/* /usr/lib/")
+    endif()
+else()
+    message(STATUS "🚫 Test suite disabled (use -DBUILD_TESTS=ON to enable)")
+endif()
 
 # Install rules
 #install(TARGETS autoapp btservice

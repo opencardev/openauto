@@ -3,6 +3,7 @@
 #include <memory>
 #include <QApplication>
 #include <QTest>
+#include <QSignalSpy>
 
 #include <f1x/openauto/autoapp/UI/MainWindow.hpp>
 #include <f1x/openauto/autoapp/UI/SettingsWindow.hpp>
