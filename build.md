@@ -127,8 +127,21 @@ During configuration, the build system automatically:
 - **btservice**: Bluetooth service component
 
 #### Available Targets
-- **coverage**: Generate coverage report (requires debug build with coverage enabled)
-- **test**: Run all tests (currently disabled - tests need re-implementation for current API)
+- **autoapp**: Main OpenAuto application
+- **btservice**: Bluetooth service component
+- **unit_tests**: Unit test suite (builds with memory-safe compilation)
+
+#### Building Specific Targets
+```bash
+# Build main application only
+cmake --build build --target autoapp -j2
+
+# Build unit tests (recommended approach for limited memory systems)
+cmake --build build --target unit_tests -j1
+
+# Build bluetooth service
+cmake --build build --target btservice -j2
+```
 
 ## Testing
 
@@ -319,14 +332,99 @@ If version shows as "unknown", ensure you're building from a git repository:
 git status  # Should show current branch
 ```
 
-### Build Performance
-The build uses `$(($(nproc) - 1))` cores by default, leaving one core free for system responsiveness. You can adjust this:
+### Out of Memory (OOM) Build Failures
+If compilation fails with "Killed signal terminated program cc1plus":
+
+**Immediate Fix:**
 ```bash
-# Use all cores
+# Use single-threaded compilation
+cd build
+make -j1 unit_tests  # or any other target
+```
+
+**Long-term Solutions:**
+```bash
+# 1. Use the safe build script
+./build_safe.sh unit_tests
+
+# 2. Check system memory and adjust accordingly
+free -h
+# If available memory < 2GB, always use -j1
+# If available memory 2-4GB, use -j2
+# If available memory > 4GB, use -j4 or higher
+
+# 3. Monitor memory during build
+watch -n 1 'free -h && ps aux | grep cc1plus | wc -l'
+
+# 4. Check system logs for OOM events
+dmesg | tail -20 | grep -i "killed\|oom"
+```
+
+**Prevention:**
+- Always use limited parallel jobs on Raspberry Pi: `-j1` or `-j2`
+- Close unnecessary applications before building
+- Consider increasing swap space for large compilations
+
+### Build Performance and Memory Management
+
+The build uses `$(($(nproc) - 1))` cores by default, leaving one core free for system responsiveness. However, on systems with limited RAM (4GB or less), parallel compilation can cause out-of-memory (OOM) errors.
+
+#### Memory-Safe Building (Recommended for Raspberry Pi)
+
+For systems with limited memory, use these approaches:
+
+**Option 1: Limited Parallel Jobs (Recommended)**
+```bash
+# For 4GB systems, use at most 2 parallel jobs
+cmake --build build -j2
+
+# For 2GB systems, use single-threaded builds
+cmake --build build -j1
+```
+
+**Option 2: Use the Safe Build Script**
+A safe build script has been created that automatically handles memory limitations:
+```bash
+# Use the safe build script (automatically tries -j2, falls back to -j1)
+./build_safe.sh unit_tests  # or any other target
+```
+
+**Option 3: Manual Memory-Aware Building**
+```bash
+# Check available memory before building
+free -h
+
+# If available memory < 2GB, use single thread
+if [ $(free -m | awk 'NR==2{print $7}') -lt 2000 ]; then
+    cmake --build build -j1
+else
+    cmake --build build -j2
+fi
+```
+
+#### Symptoms of Memory Issues
+If you encounter these errors, reduce parallel jobs:
+```
+c++: fatal error: Killed signal terminated program cc1plus
+compilation terminated.
+make[3]: *** [CMakeFiles/target.dir/build.make:254: CMakeFiles/target.dir/file.cpp.o] Error 1
+```
+
+#### Memory Optimization Tips
+- **Monitor memory usage**: `watch -n 1 free -h`
+- **Check for OOM kills**: `dmesg | grep -i "killed\|oom"`
+- **Increase swap if needed**: Create additional swap space for temporary relief
+- **Close unnecessary applications** during compilation
+
+#### Alternative Build Configurations
+```bash
+# Use all cores (only for systems with 8GB+ RAM)
 cmake --build build -j$(nproc)
 
-# Use specific number of cores
-cmake --build build -j4
+# Use specific number of cores based on your system
+cmake --build build -j4  # For 8GB+ systems
+cmake --build build -j2  # For 4GB systems  
+cmake --build build -j1  # For 2GB systems or if memory issues persist
 ```
 
 ### CMake Warnings
