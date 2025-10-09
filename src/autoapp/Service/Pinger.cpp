@@ -17,7 +17,7 @@
 */
 
 #include <f1x/openauto/autoapp/Service/Pinger.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 
 namespace f1x::openauto::autoapp::service {
 
@@ -34,7 +34,7 @@ namespace f1x::openauto::autoapp::service {
         promise_->reject(aasdk::error::Error(aasdk::error::ErrorCode::OPERATION_IN_PROGRESS));
       } else {
         ++pingsCount_;
-        OPENAUTO_LOG(debug) << "[Pinger] Ping counter: " << pingsCount_;
+        OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[Pinger] Ping counter: " << pingsCount_).str());
 
         promise_ = std::move(promise);
         timer_.expires_from_now(boost::posix_time::milliseconds(duration_));
@@ -47,7 +47,7 @@ namespace f1x::openauto::autoapp::service {
   void Pinger::pong() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
       ++pongsCount_;
-      OPENAUTO_LOG(debug) << "[Pinger] Pong counter: " << pongsCount_;
+      OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[Pinger] Pong counter: " << pongsCount_).str());
     });
   }
 

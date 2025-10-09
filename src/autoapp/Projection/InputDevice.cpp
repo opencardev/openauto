@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Projection/IInputDeviceEventHandler.hpp>
 #include <f1x/openauto/autoapp/Projection/InputDevice.hpp>
 
@@ -43,7 +43,7 @@ void InputDevice::start(IInputDeviceEventHandler& eventHandler)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[InputDevice] start()";
+    OPENAUTO_LOG_INFO(INPUT, "[InputDevice] start()");
     eventHandler_ = &eventHandler;
     parent_.installEventFilter(this);
 }
@@ -52,7 +52,7 @@ void InputDevice::stop()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(info) << "[InputDevice] stop()";
+    OPENAUTO_LOG_INFO(INPUT, "[InputDevice] stop()");
     parent_.removeEventFilter(this);
     eventHandler_ = nullptr;
 }

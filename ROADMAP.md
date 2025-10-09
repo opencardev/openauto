@@ -11,7 +11,7 @@ This roadmap outlines the development status, completed features, ongoing work, 
 - **Solution Delivered**: Comprehensive memory-aware build infrastructure
 
 #### Infrastructure Improvements ✅
-- ✅ **Intelligent Build Script**: `build_safe.sh` with automatic resource detection and job limiting
+- ✅ **Intelligent Build Script**: `scripts/build_safe.sh` with automatic resource detection and job limiting
 - ✅ **Comprehensive Documentation**: Extensive `build.md` updates with platform-specific guidance
 - ✅ **OOM Prevention System**: Proactive memory monitoring and compiler process management
 - ✅ **Cross-Platform Optimization**: Raspberry Pi and embedded system build reliability
@@ -516,7 +516,7 @@ We welcome contributions to the OpenAuto project! Here's how you can help:
 
 ### Development Guidelines
 - Follow memory-aware development practices for resource-constrained systems
-- Use the provided build tools (`build_safe.sh`) for reliable compilation
+- Use the provided build tools (`scripts/build_safe.sh`) for reliable compilation
 - Ensure changes work on Raspberry Pi and other embedded platforms
 - Include appropriate tests for new features and bug fixes
 

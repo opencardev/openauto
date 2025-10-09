@@ -18,7 +18,7 @@
 
 #include <QApplication>
 #include <f1x/openauto/autoapp/Projection/QtVideoOutput.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 
 namespace f1x
 {
@@ -40,7 +40,7 @@ QtVideoOutput::QtVideoOutput(configuration::IConfiguration::Pointer configuratio
 
 void QtVideoOutput::createVideoOutput()
 {
-    OPENAUTO_LOG(info) << "[QtVideoOutput] createVideoOutput()";
+    OPENAUTO_LOG_INFO(VIDEO, "[QtVideoOutput] createVideoOutput()");
     videoWidget_ = std::make_unique<QVideoWidget>();
     mediaPlayer_ = std::make_unique<QMediaPlayer>(nullptr, QMediaPlayer::StreamPlayback);
 }
@@ -84,7 +84,7 @@ void QtVideoOutput::onStartPlayback()
     mediaPlayer_->play();
 
     // TODO: This only outputs a line if there's an error - FIXME - Output a proper status instead
-    OPENAUTO_LOG(debug) << "Player error state -> " << mediaPlayer_->errorString().toStdString();
+    OPENAUTO_LOG_DEBUG(VIDEO, (std::stringstream() << "Player error state -> " << mediaPlayer_->errorString().toStdString()).str());
 }
 
 void QtVideoOutput::onStopPlayback()

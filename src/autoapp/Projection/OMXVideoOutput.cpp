@@ -27,7 +27,7 @@ extern "C"
 
 #include <aasdk/Common/Data.hpp>
 #include <f1x/openauto/autoapp/Projection/OMXVideoOutput.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 
 namespace f1x
 {
@@ -60,21 +60,21 @@ bool OMXVideoOutput::open()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(debug) << "[OMXVideoOutput] open.";
+    OPENAUTO_LOG_DEBUG(VIDEO, "[OMXVideoOutput] open.");
 
 #ifdef USE_OMX
     bcm_host_init();
 #endif
     if(OMX_Init() != OMX_ErrorNone)
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] omx init failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] omx init failed.");
         return false;
     }
 
     client_ = ilclient_init();
     if(client_ == nullptr)
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] ilclient init failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] ilclient init failed.");
         return false;
     }
 
@@ -85,7 +85,7 @@ bool OMXVideoOutput::open()
 
     if(!this->setupTunnels())
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] setup tunnels failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] setup tunnels failed.");
         return false;
     }
 
@@ -94,7 +94,7 @@ bool OMXVideoOutput::open()
 
     if(!this->enablePortBuffers())
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] enable port buffers failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] enable port buffers failed.");
         return false;
     }
 
@@ -106,7 +106,7 @@ bool OMXVideoOutput::init()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-    OPENAUTO_LOG(debug) << "[OMXVideoOutput] init, state: " << isActive_;
+    OPENAUTO_LOG_DEBUG(VIDEO, (std::stringstream() << "[OMXVideoOutput] init, state: " << isActive_).str());
     ilclient_change_component_state(components_[VideoComponent::DECODER], OMX_StateExecuting);
     
     return this->setupDisplayRegion();
@@ -183,7 +183,7 @@ void OMXVideoOutput::write(uint64_t timestamp, const aasdk::common::DataConstBuf
 
 void OMXVideoOutput::stop()
 {
-    OPENAUTO_LOG(debug) << "[OMXVideoOutput] stop.";
+    OPENAUTO_LOG_DEBUG(VIDEO, "[OMXVideoOutput] stop.");
 
     std::lock_guard<decltype(mutex_)> lock(mutex_);
 
@@ -210,31 +210,31 @@ bool OMXVideoOutput::createComponents()
 {
     if(ilclient_create_component(client_, &components_[VideoComponent::DECODER], const_cast<char*>("video_decode"), static_cast<ILCLIENT_CREATE_FLAGS_T>(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0)
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] video decode component creation failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] video decode component creation failed.");
         return false;
     }
 
     if(ilclient_create_component(client_, &components_[VideoComponent::RENDERER], const_cast<char*>("video_render"), ILCLIENT_DISABLE_ALL_PORTS) != 0)
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] video renderer component creation failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] video renderer component creation failed.");
         return false;
     }
 
     if(ilclient_create_component(client_, &components_[VideoComponent::CLOCK], const_cast<char*>("clock"), ILCLIENT_DISABLE_ALL_PORTS) != 0)
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] clock component creation failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] clock component creation failed.");
         return false;
     }
 
     if(!this->initClock())
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] clock init failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] clock init failed.");
         return false;
     }
 
     if(ilclient_create_component(client_, &components_[VideoComponent::SCHEDULER], const_cast<char*>("video_scheduler"), ILCLIENT_DISABLE_ALL_PORTS) != 0)
     {
-        OPENAUTO_LOG(error) << "[OMXVideoOutput] video scheduler component creation failed.";
+        OPENAUTO_LOG_ERROR(VIDEO, "[OMXVideoOutput] video scheduler component creation failed.");
         return false;
     }
 

@@ -36,7 +36,7 @@
 #include <fstream>
 #include <cstdio>
 #include <unistd.h>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 
 namespace f1x
 {
@@ -1756,7 +1756,7 @@ void f1x::openauto::autoapp::ui::MainWindow::tmpChanged()
             std::remove("/tmp/entityexit");
         }
     } catch (...) {
-        OPENAUTO_LOG(error) << "[OpenAuto] Error in entityexit";
+        OPENAUTO_LOG_ERROR(UI, "[OpenAuto] Error in entityexit");
     }
 
     // check if system is in display off mode (tap2wake)

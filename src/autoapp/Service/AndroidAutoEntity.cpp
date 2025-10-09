@@ -18,7 +18,7 @@
 
 #include <aasdk/Channel/Control/ControlServiceChannel.hpp>
 #include <f1x/openauto/autoapp/Service/AndroidAutoEntity.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 
 namespace f1x {
   namespace openauto {
@@ -40,12 +40,12 @@ namespace f1x {
         }
 
         AndroidAutoEntity::~AndroidAutoEntity() {
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] destroy.";
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] destroy.");
         }
 
         void AndroidAutoEntity::start(IAndroidAutoEntityEventHandler &eventHandler) {
           strand_.dispatch([this, self = this->shared_from_this(), eventHandler = &eventHandler]() {
-            OPENAUTO_LOG(info) << "[AndroidAutoEntity] start()";
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] start()");
 
             eventHandler_ = eventHandler;
             std::for_each(serviceList_.begin(), serviceList_.end(), std::bind(&IService::start, std::placeholders::_1));
@@ -54,7 +54,7 @@ namespace f1x {
             versionRequestPromise->then([]() {  }, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(),
                                                            std::placeholders::_1));
 
-            OPENAUTO_LOG(debug) << "[AndroidAutoEntity] Send Version Request.";
+            OPENAUTO_LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] Send Version Request.");
             controlServiceChannel_->sendVersionRequest(std::move(versionRequestPromise));
             controlServiceChannel_->receive(this->shared_from_this());
           });
@@ -62,7 +62,7 @@ namespace f1x {
 
         void AndroidAutoEntity::stop() {
           strand_.dispatch([this, self = this->shared_from_this()]() {
-            OPENAUTO_LOG(info) << "[AndroidAutoEntity] stop()";
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] stop()");
 
             try {
               eventHandler_ = nullptr;
@@ -73,51 +73,51 @@ namespace f1x {
               transport_->stop();
               cryptor_->deinit();
             } catch (...) {
-              OPENAUTO_LOG(error) << "[AndroidAutoEntity] stop() - exception when stopping.";
+              OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[AndroidAutoEntity] stop() - exception when stopping.");
             }
           });
         }
 
         void AndroidAutoEntity::pause() {
           strand_.dispatch([this, self = this->shared_from_this()]() {
-            OPENAUTO_LOG(info) << "[AndroidAutoEntity] pause()";
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] pause()");
 
             try {
               std::for_each(serviceList_.begin(), serviceList_.end(),
                             std::bind(&IService::pause, std::placeholders::_1));
             } catch (...) {
-              OPENAUTO_LOG(error) << "[AndroidAutoEntity] pause() - exception when pausing.";
+              OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[AndroidAutoEntity] pause() - exception when pausing.");
             }
           });
         }
 
         void AndroidAutoEntity::resume() {
           strand_.dispatch([this, self = this->shared_from_this()]() {
-            OPENAUTO_LOG(info) << "[AndroidAutoEntity] resume()";
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] resume()");
 
             try {
               std::for_each(serviceList_.begin(), serviceList_.end(),
                             std::bind(&IService::resume, std::placeholders::_1));
             } catch (...) {
-              OPENAUTO_LOG(error) << "[AndroidAutoEntity] resume() exception when resuming.";
+              OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[AndroidAutoEntity] resume() exception when resuming.");
             }
           });
         }
 
         void AndroidAutoEntity::onVersionResponse(uint16_t majorCode, uint16_t minorCode,
                                                   aap_protobuf::shared::MessageStatus status) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onVersionResponse()";
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] Version Received: " << majorCode << "." << minorCode
-                             << ", with status: " << status;
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onVersionResponse()");
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] Version Received: " << majorCode << "." << minorCode
+                             << ", with status: " << status).str());
 
           if (status == aap_protobuf::shared::MessageStatus::STATUS_NO_COMPATIBLE_VERSION) {
-            OPENAUTO_LOG(error) << "[AndroidAutoEntity] Version mismatch.";
+            OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[AndroidAutoEntity] Version mismatch.");
             this->triggerQuit();
           } else {
-            OPENAUTO_LOG(debug) << "[AndroidAutoEntity] Version matches.";
+            OPENAUTO_LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] Version matches.");
 
             try {
-              OPENAUTO_LOG(info) << "[AndroidAutoEntity] Beginning SSL handshake.";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] Beginning SSL handshake.");
               cryptor_->doHandshake();
 
               auto handshakePromise = aasdk::channel::SendPromise::defer(strand_);
@@ -127,28 +127,28 @@ namespace f1x {
               controlServiceChannel_->receive(this->shared_from_this());
             }
             catch (const aasdk::error::Error &e) {
-              OPENAUTO_LOG(info) << "[AndroidAutoEntity] Handshake Error.";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] Handshake Error.");
               this->onChannelError(e);
             }
           }
         }
 
         void AndroidAutoEntity::onHandshake(const aasdk::common::DataConstBuffer &payload) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onHandshake()";
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] Payload size: " << payload.size;
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onHandshake()");
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] Payload size: " << payload.size).str());
 
           try {
             cryptor_->writeHandshakeBuffer(payload);
 
             if (!cryptor_->doHandshake()) {
-              OPENAUTO_LOG(info) << "[AndroidAutoEntity] Re-attempting handshake.";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] Re-attempting handshake.");
 
               auto handshakePromise = aasdk::channel::SendPromise::defer(strand_);
               handshakePromise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(),
                                                         std::placeholders::_1));
               controlServiceChannel_->sendHandshake(cryptor_->readHandshakeBuffer(), std::move(handshakePromise));
             } else {
-              OPENAUTO_LOG(info) << "[AndroidAutoEntity] Handshake completed.";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] Handshake completed.");
 
               aap_protobuf::service::control::message::AuthResponse authCompleteIndication;
               authCompleteIndication.set_status(aap_protobuf::shared::MessageStatus::STATUS_SUCCESS);
@@ -162,16 +162,16 @@ namespace f1x {
             controlServiceChannel_->receive(this->shared_from_this());
           }
           catch (const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[AndroidAutoEntity] Error during handshake";
+            OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[AndroidAutoEntity] Error during handshake");
             this->onChannelError(e);
           }
         }
 
         void AndroidAutoEntity::onServiceDiscoveryRequest(
             const aap_protobuf::service::control::message::ServiceDiscoveryRequest &request) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onServiceDiscoveryRequest()";
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] Type: " << request.label_text() << ", Model: "
-                             << request.device_name();
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onServiceDiscoveryRequest()");
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] Type: " << request.label_text() << ", Model: "
+                             << request.device_name()).str());
 
           aap_protobuf::service::control::message::ServiceDiscoveryResponse serviceDiscoveryResponse;
           serviceDiscoveryResponse.mutable_channels()->Reserve(256);
@@ -213,9 +213,9 @@ namespace f1x {
 
         void AndroidAutoEntity::onAudioFocusRequest(
             const aap_protobuf::service::control::message::AudioFocusRequest &request) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onAudioFocusRequest()";
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] AudioFocusRequestType received: "
-                             << AudioFocusRequestType_Name(request.audio_focus_type());
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onAudioFocusRequest()");
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] AudioFocusRequestType received: "
+                             << AudioFocusRequestType_Name(request.audio_focus_type())).str());
 
           /*
            * When the MD starts playing music for example, it sends a gain request. The HU replies:
@@ -237,8 +237,8 @@ namespace f1x {
               ? aap_protobuf::service::control::message::AudioFocusStateType::AUDIO_FOCUS_STATE_LOSS
               : aap_protobuf::service::control::message::AudioFocusStateType::AUDIO_FOCUS_STATE_GAIN;
 
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] AudioFocusStateType determined: "
-                             << AudioFocusStateType_Name(audioFocusStateType);
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] AudioFocusStateType determined: "
+                             << AudioFocusStateType_Name(audioFocusStateType)).str());
 
           aap_protobuf::service::control::message::AudioFocusNotification response;
           response.set_focus_state(audioFocusStateType);
@@ -252,8 +252,8 @@ namespace f1x {
 
         void AndroidAutoEntity::onByeByeRequest(
             const aap_protobuf::service::control::message::ByeByeRequest &request) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onByeByeRequest()";
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] Reason received: " << request.reason();
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onByeByeRequest()");
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] Reason received: " << request.reason()).str());
 
           aap_protobuf::service::control::message::ByeByeResponse response;
           auto promise = aasdk::channel::SendPromise::defer(strand_);
@@ -265,14 +265,14 @@ namespace f1x {
 
         void AndroidAutoEntity::onByeByeResponse(
             const aap_protobuf::service::control::message::ByeByeResponse &response) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onByeByeResponse()";
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onByeByeResponse()");
           this->triggerQuit();
         }
 
         void AndroidAutoEntity::onNavigationFocusRequest(
             const aap_protobuf::service::control::message::NavFocusRequestNotification &request) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onNavigationFocusRequest()";
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] NavFocusRequestNotification type received: " << NavFocusType_Name(request.focus_type());
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onNavigationFocusRequest()");
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] NavFocusRequestNotification type received: " << NavFocusType_Name(request.focus_type())).str());
 
           /*
            * If the MD sends NAV_FOCUS_PROJECTED in the request, we should stop any local navigation on the HU and grant NAV_FOCUS_NATIVE in the response.
@@ -292,42 +292,42 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onBatteryStatusNotification(const aap_protobuf::service::control::message::BatteryStatusNotification &notification) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onBatteryStatusNotification()";
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onBatteryStatusNotification()");
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
         void AndroidAutoEntity::onPingRequest(const aap_protobuf::service::control::message::PingRequest& request) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onPingRequest()";
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onPingRequest()");
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
         void AndroidAutoEntity::onVoiceSessionRequest(
             const aap_protobuf::service::control::message::VoiceSessionNotification &request) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onVoiceSessionRequest()";
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onVoiceSessionRequest()");
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
         void AndroidAutoEntity::onPingResponse(const aap_protobuf::service::control::message::PingResponse &response) {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] onPingResponse()";
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] Timestamp: " << response.timestamp();
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] onPingResponse()");
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] Timestamp: " << response.timestamp()).str());
           pinger_->pong();
           controlServiceChannel_->receive(this->shared_from_this());
         }
 
         void AndroidAutoEntity::onChannelError(const aasdk::error::Error &e) {
-          OPENAUTO_LOG(fatal) << "[AndroidAutoEntity] onChannelError(): " << e.what();
+          OPENAUTO_LOG_FATAL(ANDROID_AUTO, (std::stringstream() << "[AndroidAutoEntity] onChannelError(): " << e.what()).str());
           this->triggerQuit();
         }
 
         void AndroidAutoEntity::triggerQuit() {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] triggerQuit()";
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] triggerQuit()");
           if (eventHandler_ != nullptr) {
             eventHandler_->onAndroidAutoQuit();
           }
         }
 
         void AndroidAutoEntity::schedulePing() {
-          OPENAUTO_LOG(info) << "[AndroidAutoEntity] schedulePing()";
+          OPENAUTO_LOG_INFO(ANDROID_AUTO, "[AndroidAutoEntity] schedulePing()");
           auto promise = IPinger::Promise::defer(strand_);
           promise->then([this, self = this->shared_from_this()]() {
                           this->sendPing();
@@ -336,7 +336,7 @@ namespace f1x {
                         [this, self = this->shared_from_this()](auto error) {
                           if (error != aasdk::error::ErrorCode::OPERATION_ABORTED &&
                               error != aasdk::error::ErrorCode::OPERATION_IN_PROGRESS) {
-                            OPENAUTO_LOG(error) << "[AndroidAutoEntity] Ping timer exceeded.";
+                            OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[AndroidAutoEntity] Ping timer exceeded.");
                             this->triggerQuit();
                           }
                         });
@@ -345,7 +345,7 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::sendPing() {
-          OPENAUTO_LOG(debug) << "[AndroidAutoEntity] sendPing()";
+          OPENAUTO_LOG_DEBUG(ANDROID_AUTO, "[AndroidAutoEntity] sendPing()");
           auto promise = aasdk::channel::SendPromise::defer(strand_);
           promise->then([]() {},
                         std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));

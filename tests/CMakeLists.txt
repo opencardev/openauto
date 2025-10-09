@@ -11,18 +11,49 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Locate GTest and GMock
 find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
 
-# Add GMock support (re-enabled for Phase 2)
+# Try different ways to find GTest includes and libraries
+if(GTEST_FOUND)
+    # Modern CMake GTest::GTest target (preferred)
+    if(TARGET GTest::gtest AND TARGET GTest::gtest_main)
+        set(GTEST_LIBRARIES GTest::gtest)
+        set(GTEST_MAIN_LIBRARIES GTest::gtest_main)
+        message(STATUS "   ✅ Using GTest CMake targets")
+    # Fallback to variables
+    elseif(GTEST_LIBRARIES)
+        message(STATUS "   ✅ Using GTest library variables")
+    # Last resort: assume system installation
+    else()
+        set(GTEST_LIBRARIES gtest)
+        set(GTEST_MAIN_LIBRARIES gtest_main)
+        message(STATUS "   ⚠️  Using system GTest libraries")
+    endif()
+    
+    # Include directories
+    if(GTEST_INCLUDE_DIRS)
+        include_directories(${GTEST_INCLUDE_DIRS})
+    else()
+        include_directories(/usr/include/gtest)
+    endif()
+endif()
+
+# Add GMock support
 find_package(GMock QUIET)
-if(GMOCK_FOUND)
-    set(GMOCK_LIBRARIES gmock gmock_main)
-    message(STATUS "   ✅ GMock found and enabled")
+if(GMOCK_FOUND OR TARGET GTest::gmock)
+    if(TARGET GTest::gmock AND TARGET GTest::gmock_main)
+        set(GMOCK_LIBRARIES GTest::gmock GTest::gmock_main)
+        message(STATUS "   ✅ GMock found via CMake targets")
+    else()
+        set(GMOCK_LIBRARIES gmock gmock_main)
+        message(STATUS "   ✅ GMock found via find_package")
+    endif()
 else()
     # Fallback to system GMock libraries
     set(GMOCK_LIBRARIES gmock gmock_main)
     message(STATUS "   ⚠️  GMock not found via find_package, using system libraries")
 endif()
+
+# Ensure we have access to standard includes
 include_directories(/usr/include)
 
 # Find required packages

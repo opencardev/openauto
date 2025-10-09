@@ -1,7 +1,7 @@
 #!/bin/bash
 # Safe build script for Raspberry Pi with limited memory
 
-cd "$(dirname "$0")/build"
+cd "$(dirname "$0")/../build"
 
 echo "Building with limited parallelism to avoid OOM issues..."
 echo "Available memory: $(free -h | grep Mem | awk '{print $7}')"

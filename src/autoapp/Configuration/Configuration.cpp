@@ -17,7 +17,7 @@
 */
 
 #include <f1x/openauto/autoapp/Configuration/Configuration.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <QTouchDevice>
 
 
@@ -151,9 +151,9 @@ void Configuration::load()
     }
     catch(const boost::property_tree::ini_parser_error& e)
     {
-        OPENAUTO_LOG(warning) << "[Configuration] failed to read configuration file: " << cConfigFileName
+        OPENAUTO_LOG_WARN(CONFIG, (std::stringstream() << "[Configuration] failed to read configuration file: " << cConfigFileName
                             << ", error: " << e.what()
-                            << ". Using default configuration.";
+                            << ". Using default configuration.").str());
         this->reset();
     }
 }
@@ -249,15 +249,15 @@ bool Configuration::hasTouchScreen() const
 {
     auto touchdevs = QTouchDevice::devices();
 
-    OPENAUTO_LOG(info) << "[Touchdev] " <<
+    OPENAUTO_LOG_INFO(CONFIG, (std::stringstream() << "[Touchdev] " <<
                           "Querying available touch devices [" <<
-                          touchdevs.length() << " available]";
+                          touchdevs.length() << " available]").str());
 
     for (int i = 0; i < touchdevs.length(); i++) {
         if (touchdevs[i]->type() == QTouchDevice::TouchScreen) {
-            OPENAUTO_LOG(info) << "[Touchdev] Device " << i <<
+            OPENAUTO_LOG_INFO(CONFIG, (std::stringstream() << "[Touchdev] Device " << i <<
                                   ": " << touchdevs[i]->name().toStdString() <<
-                                  ", type " << touchdevs[i]->type();
+                                  ", type " << touchdevs[i]->type()).str());
             return true;
         }
     }
@@ -625,13 +625,13 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(debug) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG_DEBUG(CONFIG, (std::stringstream() << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()).str());
                     return value;
                 }
             }
         }
-        OPENAUTO_LOG(warning) << "[Configuration] unable to find cs param: " << searchString.toStdString();
-        OPENAUTO_LOG(warning) << "[Configuration] Fallback to /opt/crankshaft/crankshaft_default_env.sh)";
+        OPENAUTO_LOG_WARN(CONFIG, (std::stringstream() << "[Configuration] unable to find cs param: " << searchString.toStdString()).str());
+        OPENAUTO_LOG_WARN(CONFIG, "[Configuration] Fallback to /opt/crankshaft/crankshaft_default_env.sh)");
         while(inFile2.good())
         {
             getline(inFile2,line); // get line from file
@@ -642,15 +642,15 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(debug) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG_DEBUG(CONFIG, (std::stringstream() << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()).str());
                     return value;
                 }
             }
         }
         return "";
     } else {
-        OPENAUTO_LOG(warning) << "[Configuration] unable to open cs param file (/boot/crankshaft/crankshaft_env.sh)";
-        OPENAUTO_LOG(warning) << "[Configuration] Fallback to /opt/crankshaft/crankshaft_default_env.sh)";
+        OPENAUTO_LOG_WARN(CONFIG, "[Configuration] unable to open cs param file (/boot/crankshaft/crankshaft_env.sh)");
+        OPENAUTO_LOG_WARN(CONFIG, "[Configuration] Fallback to /opt/crankshaft/crankshaft_default_env.sh)");
 
         while(inFile2.good())
         {
@@ -662,7 +662,7 @@ QString Configuration::getCSValue(QString searchString) const
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(debug) << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG_DEBUG(CONFIG, (std::stringstream() << "[Configuration] CS param found: " << searchString.toStdString() << " Value:" << value.toStdString()).str());
                     return value;
                 }
             }
@@ -673,7 +673,7 @@ QString Configuration::getCSValue(QString searchString) const
 
 QString Configuration::getParamFromFile(QString fileName, QString searchString) const
 {
-    OPENAUTO_LOG(debug) << "[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString();
+    OPENAUTO_LOG_DEBUG(CONFIG, (std::stringstream() << "[Configuration] Request param from file: " << fileName.toStdString() << " param: " << searchString.toStdString()).str());
     using namespace std;
     ifstream inFile;
     string line;
@@ -695,7 +695,7 @@ QString Configuration::getParamFromFile(QString fileName, QString searchString) 
                     int equalPosition = line.find("=");
                     QString value = line.substr(equalPosition + 1).c_str();
                     value.replace("\"","");
-                    OPENAUTO_LOG(debug) << "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString();
+                    OPENAUTO_LOG_DEBUG(CONFIG, (std::stringstream() << "[Configuration] Param from file: " << fileName.toStdString() << " found: " << searchString.toStdString() << " Value:" << value.toStdString()).str());
                     return value;
                 }
             }

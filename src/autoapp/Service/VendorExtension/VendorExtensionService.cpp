@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Service/VendorExtension/VendorExtensionService.hpp>
 #include <fstream>
 #include <QString>
@@ -34,31 +34,31 @@ namespace f1x::openauto::autoapp::service::vendorextension {
 
   void VendorExtensionService::start() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] start()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[VendorExtensionService] start()");
     });
   }
 
   void VendorExtensionService::stop() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] stop()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[VendorExtensionService] stop()");
     });
   }
 
   void VendorExtensionService::pause() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] pause()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[VendorExtensionService] pause()");
     });
   }
 
   void VendorExtensionService::resume() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[VendorExtensionService] resume()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[VendorExtensionService] resume()");
     });
   }
 
   void VendorExtensionService::fillFeatures(
       aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-    OPENAUTO_LOG(info) << "[VendorExtensionService] fillFeatures()";
+    OPENAUTO_LOG_INFO(ANDROID_AUTO, "[VendorExtensionService] fillFeatures()");
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -68,14 +68,14 @@ namespace f1x::openauto::autoapp::service::vendorextension {
   }
 
   void VendorExtensionService::onChannelError(const aasdk::error::Error &e) {
-    OPENAUTO_LOG(error) << "[VendorExtensionService] onChannelError(): " << e.what();
+    OPENAUTO_LOG_ERROR(ANDROID_AUTO, (std::stringstream() << "[VendorExtensionService] onChannelError(): " << e.what()).str());
   }
 
   void VendorExtensionService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-    OPENAUTO_LOG(info) << "[VendorExtensionService] onChannelOpenRequest()";
-    OPENAUTO_LOG(info) << "[VendorExtensionService] Channel Id: " << request.service_id() << ", Priority: "
-                       << request.priority();
+    OPENAUTO_LOG_INFO(ANDROID_AUTO, "[VendorExtensionService] onChannelOpenRequest()");
+    OPENAUTO_LOG_INFO(ANDROID_AUTO, (std::stringstream() << "[VendorExtensionService] Channel Id: " << request.service_id() << ", Priority: "
+                       << request.priority()).str());
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;

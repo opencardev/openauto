@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Service/InputSource/InputSourceService.hpp>
 
 namespace f1x {
@@ -35,33 +35,33 @@ namespace f1x {
 
           void InputSourceService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputSourceService] start()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[InputSourceService] start()");
               channel_->receive(this->shared_from_this());
             });
           }
 
           void InputSourceService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputSourceService] stop()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[InputSourceService] stop()");
               inputDevice_->stop();
             });
           }
 
           void InputSourceService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputSourceService] pause()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[InputSourceService] pause()");
             });
           }
 
           void InputSourceService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[InputSourceService] resume()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[InputSourceService] resume()");
             });
           }
 
           void InputSourceService::fillFeatures(
               aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[InputSourceService] fillFeatures()";
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[InputSourceService] fillFeatures()");
 
             auto *service = response.add_channels();
             service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -84,8 +84,8 @@ namespace f1x {
           }
 
           void InputSourceService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[InputSourceService] onChannelOpenRequest()";
-            OPENAUTO_LOG(debug) << "[InputSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[InputSourceService] onChannelOpenRequest()");
+            OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[InputSourceService] Channel Id: " << request.service_id() << ", Priority: " << request.priority()).str());
 
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
@@ -100,8 +100,8 @@ namespace f1x {
           }
 
           void InputSourceService::onKeyBindingRequest(const aap_protobuf::service::media::sink::message::KeyBindingRequest &request) {
-            OPENAUTO_LOG(debug) << "[InputSourceService] onKeyBindingRequest()";
-            OPENAUTO_LOG(debug) << "[InputSourceService] KeyCodes Count: " << request.keycodes_size();
+            OPENAUTO_LOG_DEBUG(ANDROID_AUTO, "[InputSourceService] onKeyBindingRequest()");
+            OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[InputSourceService] KeyCodes Count: " << request.keycodes_size()).str());
 
             aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
             const auto &supportedButtonCodes = inputDevice_->getSupportedButtonCodes();
@@ -109,7 +109,7 @@ namespace f1x {
             for (int i = 0; i < request.keycodes_size(); ++i) {
               if (std::find(supportedButtonCodes.begin(), supportedButtonCodes.end(), request.keycodes(i)) ==
                   supportedButtonCodes.end()) {
-                OPENAUTO_LOG(error) << "[InputSourceService] onKeyBindingRequest is not supported for KeyCode: " << request.keycodes(i);
+                OPENAUTO_LOG_ERROR(ANDROID_AUTO, (std::stringstream() << "[InputSourceService] onKeyBindingRequest is not supported for KeyCode: " << request.keycodes(i)).str());
                 status = aap_protobuf::shared::MessageStatus::STATUS_KEYCODE_NOT_BOUND;
                 break;
               }
@@ -122,7 +122,7 @@ namespace f1x {
               inputDevice_->start(*this);
             }
 
-            OPENAUTO_LOG(debug) << "[InputSourceService] Sending KeyBindingResponse with Status: " << status;
+            OPENAUTO_LOG_DEBUG(ANDROID_AUTO, (std::stringstream() << "[InputSourceService] Sending KeyBindingResponse with Status: " << status).str());
 
             auto promise = aasdk::channel::SendPromise::defer(strand_);
             promise->then([]() {},
@@ -132,11 +132,11 @@ namespace f1x {
           }
 
           void InputSourceService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[InputSourceService] onChannelError(): " << e.what();
+            OPENAUTO_LOG_ERROR(ANDROID_AUTO, (std::stringstream() << "[InputSourceService] onChannelError(): " << e.what()).str());
           }
 
           void InputSourceService::onButtonEvent(const projection::ButtonEvent &event) {
-            OPENAUTO_LOG(error) << "[InputSourceService] onButtonEvent()";
+            OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[InputSourceService] onButtonEvent()");
             auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now().time_since_epoch());
 
@@ -165,7 +165,7 @@ namespace f1x {
           }
 
           void InputSourceService::onTouchEvent(const projection::TouchEvent &event) {
-            OPENAUTO_LOG(error) << "[InputSourceService] onTouchEvent()";
+            OPENAUTO_LOG_ERROR(ANDROID_AUTO, "[InputSourceService] onTouchEvent()");
             auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now().time_since_epoch());
 

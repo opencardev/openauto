@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Service/NavigationStatus/NavigationStatusService.hpp>
 #include <fstream>
 #include <QString>
@@ -34,31 +34,31 @@ namespace f1x::openauto::autoapp::service::navigationstatus {
 
   void NavigationStatusService::start() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[NavigationStatusService] start()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] start()");
     });
   }
 
   void NavigationStatusService::stop() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[NavigationStatusService] stop()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] stop()");
     });
   }
 
   void NavigationStatusService::pause() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[NavigationStatusService] pause()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] pause()");
     });
   }
 
   void NavigationStatusService::resume() {
     strand_.dispatch([this, self = this->shared_from_this()]() {
-      OPENAUTO_LOG(info) << "[NavigationStatusService] resume()";
+      OPENAUTO_LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] resume()");
     });
   }
 
   void NavigationStatusService::fillFeatures(
       aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-    OPENAUTO_LOG(info) << "[NavigationStatusService] fillFeatures()";
+    OPENAUTO_LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] fillFeatures()");
 
     auto *service = response.add_channels();
     service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -69,9 +69,9 @@ namespace f1x::openauto::autoapp::service::navigationstatus {
 
   void NavigationStatusService::onChannelOpenRequest(
       const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-    OPENAUTO_LOG(info) << "[NavigationStatusService] onChannelOpenRequest()";
-    OPENAUTO_LOG(info) << "[NavigationStatusService] Channel Id: " << request.service_id() << ", Priority: "
-                       << request.priority();
+    OPENAUTO_LOG_INFO(ANDROID_AUTO, "[NavigationStatusService] onChannelOpenRequest()");
+    OPENAUTO_LOG_INFO(ANDROID_AUTO, (std::stringstream() << "[NavigationStatusService] Channel Id: " << request.service_id() << ", Priority: "
+                       << request.priority()).str());
 
     aap_protobuf::service::control::message::ChannelOpenResponse response;
     const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -103,7 +103,7 @@ namespace f1x::openauto::autoapp::service::navigationstatus {
 
 
   void NavigationStatusService::onChannelError(const aasdk::error::Error &e) {
-    OPENAUTO_LOG(error) << "[NavigationStatusService] onChannelError(): " << e.what();
+    OPENAUTO_LOG_ERROR(ANDROID_AUTO, (std::stringstream() << "[NavigationStatusService] onChannelError(): " << e.what()).str());
   }
 }
 

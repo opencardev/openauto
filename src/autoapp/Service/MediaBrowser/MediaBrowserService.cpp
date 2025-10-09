@@ -16,7 +16,7 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Service/MediaBrowser/MediaBrowserService.hpp>
 #include <fstream>
 #include <QString>
@@ -37,31 +37,31 @@ namespace f1x {
 
           void MediaBrowserService::start() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] start()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] start()");
             });
           }
 
           void MediaBrowserService::stop() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] stop()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] stop()");
             });
           }
 
           void MediaBrowserService::pause() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] pause()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] pause()");
             });
           }
 
           void MediaBrowserService::resume() {
             strand_.dispatch([this, self = this->shared_from_this()]() {
-              OPENAUTO_LOG(info) << "[MediaBrowserService] resume()";
+              OPENAUTO_LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] resume()");
             });
           }
 
           void MediaBrowserService::fillFeatures(
               aap_protobuf::service::control::message::ServiceDiscoveryResponse &response) {
-            OPENAUTO_LOG(info) << "[MediaBrowserService] fillFeatures()";
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] fillFeatures()");
 
             auto *service = response.add_channels();
             service->set_id(static_cast<uint32_t>(channel_->getId()));
@@ -71,8 +71,8 @@ namespace f1x {
           }
 
           void MediaBrowserService::onChannelOpenRequest(const aap_protobuf::service::control::message::ChannelOpenRequest &request) {
-            OPENAUTO_LOG(info) << "[MediaBrowserService] onChannelOpenRequest()";
-            OPENAUTO_LOG(info) << "[MediaBrowserService] Channel Id: " << request.service_id() << ", Priority: " << request.priority();
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, "[MediaBrowserService] onChannelOpenRequest()");
+            OPENAUTO_LOG_INFO(ANDROID_AUTO, (std::stringstream() << "[MediaBrowserService] Channel Id: " << request.service_id() << ", Priority: " << request.priority()).str());
 
             aap_protobuf::service::control::message::ChannelOpenResponse response;
             const aap_protobuf::shared::MessageStatus status = aap_protobuf::shared::MessageStatus::STATUS_SUCCESS;
@@ -87,7 +87,7 @@ namespace f1x {
           }
 
           void MediaBrowserService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[MediaBrowserService] onChannelError(): " << e.what();
+            OPENAUTO_LOG_ERROR(ANDROID_AUTO, (std::stringstream() << "[MediaBrowserService] onChannelError(): " << e.what()).str());
           }
         }
       }

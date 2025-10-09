@@ -344,12 +344,15 @@ make -j1 unit_tests  # or any other target
 
 **Long-term Solutions:**
 ```bash
+**Long-term Solutions:**
+```bash
 # 1. Use the safe build script
-./build_safe.sh unit_tests
+./scripts/build_safe.sh unit_tests
 
 # 2. Check system memory and adjust accordingly
 free -h
 # If available memory < 2GB, always use -j1
+```
 # If available memory 2-4GB, use -j2
 # If available memory > 4GB, use -j4 or higher
 
@@ -386,7 +389,7 @@ cmake --build build -j1
 A safe build script has been created that automatically handles memory limitations:
 ```bash
 # Use the safe build script (automatically tries -j2, falls back to -j1)
-./build_safe.sh unit_tests  # or any other target
+./scripts/build_safe.sh unit_tests  # or any other target
 ```
 
 **Option 3: Manual Memory-Aware Building**

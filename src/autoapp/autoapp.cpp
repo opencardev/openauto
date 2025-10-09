@@ -27,6 +27,7 @@
 #include <aasdk/USB/AccessoryModeQueryFactory.hpp>
 #include <aasdk/TCP/TCPWrapper.hpp>
 #include <boost/log/utility/setup.hpp>
+#include <boost/log/trivial.hpp>
 #include <f1x/openauto/autoapp/App.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 #include <f1x/openauto/autoapp/Configuration/RecentAddressesList.hpp>
@@ -38,7 +39,7 @@
 #include <f1x/openauto/autoapp/UI/ConnectDialog.hpp>
 #include <f1x/openauto/autoapp/UI/WarningDialog.hpp>
 #include <f1x/openauto/autoapp/UI/UpdateDialog.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 
 namespace autoapp = f1x::openauto::autoapp;
 using ThreadPool = std::vector<std::thread>;
@@ -78,11 +79,11 @@ void configureLogging() {
     if (logSettings.good()) {
         try {
             // For boost < 1.71 the severity types are not automatically parsed so lets register them.
-            boost::log::register_simple_filter_factory<boost::log::trivial::severity_level>("Severity");
+            boost::log::register_simple_filter_factory<boost::log::trivial::severity_level, char>("Severity");
             boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
             boost::log::init_from_stream(logSettings);
         } catch (std::exception const & e) {
-            OPENAUTO_LOG(warning) << "[OpenAuto] " << logIni << " was provided but was not valid.";
+            OPENAUTO_LOG_WARN(GENERAL, std::string("[OpenAuto] ") + logIni + " was provided but was not valid.");
         }
     }
 }
@@ -94,7 +95,7 @@ int main(int argc, char* argv[])
     libusb_context* usbContext;
     if(libusb_init(&usbContext) != 0)
     {
-        OPENAUTO_LOG(error) << "[AutoApp] libusb_init failed.";
+        OPENAUTO_LOG_ERROR(GENERAL, "[AutoApp] libusb_init failed.");
         return 1;
     }
 
@@ -109,9 +110,9 @@ int main(int argc, char* argv[])
     int height = QApplication::desktop()->height();
 
     for (QScreen *screen : qApplication.screens()) {
-      OPENAUTO_LOG(info) << "[AutoApp] Screen name: " << screen->name().toStdString();
-      OPENAUTO_LOG(info) << "[AutoApp] Screen geometry: " << screen->geometry().width(); // This includes position and size
-      OPENAUTO_LOG(info) << "[AutoApp] Screen physical size: " << screen->physicalSize().width(); // Size in millimeters
+      OPENAUTO_LOG_INFO(GENERAL, std::string("[AutoApp] Screen name: ") + screen->name().toStdString());
+      OPENAUTO_LOG_INFO(GENERAL, "[AutoApp] Screen geometry: " + std::to_string(screen->geometry().width()));
+      OPENAUTO_LOG_INFO(GENERAL, "[AutoApp] Screen physical size: " + std::to_string(screen->physicalSize().width()));
     }
 
     QScreen *primaryScreen = QGuiApplication::primaryScreen();
@@ -122,13 +123,13 @@ int main(int argc, char* argv[])
       QRect screenGeometry = primaryScreen->geometry();
       width = screenGeometry.width();
       height = screenGeometry.height();
-      OPENAUTO_LOG(info) << "[AutoApp] Using gemoetry from primary screen.";
+      OPENAUTO_LOG_INFO(GENERAL, "[AutoApp] Using gemoetry from primary screen.");
     } else {
-      OPENAUTO_LOG(info) << "[AutoApp] Unable to find primary screen, using default values.";
+      OPENAUTO_LOG_INFO(GENERAL, "[AutoApp] Unable to find primary screen, using default values.");
     }
 
-    OPENAUTO_LOG(info) << "[AutoApp] Display width: " << width;
-    OPENAUTO_LOG(info) << "[AutoApp] Display height: " << height;
+    OPENAUTO_LOG_INFO(GENERAL, (std::stringstream() << "[AutoApp] Display width: " << width).str());
+    OPENAUTO_LOG_INFO(GENERAL, (std::stringstream() << "[AutoApp] Display height: " << height).str());
 
     auto configuration = std::make_shared<autoapp::configuration::Configuration>();
 
@@ -176,57 +177,57 @@ int main(int argc, char* argv[])
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraHide, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Background &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera Background.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera Background.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraShow, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Foreground &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera Foreground.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera Foreground.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraPosYUp, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py PosYUp &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera PosY up.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera PosY up.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraPosYDown, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py PosYDown &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera PosY down.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera PosY down.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraZoomPlus, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py ZoomPlus &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera Zoom plus.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera Zoom plus.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraZoomMinus, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py ZoomMinus &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera Zoom minus.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera Zoom minus.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraRecord, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Record &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera Record.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera Record.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraStop, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Stop &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera Stop.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera Stop.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::cameraSave, [&qApplication]() {
         system("/opt/crankshaft/cameracontrol.py Save &");
-        OPENAUTO_LOG(debug) << "[AutoApp] Camera Save.";
+        OPENAUTO_LOG_DEBUG(CAMERA, "[AutoApp] Camera Save.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerScriptNight, [&qApplication]() {
         system("/opt/crankshaft/service_daynight.sh app night");
-        OPENAUTO_LOG(debug) << "[AutoApp] MainWindow Night.";
+        OPENAUTO_LOG_DEBUG(GENERAL, "[AutoApp] MainWindow Night.");
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerScriptDay, [&qApplication]() {
         system("/opt/crankshaft/service_daynight.sh app day");
-        OPENAUTO_LOG(debug) << "[AutoApp] MainWindow Day.";
+        OPENAUTO_LOG_DEBUG(GENERAL, "[AutoApp] MainWindow Day.");
     });
 
     mainWindow.showFullScreen();
@@ -248,20 +249,20 @@ int main(int argc, char* argv[])
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerAppStart, [&app]() {
-        OPENAUTO_LOG(debug) << "[AutoApp] TriggerAppStart: Manual start android auto.";
+        OPENAUTO_LOG_DEBUG(GENERAL, "[AutoApp] TriggerAppStart: Manual start android auto.");
         try {
             app->disableAutostartEntity = false;
             app->resume();
             app->waitForUSBDevice();
         } catch (...) {
-            OPENAUTO_LOG(error) << "[AutoApp] TriggerAppStart: app->waitForUSBDevice();";
+            OPENAUTO_LOG_ERROR(GENERAL, "[AutoApp] TriggerAppStart: app->waitForUSBDevice() exception");
         }
     });
 
     QObject::connect(&mainWindow, &autoapp::ui::MainWindow::TriggerAppStop, [&app]() {
         try {
             if (std::ifstream("/tmp/android_device")) {
-                OPENAUTO_LOG(debug) << "[AutoApp] TriggerAppStop: Manual stop usb android auto.";
+                OPENAUTO_LOG_DEBUG(GENERAL, "[AutoApp] TriggerAppStop: Manual stop usb android auto.");
                 app->disableAutostartEntity = true;
                 system("/usr/local/bin/autoapp_helper usbreset");
                 usleep(500000);
@@ -269,21 +270,21 @@ int main(int argc, char* argv[])
                     app->stop();
                     //app->pause();
                 } catch (...) {
-                    OPENAUTO_LOG(error) << "[AutoApp] TriggerAppStop: stop();";
+                    OPENAUTO_LOG_ERROR(GENERAL, "[AutoApp] TriggerAppStop: stop() exception");
                 }
 
             } else {
-                OPENAUTO_LOG(debug) << "[AutoApp] TriggerAppStop: Manual stop wifi android auto.";
+                OPENAUTO_LOG_DEBUG(NETWORK, "[AutoApp] TriggerAppStop: Manual stop wifi android auto.");
                 try {
                     app->onAndroidAutoQuit();
                     //app->pause();
                 } catch (...) {
-                    OPENAUTO_LOG(error) << "[Autoapp] TriggerAppStop: stop();";
+                    OPENAUTO_LOG_ERROR(GENERAL, "[Autoapp] TriggerAppStop: stop() exception");
                 }
 
             }
         } catch (...) {
-            OPENAUTO_LOG(error) << "[AutoApp] Exception in manual stop android auto.";
+            OPENAUTO_LOG_ERROR(GENERAL, "[AutoApp] Exception in manual stop android auto.");
         }
     });
 
@@ -292,7 +293,7 @@ int main(int argc, char* argv[])
         connectdialog.close();
         warningdialog.close();
         updatedialog.close();
-        OPENAUTO_LOG(debug) << "[AutoApp] Close all possible open dialogs.";
+        OPENAUTO_LOG_DEBUG(GENERAL, "[AutoApp] Close all possible open dialogs.");
     });
 
     if (configuration->hideWarning() == false) {

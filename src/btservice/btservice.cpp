@@ -18,7 +18,7 @@
 
 #include <QCoreApplication>
 #include <QtBluetooth>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Configuration/Configuration.hpp>
 #include <f1x/openauto/btservice/BluetoothHandler.hpp>
 #include <f1x/openauto/btservice/AndroidBluetoothService.hpp>
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Exception caught: " << e.what() << std::endl;
   }
 
-  OPENAUTO_LOG(info) << "stop";
+  OPENAUTO_LOG_INFO(BLUETOOTH, "stop");
 
   return 0;
 }

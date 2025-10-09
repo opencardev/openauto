@@ -17,7 +17,8 @@
 */
 
 #include <boost/property_tree/ini_parser.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <sstream>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Configuration/RecentAddressesList.hpp>
 
 namespace f1x
@@ -88,9 +89,9 @@ void RecentAddressesList::load()
     }
     catch(const boost::property_tree::ini_parser_error& e)
     {
-        OPENAUTO_LOG(warning) << "[RecentAddressesList] failed to read configuration file: " << cConfigFileName
+        OPENAUTO_LOG_WARN(CONFIG, (std::stringstream() << "[RecentAddressesList] failed to read configuration file: " << cConfigFileName
                             << ", error: " << e.what()
-                            << ". Empty list will be used.";
+                            << ". Empty list will be used.").str());
     }
 }
 

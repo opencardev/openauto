@@ -318,11 +318,12 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 set(common_include_directory ${include_directory}/f1x/openauto/Common)
+set(common_sources_directory ${sources_directory}/Common)
 
 set(autoapp_sources_directory ${sources_directory}/autoapp)
 set(autoapp_include_directory ${include_directory}/f1x/openauto/autoapp)
 
-file(GLOB_RECURSE autoapp_source_files ${autoapp_sources_directory}/*.ui ${autoapp_sources_directory}/*.cpp ${autoapp_include_directory}/*.hpp ${autoapp_include_directory}/*.h ${common_include_directory}/*.hpp ${resources_directory}/*.qrc)
+file(GLOB_RECURSE autoapp_source_files ${autoapp_sources_directory}/*.ui ${autoapp_sources_directory}/*.cpp ${common_sources_directory}/*.cpp ${autoapp_include_directory}/*.hpp ${autoapp_include_directory}/*.h ${common_include_directory}/*.hpp ${resources_directory}/*.qrc)
 
 add_executable(autoapp ${autoapp_source_files})
 
@@ -357,7 +358,7 @@ message(STATUS "  Build Date: ${OPENAUTO_BUILD_DATE}")
 set(btservice_sources_directory ${sources_directory}/btservice)
 
 set(btservice_include_directory ${include_directory}/f1x/openauto/btservice)
-file(GLOB_RECURSE btservice_source_files ${btservice_sources_directory}/*.cpp ${btservice_include_directory}/*.hpp ${autoapp_sources_directory}/Configuration/*.cpp ${autoapp_includes_directory}/Configuration/*.hpp ${common_include_directory}/*.hpp)
+file(GLOB_RECURSE btservice_source_files ${btservice_sources_directory}/*.cpp ${common_sources_directory}/*.cpp ${btservice_include_directory}/*.hpp ${autoapp_sources_directory}/Configuration/*.cpp ${autoapp_includes_directory}/Configuration/*.hpp ${common_include_directory}/*.hpp)
 
 add_executable(btservice ${btservice_source_files}
         src/btservice/BluetoothHandler.cpp)
@@ -386,10 +387,22 @@ if(BUILD_TESTS)
     find_package(GTest QUIET)
     if(GTEST_FOUND)
         message(STATUS "   ✅ GoogleTest found")
+        
+        # Check for GMock
+        find_package(GMock QUIET)
+        if(GMOCK_FOUND)
+            message(STATUS "   ✅ GMock found")
+        else()
+            message(STATUS "   ⚠️  GMock not found via find_package, using system libraries")
+        endif()
+        
         add_subdirectory(tests)
     else()
-        message(STATUS "   ⚠️  GoogleTest not found. Install with: sudo apt-get install libgtest-dev")
-        message(STATUS "   ⚠️  Then build GoogleTest: cd /usr/src/gtest && sudo cmake . && sudo make && sudo cp lib/* /usr/lib/")
+        message(STATUS "   ⚠️  GoogleTest not found. Install with:")
+        message(STATUS "      sudo apt-get install -y libgtest-dev qtbase5-dev-tools")
+        message(STATUS "      cd /usr/src/googletest && sudo cmake . && sudo make && sudo cp lib/* /usr/lib/")
+        message(STATUS "      sudo cp -r /usr/src/googletest/googlemock/include/gmock /usr/include/")
+        message(STATUS "      sudo cp -r /usr/src/googletest/googletest/include/gtest /usr/include/")
     endif()
 else()
     message(STATUS "🚫 Test suite disabled (use -DBUILD_TESTS=ON to enable)")

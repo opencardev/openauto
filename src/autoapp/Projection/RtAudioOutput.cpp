@@ -17,7 +17,7 @@
 */
 
 #include <f1x/openauto/autoapp/Projection/RtAudioOutput.hpp>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 
 #if defined(RTAUDIO_VERSION_MAJOR) && (RTAUDIO_VERSION_MAJOR >= 6)
 #  define OA_RTAUDIO_V6 1
@@ -48,7 +48,7 @@ bool RtAudioOutput::open()
 
     if (dac_->getDeviceCount() <= 0)
     {
-        OPENAUTO_LOG(error) << "[RtAudioOutput] No output devices found.";
+        OPENAUTO_LOG_ERROR(AUDIO, "[RtAudioOutput] No output devices found.");
         return false;
     }
 
@@ -69,8 +69,8 @@ bool RtAudioOutput::open()
 
     if (err != RTAUDIO_NO_ERROR)
     {
-        OPENAUTO_LOG(error) << "[RtAudioOutput] openStream failed, code=" << static_cast<int>(err)
-                            << " msg=" << dac_->getErrorText();
+        OPENAUTO_LOG_ERROR(AUDIO, (std::stringstream() << "[RtAudioOutput] openStream failed, code=" << static_cast<int>(err)
+                            << " msg=" << dac_->getErrorText()).str());
         return false;
     }
 #else
@@ -83,12 +83,12 @@ bool RtAudioOutput::open()
     catch (const RtAudioError& e)
     {
         // Older RtAudio throws exceptions.
-        OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to open audio output, what: " << e.what();
+        OPENAUTO_LOG_ERROR(AUDIO, (std::stringstream() << "[RtAudioOutput] Failed to open audio output, what: " << e.what()).str());
         return false;
     }
 #endif
 
-    OPENAUTO_LOG(info) << "[RtAudioOutput] Sample Rate: " << sampleRate_;
+    OPENAUTO_LOG_INFO(AUDIO, (std::stringstream() << "[RtAudioOutput] Sample Rate: " << sampleRate_).str());
     return audioBuffer_.open(QIODevice::ReadWrite);
 }
 
@@ -107,8 +107,8 @@ void RtAudioOutput::start()
         RtAudioErrorType err = dac_->startStream();
         if (err != RTAUDIO_NO_ERROR)
         {
-            OPENAUTO_LOG(error) << "[RtAudioOutput] startStream failed, code=" << static_cast<int>(err)
-                                << " msg=" << dac_->getErrorText();
+            OPENAUTO_LOG_ERROR(AUDIO, (std::stringstream() << "[RtAudioOutput] startStream failed, code=" << static_cast<int>(err)
+                                << " msg=" << dac_->getErrorText()).str());
         }
 #else
         try
@@ -117,7 +117,7 @@ void RtAudioOutput::start()
         }
         catch(const RtAudioError& e)
         {
-            OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to start audio output, what: " << e.what();
+            OPENAUTO_LOG_ERROR(AUDIO, (std::stringstream() << "[RtAudioOutput] Failed to start audio output, what: " << e.what()).str());
         }
 #endif
     }
@@ -163,8 +163,8 @@ void RtAudioOutput::doSuspend()
         RtAudioErrorType err = dac_->stopStream();
         if (err != RTAUDIO_NO_ERROR)
         {
-            OPENAUTO_LOG(error) << "[RtAudioOutput] stopStream failed, code=" << static_cast<int>(err)
-                                << " msg=" << dac_->getErrorText();
+            OPENAUTO_LOG_ERROR(AUDIO, (std::stringstream() << "[RtAudioOutput] stopStream failed, code=" << static_cast<int>(err)
+                                << " msg=" << dac_->getErrorText()).str());
         }
 #else
         try
@@ -173,7 +173,7 @@ void RtAudioOutput::doSuspend()
         }
         catch(const RtAudioError& e)
         {
-            OPENAUTO_LOG(error) << "[RtAudioOutput] Failed to suspend audio output, what: " << e.what();
+            OPENAUTO_LOG_ERROR(AUDIO, (std::stringstream() << "[RtAudioOutput] Failed to suspend audio output, what: " << e.what()).str());
         }
 #endif
     }

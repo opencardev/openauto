@@ -17,7 +17,7 @@
 */
 
 #include <QApplication>
-#include <f1x/openauto/Common/Log.hpp>
+#include <openauto/Common/ModernLogger.hpp>
 #include <f1x/openauto/autoapp/Projection/LocalBluetoothDevice.hpp>
 #include <QtBluetooth>
 
@@ -34,7 +34,7 @@ namespace f1x::openauto::autoapp::projection {
   }
 
   void LocalBluetoothDevice::createBluetoothLocalDevice(const QString &adapterAddress) {
-    OPENAUTO_LOG(info) << "[LocalBluetoothDevice] create.";
+    OPENAUTO_LOG_INFO(PROJECTION, "[LocalBluetoothDevice] create.");
 
 
     QBluetoothAddress address(adapterAddress);
