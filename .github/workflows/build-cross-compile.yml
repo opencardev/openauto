@@ -181,7 +181,17 @@ jobs:
       - name: Create build context directory
         run: |
           mkdir -p build-context
-          cp -r . build-context/
+          
+          # Copy source files excluding build-context to avoid recursive copy
+          rsync -av --progress . build-context/ \
+            --exclude build-context \
+            --exclude .git \
+            --exclude artifacts \
+            --exclude '*.tar.gz' \
+            --exclude '*.deb'
+          
+          echo "Build context created:"
+          ls -la build-context/
 
       - name: Build Docker image and compile OpenAuto
         run: |
