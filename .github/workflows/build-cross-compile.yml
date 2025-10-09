@@ -205,6 +205,7 @@ jobs:
             --build-arg DEBIAN_RELEASE=${{ needs.prepare.outputs.release }} \
             --build-arg TARGET_ARCH=${{ matrix.arch }} \
             --build-arg BUILD_TESTS=${{ github.event.inputs.build_tests || 'false' }} \
+            --build-arg AASDK_BRANCH=newdev \
             -f Dockerfile.cross \
             -t openauto-builder:${{ matrix.arch }} \
             .
@@ -238,6 +239,23 @@ jobs:
             file "artifacts/${{ matrix.arch }}/btservice-${{ matrix.arch }}"
           else
             echo "❌ btservice binary not found"
+          fi
+          
+          # Check for AASDK DEB packages
+          echo ""
+          echo "=== AASDK DEB Packages ==="
+          if ls artifacts/${{ matrix.arch }}/*.deb 1> /dev/null 2>&1; then
+            echo "✅ AASDK DEB packages found:"
+            ls -la artifacts/${{ matrix.arch }}/*.deb
+            
+            # Show package details
+            for deb in artifacts/${{ matrix.arch }}/*.deb; do
+              echo "📦 Package: $(basename "$deb")"
+              dpkg --info "$deb" | head -20
+              echo ""
+            done
+          else
+            echo "❌ No AASDK DEB packages found"
           fi
 
       - name: Upload build artifacts

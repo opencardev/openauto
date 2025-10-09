@@ -11,6 +11,7 @@ services:
         DEBIAN_RELEASE: trixie
         TARGET_ARCH: armhf
         BUILD_TESTS: "false"
+        AASDK_BRANCH: newdev
       platforms:
         - linux/arm/v7
     volumes:
@@ -42,6 +43,7 @@ services:
         DEBIAN_RELEASE: trixie
         TARGET_ARCH: arm64
         BUILD_TESTS: "false"
+        AASDK_BRANCH: newdev
       platforms:
         - linux/arm64
     volumes:
@@ -73,6 +75,7 @@ services:
         DEBIAN_RELEASE: trixie
         TARGET_ARCH: armhf
         BUILD_TESTS: "true"
+        AASDK_BRANCH: newdev
       platforms:
         - linux/arm/v7
     volumes:

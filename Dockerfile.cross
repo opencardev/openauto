@@ -193,12 +193,24 @@ fi
 echo "Building AASDK with ${JOBS} parallel jobs"
 cmake --build . -j${JOBS}
 
-# Install AASDK
-cmake --install .
+# Create DEB packages
+echo "Creating AASDK DEB packages for ${TARGET_ARCH}"
+cpack -G DEB
 
-echo "AASDK build and installation completed for ${TARGET_ARCH}"
+# Install AASDK DEB packages
+echo "Installing AASDK DEB packages"
+dpkg -i *.deb || true
+apt-get install -f -y  # Fix any dependency issues
 
-# Clean up
+# Copy DEB packages to output for artifacts
+mkdir -p /aasdk-packages
+cp *.deb /aasdk-packages/
+
+echo "AASDK DEB package build and installation completed for ${TARGET_ARCH}"
+echo "DEB packages created:"
+ls -la /aasdk-packages/
+
+# Clean up source but keep packages
 cd /
 rm -rf /tmp/aasdk
 EOF
@@ -268,6 +280,13 @@ cmake --build . -j\${JOBS}
 
 # Create output directory
 mkdir -p /output
+
+# Copy AASDK DEB packages
+if [ -d /aasdk-packages ]; then
+    cp /aasdk-packages/*.deb /output/
+    echo "Copied AASDK DEB packages:"
+    ls -la /output/*.deb 2>/dev/null || echo "No AASDK DEB packages found"
+fi
 
 # Copy binaries
 if [ -f bin/autoapp ]; then
