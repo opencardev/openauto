@@ -1,0 +1,308 @@
+/*
+ * Project: OpenAuto
+ * This file is part of openauto project.
+ * Copyright (C) 2025 OpenCarDev Team
+ *
+ *  openauto is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  openauto is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+name: Cross-Compile Build for ARM
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_arch:
+        description: 'Target architecture'
+        required: true
+        default: 'armhf'
+        type: choice
+        options:
+        - armhf
+        - arm64
+        - both
+      release:
+        description: 'Debian release'
+        required: true
+        default: 'trixie'
+        type: choice
+        options:
+        - trixie
+        - bookworm
+      version:
+        description: 'Build version'
+        required: false
+        default: 'DEV'
+        type: string
+      build_tests:
+        description: 'Build with tests enabled'
+        required: false
+        default: false
+        type: boolean
+
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/*'
+      - 'bugfix/*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      version_string: ${{ steps.get_version.outputs.version_string }}
+      buildhash: ${{ steps.get_version.outputs.buildhash }}
+      buildbranch: ${{ steps.get_version.outputs.buildbranch }}
+      builddate: ${{ steps.get_version.outputs.builddate }}
+      target_arch: ${{ steps.get_version.outputs.target_arch }}
+      release: ${{ steps.get_version.outputs.release }}
+      build_matrix: ${{ steps.get_version.outputs.build_matrix }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get build version and metadata
+        id: get_version
+        run: |
+          # Extract version from input or default
+          VERSION="${{ github.event.inputs.version || 'DEV' }}"
+          ARCH="${{ github.event.inputs.target_arch || 'armhf' }}"
+          RELEASE="${{ github.event.inputs.release || 'trixie' }}"
+          BUILD_TESTS="${{ github.event.inputs.build_tests || 'false' }}"
+          
+          # Get git information
+          BUILD_HASH=$(git rev-parse --short "$GITHUB_SHA")
+          BUILD_DATE=$(date '+%Y-%m-%d')
+          BUILD_BRANCH="${GITHUB_REF#refs/heads/}"
+          
+          # Create version string
+          if [ "$VERSION" = "DEV" ]; then
+            VERSION_STRING="${BUILD_DATE}-${BUILD_BRANCH}-${BUILD_HASH}"
+          else
+            VERSION_STRING="${VERSION}-${BUILD_DATE}-${BUILD_HASH}"
+          fi
+          
+          # Create build matrix
+          if [ "$ARCH" = "both" ]; then
+            BUILD_MATRIX='["armhf", "arm64"]'
+          else
+            BUILD_MATRIX='["'$ARCH'"]'
+          fi
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_string=${VERSION_STRING}" >> $GITHUB_OUTPUT
+          echo "buildhash=${BUILD_HASH}" >> $GITHUB_OUTPUT
+          echo "buildbranch=${BUILD_BRANCH}" >> $GITHUB_OUTPUT
+          echo "builddate=${BUILD_DATE}" >> $GITHUB_OUTPUT
+          echo "target_arch=${ARCH}" >> $GITHUB_OUTPUT
+          echo "release=${RELEASE}" >> $GITHUB_OUTPUT
+          echo "build_matrix=${BUILD_MATRIX}" >> $GITHUB_OUTPUT
+          echo "build_tests=${BUILD_TESTS}" >> $GITHUB_OUTPUT
+          
+          echo "Build Version: ${VERSION_STRING}"
+          echo "Architecture: ${ARCH}"
+          echo "Release: ${RELEASE}"
+          echo "Build Matrix: ${BUILD_MATRIX}"
+          echo "Build Tests: ${BUILD_TESTS}"
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: ${{ fromJson(needs.prepare.outputs.build_matrix) }}
+      fail-fast: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU for multi-architecture builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Configure binfmt for persistent ARM emulation
+        run: |
+          echo "=== Configuring binfmt for persistent ARM emulation ==="
+          
+          # Install qemu-user-static if not already present
+          sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
+          
+          # Apply binfmt configuration for persistent mode
+          if [ -f /var/lib/binfmts/qemu-arm ]; then
+            sudo sed -i '10s/^$/yes/g' /var/lib/binfmts/qemu-arm
+            echo "Configured qemu-arm for persistent mode"
+          fi
+          
+          if [ -f /var/lib/binfmts/qemu-aarch64 ]; then
+            sudo sed -i '10s/^$/yes/g' /var/lib/binfmts/qemu-aarch64  
+            echo "Configured qemu-aarch64 for persistent mode"
+          fi
+          
+          # Restart binfmt-support to apply changes
+          sudo systemctl restart binfmt-support
+          
+          echo "=== Verifying binfmt configuration ==="
+          echo "Testing ARM emulation capability:"
+          
+          # Test with platform specification
+          docker run --rm --platform linux/arm64 busybox:latest echo "ARM64 emulation working!" || echo "ARM64 platform test failed"
+          docker run --rm --platform linux/arm/v7 busybox:latest echo "ARMv7 emulation working!" || echo "ARMv7 platform test failed"
+
+      - name: Free up disk space
+        run: |
+          # Remove unnecessary packages to free up space
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h
+
+      - name: Create build context directory
+        run: |
+          mkdir -p build-context
+          cp -r . build-context/
+
+      - name: Build Docker image and compile OpenAuto
+        run: |
+          # Determine platform for Docker
+          if [ "${{ matrix.arch }}" = "armhf" ]; then
+            DOCKER_PLATFORM="linux/arm/v7"
+          elif [ "${{ matrix.arch }}" = "arm64" ]; then
+            DOCKER_PLATFORM="linux/arm64"
+          else
+            echo "Unsupported architecture: ${{ matrix.arch }}"
+            exit 1
+          fi
+          
+          echo "Building for architecture: ${{ matrix.arch }}"
+          echo "Docker platform: ${DOCKER_PLATFORM}"
+          echo "Debian release: ${{ needs.prepare.outputs.release }}"
+          
+          # Build the Docker image
+          docker buildx build \
+            --platform ${DOCKER_PLATFORM} \
+            --build-arg DEBIAN_RELEASE=${{ needs.prepare.outputs.release }} \
+            --build-arg TARGET_ARCH=${{ matrix.arch }} \
+            --build-arg BUILD_TESTS=${{ github.event.inputs.build_tests || 'false' }} \
+            -f Dockerfile.cross \
+            -t openauto-builder:${{ matrix.arch }} \
+            .
+          
+          # Create output directory
+          mkdir -p artifacts/${{ matrix.arch }}
+          
+          # Run the build
+          docker run \
+            --platform ${DOCKER_PLATFORM} \
+            --rm \
+            -v "$(pwd)/build-context:/src" \
+            -v "$(pwd)/artifacts/${{ matrix.arch }}:/output" \
+            openauto-builder:${{ matrix.arch }}
+
+      - name: Verify build artifacts
+        run: |
+          echo "=== Build artifacts for ${{ matrix.arch }} ==="
+          ls -la artifacts/${{ matrix.arch }}/
+          
+          # Check if main binaries exist
+          if [ -f "artifacts/${{ matrix.arch }}/autoapp-${{ matrix.arch }}" ]; then
+            echo "✅ autoapp binary built successfully"
+            file "artifacts/${{ matrix.arch }}/autoapp-${{ matrix.arch }}"
+          else
+            echo "❌ autoapp binary not found"
+          fi
+          
+          if [ -f "artifacts/${{ matrix.arch }}/btservice-${{ matrix.arch }}" ]; then
+            echo "✅ btservice binary built successfully"
+            file "artifacts/${{ matrix.arch }}/btservice-${{ matrix.arch }}"
+          else
+            echo "❌ btservice binary not found"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openauto-${{ matrix.arch }}-${{ needs.prepare.outputs.version_string }}
+          path: artifacts/${{ matrix.arch }}/
+          retention-days: 30
+
+      - name: Create release tarball
+        run: |
+          cd artifacts/${{ matrix.arch }}
+          tar -czf ../openauto-${{ matrix.arch }}-${{ needs.prepare.outputs.version_string }}.tar.gz *
+          cd ..
+          sha256sum openauto-${{ matrix.arch }}-${{ needs.prepare.outputs.version_string }}.tar.gz > openauto-${{ matrix.arch }}-${{ needs.prepare.outputs.version_string }}.tar.gz.sha256
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openauto-release-${{ matrix.arch }}-${{ needs.prepare.outputs.version_string }}
+          path: |
+            artifacts/openauto-${{ matrix.arch }}-${{ needs.prepare.outputs.version_string }}.tar.gz
+            artifacts/openauto-${{ matrix.arch }}-${{ needs.prepare.outputs.version_string }}.tar.gz.sha256
+          retention-days: 90
+
+  summary:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Build Summary
+        run: |
+          echo "=== OpenAuto Cross-Compilation Build Summary ==="
+          echo "Version: ${{ needs.prepare.outputs.version_string }}"
+          echo "Branch: ${{ needs.prepare.outputs.buildbranch }}"
+          echo "Commit: ${{ needs.prepare.outputs.buildhash }}"
+          echo "Date: ${{ needs.prepare.outputs.builddate }}"
+          echo "Release: ${{ needs.prepare.outputs.release }}"
+          echo "Target Architectures: ${{ needs.prepare.outputs.build_matrix }}"
+          echo ""
+          
+          # Check build results
+          if [ "${{ needs.build.result }}" = "success" ]; then
+            echo "✅ All builds completed successfully"
+          else
+            echo "❌ Some builds failed"
+            echo "Build result: ${{ needs.build.result }}"
+          fi
