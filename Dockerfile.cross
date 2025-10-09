@@ -6,11 +6,13 @@ FROM debian:${DEBIAN_RELEASE}
 ARG DEBIAN_RELEASE
 ARG TARGET_ARCH=armhf
 ARG BUILD_TESTS=false
+ARG AASDK_BRANCH=newdev
 
 # Environment setup
 ENV DEBIAN_FRONTEND=noninteractive \
     TARGET_ARCH=${TARGET_ARCH} \
-    BUILD_TESTS=${BUILD_TESTS}
+    BUILD_TESTS=${BUILD_TESTS} \
+    AASDK_BRANCH=${AASDK_BRANCH}
 
 # Add architecture and update sources
 RUN dpkg --add-architecture ${TARGET_ARCH} && \
@@ -141,6 +143,66 @@ set(PKG_CONFIG_EXECUTABLE /usr/bin/pkg-config)
 set(ENV{PKG_CONFIG_PATH} /usr/lib/aarch64-linux-gnu/pkgconfig)
 EOF
 
+# Clone and build AASDK
+RUN <<EOF
+set -e
+
+echo "Cloning AASDK branch: ${AASDK_BRANCH}"
+cd /tmp
+git clone --depth 1 --branch ${AASDK_BRANCH} https://github.com/opencardev/aasdk.git
+
+cd aasdk
+
+# Create build directory
+mkdir -p build
+cd build
+
+# Set cross-compilation variables
+if [ "${TARGET_ARCH}" = "armhf" ]; then
+    export CMAKE_TOOLCHAIN_FILE=/toolchain-armhf.cmake
+    export CROSS_COMPILE=arm-linux-gnueabihf-
+    export ARCH_SUFFIX=arm-linux-gnueabihf
+elif [ "${TARGET_ARCH}" = "arm64" ]; then
+    export CMAKE_TOOLCHAIN_FILE=/toolchain-arm64.cmake
+    export CROSS_COMPILE=aarch64-linux-gnu-
+    export ARCH_SUFFIX=aarch64-linux-gnu
+fi
+
+echo "Building AASDK for ${TARGET_ARCH}"
+echo "Using toolchain: ${CMAKE_TOOLCHAIN_FILE}"
+
+# Configure AASDK CMake
+cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
+    -DCMAKE_FIND_ROOT_PATH="/usr/${ARCH_SUFFIX}" \
+    -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+    -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+    -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DCMAKE_POLICY_DEFAULT_CMP0167=NEW \
+    -Wno-dev \
+    ..
+
+# Build AASDK
+JOBS=$(nproc)
+if [ $JOBS -gt 2 ]; then
+    JOBS=2  # Limit to prevent OOM
+fi
+
+echo "Building AASDK with ${JOBS} parallel jobs"
+cmake --build . -j${JOBS}
+
+# Install AASDK
+cmake --install .
+
+echo "AASDK build and installation completed for ${TARGET_ARCH}"
+
+# Clean up
+cd /
+rm -rf /tmp/aasdk
+EOF
+
 # Create build script
 COPY <<EOF /build.sh
 #!/bin/bash
@@ -173,10 +235,13 @@ cd build
 CMAKE_ARGS=(
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_TOOLCHAIN_FILE=\${CMAKE_TOOLCHAIN_FILE}
-    -DCMAKE_FIND_ROOT_PATH="/usr/\${ARCH_SUFFIX}"
+    -DCMAKE_FIND_ROOT_PATH="/usr/\${ARCH_SUFFIX};/usr/local"
     -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
     -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
     -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+    -DCMAKE_PREFIX_PATH="/usr/local"
+    -DCMAKE_POLICY_DEFAULT_CMP0167=NEW
+    -Wno-dev
     -DNOPI=true
 )
 
