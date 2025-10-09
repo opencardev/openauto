@@ -6,7 +6,7 @@ on:
       target_arch:
         description: 'Target architecture'
         required: true
-        default: 'armhf'
+        default: 'both'
         type: choice
         options:
         - armhf
@@ -28,7 +28,7 @@ on:
       build_tests:
         description: 'Build with tests enabled'
         required: false
-        default: false
+        default: true
         type: boolean
 
   push:
