@@ -1,23 +1,5 @@
-/*
- * Project: OpenAuto
- * This file is part of openauto project.
- * Copyright (C) 2025 OpenCarDev Team
- *
- *  openauto is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  openauto is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
- */
-
-version: '3.8'
+# Modern Docker Compose specification (no version needed)
+name: openauto-cross-compile
 
 services:
   # ARMhf (32-bit ARM) build environment
@@ -32,14 +14,24 @@ services:
       platforms:
         - linux/arm/v7
     volumes:
-      - .:/src
-      - ./artifacts/armhf:/output
+      - type: bind
+        source: .
+        target: /src
+      - type: bind
+        source: ./artifacts/armhf
+        target: /output
+        bind:
+          create_host_path: true
     environment:
-      - TARGET_ARCH=armhf
-      - BUILD_TESTS=false
+      TARGET_ARCH: armhf
+      BUILD_TESTS: "false"
     profiles:
       - armhf
       - all
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   # ARM64 (64-bit ARM) build environment  
   build-arm64:
@@ -53,14 +45,24 @@ services:
       platforms:
         - linux/arm64
     volumes:
-      - .:/src
-      - ./artifacts/arm64:/output
+      - type: bind
+        source: .
+        target: /src
+      - type: bind
+        source: ./artifacts/arm64
+        target: /output
+        bind:
+          create_host_path: true
     environment:
-      - TARGET_ARCH=arm64
-      - BUILD_TESTS=false
+      TARGET_ARCH: arm64
+      BUILD_TESTS: "false"
     profiles:
       - arm64
       - all
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   # Development environment for testing
   dev-armhf:
@@ -74,13 +76,25 @@ services:
       platforms:
         - linux/arm/v7
     volumes:
-      - .:/src
-      - ./artifacts/armhf-dev:/output
+      - type: bind
+        source: .
+        target: /src
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ./artifacts/armhf-dev
+        target: /output
+        bind:
+          create_host_path: true
     environment:
-      - TARGET_ARCH=armhf
-      - BUILD_TESTS=true
+      TARGET_ARCH: armhf
+      BUILD_TESTS: "true"
     command: /bin/bash
     stdin_open: true
     tty: true
     profiles:
       - dev
+    deploy:
+      resources:
+        limits:
+          memory: 2G

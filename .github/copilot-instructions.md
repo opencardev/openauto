@@ -78,7 +78,7 @@
 - Create unit tests for critical functions to ensure code reliability.
 - Use integration tests to verify that different parts of the system work together as expected.
 - Use caching strategies to improve performance for frequently accessed data.
-- For new files do not use the existing header information, instead use the following template:
+- For new files do not use the existing header information, instead use the following template for source files:
 []: # ```plaintext
 []: #  * Project: OpenAuto
 []: #  * This file is part of openauto project.

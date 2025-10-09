@@ -1,21 +1,4 @@
-/*
- * Project: OpenAuto
- * This file is part of openauto project.
- * Copyright (C) 2025 OpenCarDev Team
- *
- *  openauto is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  openauto is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
- */
+# syntax=docker/dockerfile:1
 
 ARG DEBIAN_RELEASE=trixie
 FROM debian:${DEBIAN_RELEASE}
@@ -25,9 +8,9 @@ ARG TARGET_ARCH=armhf
 ARG BUILD_TESTS=false
 
 # Environment setup
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TARGET_ARCH=${TARGET_ARCH}
-ENV BUILD_TESTS=${BUILD_TESTS}
+ENV DEBIAN_FRONTEND=noninteractive \
+    TARGET_ARCH=${TARGET_ARCH} \
+    BUILD_TESTS=${BUILD_TESTS}
 
 # Add architecture and update sources
 RUN dpkg --add-architecture ${TARGET_ARCH} && \
@@ -49,17 +32,23 @@ RUN apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install cross-compilation specific packages
-RUN if [ "${TARGET_ARCH}" = "armhf" ]; then \
-        apt-get update && apt-get install -y \
+RUN <<EOF
+if [ "${TARGET_ARCH}" = "armhf" ]; then
+    apt-get update
+    apt-get install -y \
         gcc-arm-linux-gnueabihf \
-        g++-arm-linux-gnueabihf \
-        && apt-get clean && rm -rf /var/lib/apt/lists/*; \
-    elif [ "${TARGET_ARCH}" = "arm64" ]; then \
-        apt-get update && apt-get install -y \
+        g++-arm-linux-gnueabihf
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+elif [ "${TARGET_ARCH}" = "arm64" ]; then
+    apt-get update
+    apt-get install -y \
         gcc-aarch64-linux-gnu \
-        g++-aarch64-linux-gnu \
-        && apt-get clean && rm -rf /var/lib/apt/lists/*; \
-    fi
+        g++-aarch64-linux-gnu
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+fi
+EOF
 
 # Install target architecture libraries
 RUN apt-get update && apt-get install -y \
@@ -82,31 +71,41 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install test dependencies if needed
-RUN if [ "${BUILD_TESTS}" = "true" ]; then \
-        apt-get update && apt-get install -y \
+RUN <<EOF
+if [ "${BUILD_TESTS}" = "true" ]; then
+    apt-get update
+    apt-get install -y \
         libgtest-dev:${TARGET_ARCH} \
         libgmock-dev:${TARGET_ARCH} \
-        qtbase5-dev-tools \
-        && apt-get clean && rm -rf /var/lib/apt/lists/*; \
-    fi
+        qtbase5-dev-tools
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+fi
+EOF
 
 # Set up cross-compilation environment variables
-RUN if [ "${TARGET_ARCH}" = "armhf" ]; then \
-        echo "export CC=arm-linux-gnueabihf-gcc" >> /etc/environment && \
-        echo "export CXX=arm-linux-gnueabihf-g++" >> /etc/environment && \
-        echo "export AR=arm-linux-gnueabihf-ar" >> /etc/environment && \
-        echo "export STRIP=arm-linux-gnueabihf-strip" >> /etc/environment && \
-        echo "export PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig" >> /etc/environment; \
-    elif [ "${TARGET_ARCH}" = "arm64" ]; then \
-        echo "export CC=aarch64-linux-gnu-gcc" >> /etc/environment && \
-        echo "export CXX=aarch64-linux-gnu-g++" >> /etc/environment && \
-        echo "export AR=aarch64-linux-gnu-ar" >> /etc/environment && \
-        echo "export STRIP=aarch64-linux-gnu-strip" >> /etc/environment && \
-        echo "export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig" >> /etc/environment; \
-    fi
+RUN <<EOF
+if [ "${TARGET_ARCH}" = "armhf" ]; then
+    {
+        echo "export CC=arm-linux-gnueabihf-gcc"
+        echo "export CXX=arm-linux-gnueabihf-g++"
+        echo "export AR=arm-linux-gnueabihf-ar"
+        echo "export STRIP=arm-linux-gnueabihf-strip"
+        echo "export PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig"
+    } >> /etc/environment
+elif [ "${TARGET_ARCH}" = "arm64" ]; then
+    {
+        echo "export CC=aarch64-linux-gnu-gcc"
+        echo "export CXX=aarch64-linux-gnu-g++"
+        echo "export AR=aarch64-linux-gnu-ar"
+        echo "export STRIP=aarch64-linux-gnu-strip"
+        echo "export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig"
+    } >> /etc/environment
+fi
+EOF
 
 # Create CMake toolchain files
-RUN cat > /toolchain-armhf.cmake << 'EOF'
+COPY <<EOF /toolchain-armhf.cmake
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
@@ -124,7 +123,7 @@ set(PKG_CONFIG_EXECUTABLE /usr/bin/pkg-config)
 set(ENV{PKG_CONFIG_PATH} /usr/lib/arm-linux-gnueabihf/pkgconfig)
 EOF
 
-RUN cat > /toolchain-arm64.cmake << 'EOF'
+COPY <<EOF /toolchain-arm64.cmake
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR aarch64)
 
@@ -143,7 +142,7 @@ set(ENV{PKG_CONFIG_PATH} /usr/lib/aarch64-linux-gnu/pkgconfig)
 EOF
 
 # Create build script
-RUN cat > /build.sh << 'EOF'
+COPY <<EOF /build.sh
 #!/bin/bash
 set -e
 
@@ -151,18 +150,18 @@ set -e
 source /etc/environment
 
 # Set cross-compilation variables
-if [ "${TARGET_ARCH}" = "armhf" ]; then
+if [ "\${TARGET_ARCH}" = "armhf" ]; then
     export CMAKE_TOOLCHAIN_FILE=/toolchain-armhf.cmake
     export CROSS_COMPILE=arm-linux-gnueabihf-
     export ARCH_SUFFIX=arm-linux-gnueabihf
-elif [ "${TARGET_ARCH}" = "arm64" ]; then
+elif [ "\${TARGET_ARCH}" = "arm64" ]; then
     export CMAKE_TOOLCHAIN_FILE=/toolchain-arm64.cmake
     export CROSS_COMPILE=aarch64-linux-gnu-
     export ARCH_SUFFIX=aarch64-linux-gnu
 fi
 
-echo "Building OpenAuto for ${TARGET_ARCH}"
-echo "Using toolchain: ${CMAKE_TOOLCHAIN_FILE}"
+echo "Building OpenAuto for \${TARGET_ARCH}"
+echo "Using toolchain: \${CMAKE_TOOLCHAIN_FILE}"
 
 cd /src
 
@@ -173,8 +172,8 @@ cd build
 # Configure CMake
 CMAKE_ARGS=(
     -DCMAKE_BUILD_TYPE=Release
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-    -DCMAKE_FIND_ROOT_PATH="/usr/${ARCH_SUFFIX}"
+    -DCMAKE_TOOLCHAIN_FILE=\${CMAKE_TOOLCHAIN_FILE}
+    -DCMAKE_FIND_ROOT_PATH="/usr/\${ARCH_SUFFIX}"
     -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
     -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
     -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
@@ -182,50 +181,50 @@ CMAKE_ARGS=(
 )
 
 # Add test configuration
-if [ "${BUILD_TESTS}" = "true" ]; then
+if [ "\${BUILD_TESTS}" = "true" ]; then
     CMAKE_ARGS+=(-DBUILD_TESTS=ON)
 else
     CMAKE_ARGS+=(-DBUILD_TESTS=OFF)
 fi
 
 echo "CMake configuration:"
-printf '%s\n' "${CMAKE_ARGS[@]}"
+printf '%s\n' "\${CMAKE_ARGS[@]}"
 
-cmake "${CMAKE_ARGS[@]}" ..
+cmake "\${CMAKE_ARGS[@]}" ..
 
 # Build with appropriate parallelism
-JOBS=$(nproc)
-if [ $JOBS -gt 2 ]; then
+JOBS=\$(nproc)
+if [ \$JOBS -gt 2 ]; then
     JOBS=2  # Limit to prevent OOM on GitHub runners
 fi
 
-echo "Building with ${JOBS} parallel jobs"
-cmake --build . -j${JOBS}
+echo "Building with \${JOBS} parallel jobs"
+cmake --build . -j\${JOBS}
 
 # Create output directory
 mkdir -p /output
 
 # Copy binaries
 if [ -f bin/autoapp ]; then
-    cp bin/autoapp /output/autoapp-${TARGET_ARCH}
+    cp bin/autoapp /output/autoapp-\${TARGET_ARCH}
     echo "Copied autoapp binary"
 fi
 
 if [ -f bin/btservice ]; then
-    cp bin/btservice /output/btservice-${TARGET_ARCH}
+    cp bin/btservice /output/btservice-\${TARGET_ARCH}
     echo "Copied btservice binary"
 fi
 
 # Copy any other binaries
 find bin -type f -executable 2>/dev/null | while read -r binary; do
-    if [ "$binary" != "bin/autoapp" ] && [ "$binary" != "bin/btservice" ]; then
-        basename_binary=$(basename "$binary")
-        cp "$binary" "/output/${basename_binary}-${TARGET_ARCH}"
-        echo "Copied $basename_binary binary"
+    if [ "\$binary" != "bin/autoapp" ] && [ "\$binary" != "bin/btservice" ]; then
+        basename_binary=\$(basename "\$binary")
+        cp "\$binary" "/output/\${basename_binary}-\${TARGET_ARCH}"
+        echo "Copied \$basename_binary binary"
     fi
 done
 
-echo "Build completed successfully for ${TARGET_ARCH}"
+echo "Build completed successfully for \${TARGET_ARCH}"
 EOF
 
 RUN chmod +x /build.sh
