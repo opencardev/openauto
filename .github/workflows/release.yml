@@ -1,0 +1,116 @@
+name: OpenAuto Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Build run ID to create release from'
+        required: true
+        type: string
+      version:
+        description: 'Release version (leave empty for auto-generated)'
+        required: false
+        default: ''
+        type: string
+      create_draft:
+        description: 'Create as draft release'
+        required: false
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      build_run_id:
+        description: 'Build run ID to create release from'
+        required: true
+        type: string
+      version:
+        description: 'Release version (leave empty for auto-generated)'
+        required: false
+        default: ''
+        type: string
+      create_draft:
+        description: 'Create as draft release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release info
+        id: release_info
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            BUILD_YEAR=$(date -u +"%Y")
+            BUILD_MONTH=$(date -u +"%m")
+            BUILD_DAY=$(date -u +"%d")
+            VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
+            COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+            if [ "$COMMIT_SHA" != "unknown" ]; then
+              VERSION="${VERSION}+git.${COMMIT_SHA}"
+            fi
+          fi
+          COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+          BUILD_DATE=$(date -u +"%Y%m%d_%H%M%S")
+
+          cat > RELEASE_NOTES.md << EOF
+          ## OpenAuto Release ${VERSION}
+
+          Build Information:
+          - Version: \`${VERSION}\`
+          - Commit: \`${COMMIT_SHA}\`
+          - Build Date: \`${BUILD_DATE}\`
+          - Build Run: \`${{ inputs.build_run_id }}\`
+
+          This release bundles the build artifacts produced by the CI for Debian bookworm/trixie using libaasdk from the OpenCarDev APT repository.
+          EOF
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+
+      - name: Download artifacts from build run
+        run: |
+          echo "Downloading artifacts from run ID: ${{ inputs.build_run_id }}"
+
+          mkdir -p ./release-artifacts
+          gh run download ${{ inputs.build_run_id }} --dir ./downloaded-artifacts
+
+          # Collect common build outputs
+          if [ -d "./downloaded-artifacts" ]; then
+            # Copy everything under build directories to release-artifacts
+            find ./downloaded-artifacts -type f \( -name "*.deb" -o -name "*.tar.*" -o -name "*.AppImage" -o -name "autoapp*" -o -name "btservice*" -o -name "*.log" \) -exec cp -v {} ./release-artifacts/ \; || true
+            # Also collect CPack results if any
+            find ./downloaded-artifacts -type f -path "*/build/*" -exec cp -v --parents {} ./release-artifacts/ \; || true
+          fi
+
+          echo "Downloaded artifacts:"
+          ls -la ./release-artifacts/ || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.release_info.outputs.version }}
+          name: OpenAuto Release ${{ steps.release_info.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            ./release-artifacts/**
+          fail_on_unmatched_files: false
+          generate_release_notes: false
+          draft: ${{ inputs.create_draft || false }}
+          prerelease: ${{ contains(steps.release_info.outputs.version, 'git') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      version: ${{ steps.release_info.outputs.version }}
