@@ -1,0 +1,143 @@
+name: OpenAuto APT Repository Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Build run ID to publish to APT repo'
+        required: true
+        type: string
+      distribution:
+        description: 'Distribution to publish to'
+        required: false
+        default: 'trixie'
+        type: choice
+        options:
+          - trixie
+          - bookworm
+          - both
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      total_files: ${{ steps.find_files.outputs.total_files }}
+    steps:
+      - name: Download artifacts from build run
+        run: |
+          echo "Downloading artifacts from run ID: ${{ inputs.build_run_id }}"
+          gh run download ${{ inputs.build_run_id }} --repo ${{ github.repository }} --dir ./downloaded-artifacts
+          echo "Downloaded artifacts structure:"
+          find ./downloaded-artifacts -type f | head -50
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find .deb files
+        id: find_files
+        run: |
+          echo "Finding .deb files..."
+          find ./downloaded-artifacts -name "*.deb" -type f > deb_file_list.txt || true
+          cat deb_file_list.txt || true
+          count=$(wc -l < deb_file_list.txt 2>/dev/null || echo 0)
+          echo "total_files=${count}" >> $GITHUB_OUTPUT
+
+      - name: Summary (no debs)
+        if: steps.find_files.outputs.total_files == '0'
+        run: |
+          echo "## APT publish skipped" >> $GITHUB_STEP_SUMMARY
+          echo "No .deb files found in build run: ${{ inputs.build_run_id }}" >> $GITHUB_STEP_SUMMARY
+
+  upload-trixie:
+    needs: prepare
+    if: needs.prepare.outputs.total_files != '0' && (inputs.distribution == 'trixie' || inputs.distribution == 'both')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download .deb files
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*'
+          path: ./artifacts
+        continue-on-error: true
+
+      - name: Collect .deb files
+        run: |
+          mkdir -p ./deb-files
+          # Collect from previously downloaded-artifacts when no artifact bundles exist
+          if [ ! -d ./artifacts ] || [ -z "$(find ./artifacts -name '*.deb' -type f 2>/dev/null)" ]; then
+            echo "No artifact bundles; copying from downloaded-artifacts"
+            cp -v $(find ./downloaded-artifacts -name '*.deb' -type f) ./deb-files/ || true
+          else
+            echo "Copying from artifacts bundles"
+            cp -v $(find ./artifacts -name '*.deb' -type f) ./deb-files/ || true
+          fi
+          ls -la ./deb-files || true
+
+      - name: Upload to APT Repository (Trixie)
+        uses: MauroDruwel/apt-repo-action@v4
+        with:
+          github_token: ${{ secrets.PACKAGES_REPO_TOKEN }}
+          repo_supported_arch: |
+            amd64
+            arm64
+            armhf
+          repo_supported_version: |
+            trixie
+          file: ./deb-files/*.deb
+          file_target_version: trixie
+          target_repository: opencardev/packages
+          private_key: ${{ secrets.APT_SIGNING_KEY }}
+          key_passphrase: ${{ secrets.APT_SIGNING_PASSPHRASE }}
+          public_key: ${{ secrets.APT_SIGNING_PUBLIC_KEY }}
+
+  upload-bookworm:
+    needs: prepare
+    if: needs.prepare.outputs.total_files != '0' && (inputs.distribution == 'bookworm' || inputs.distribution == 'both')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download .deb files
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*'
+          path: ./artifacts
+        continue-on-error: true
+
+      - name: Collect .deb files
+        run: |
+          mkdir -p ./deb-files
+          if [ ! -d ./artifacts ] || [ -z "$(find ./artifacts -name '*.deb' -type f 2>/dev/null)" ]; then
+            echo "No artifact bundles; copying from downloaded-artifacts"
+            cp -v $(find ./downloaded-artifacts -name '*.deb' -type f) ./deb-files/ || true
+          else
+            echo "Copying from artifacts bundles"
+            cp -v $(find ./artifacts -name '*.deb' -type f) ./deb-files/ || true
+          fi
+          ls -la ./deb-files || true
+
+      - name: Upload to APT Repository (Bookworm)
+        uses: MauroDruwel/apt-repo-action@v4
+        with:
+          github_token: ${{ secrets.PACKAGES_REPO_TOKEN }}
+          repo_supported_arch: |
+            amd64
+            arm64
+            armhf
+          repo_supported_version: |
+            bookworm
+          file: ./deb-files/*.deb
+          file_target_version: bookworm
+          target_repository: opencardev/packages
+          private_key: ${{ secrets.APT_SIGNING_KEY }}
+          key_passphrase: ${{ secrets.APT_SIGNING_PASSPHRASE }}
+          public_key: ${{ secrets.APT_SIGNING_PUBLIC_KEY }}
+
+  summary:
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "## OpenAuto APT Repository Upload" >> $GITHUB_STEP_SUMMARY
+          echo "Build Run ID: ${{ inputs.build_run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "Distribution: ${{ inputs.distribution }}" >> $GITHUB_STEP_SUMMARY
+          echo "Deb files found: ${{ needs.prepare.outputs.total_files }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,203 @@
+name: Build OpenAuto using APT-provided libaasdk
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'bugfix/**'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  workflow_dispatch:
+    inputs:
+      distro:
+        description: 'Debian distribution to use'
+        required: false
+        default: 'bookworm'
+        type: choice
+        options:
+          - bookworm
+          - trixie
+      version:
+        description: 'Build version (optional)'
+        required: false
+        default: ''
+        type: string
+      trigger_release:
+        description: 'Trigger release workflow after build'
+        required: false
+        default: false
+        type: boolean
+      trigger_apt_publish:
+        description: 'Trigger APT publish workflow after build'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [ bookworm, trixie ]
+      max-parallel: 2
+    container:
+      image: debian:${{ matrix.distro }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare build environment and install libaasdk from APT repo
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+
+          # Base tooling
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl gnupg build-essential cmake pkg-config git \
+            dpkg-dev fakeroot file \
+            libusb-1.0-0-dev libtag1-dev librtaudio-dev libgps-dev \
+            libprotobuf-dev protobuf-compiler \
+            libssl-dev libblkid-dev \
+            libboost-system-dev libboost-log-dev \
+            qtbase5-dev qtmultimedia5-dev qttools5-dev qttools5-dev-tools qtconnectivity5-dev
+
+          # Add OpenCarDev APT repository (signed-by best practice)
+          install -d -m 0755 /etc/apt/keyrings
+          curl -fsSL https://opencardev.github.io/packages/opencardev.gpg.key -o /etc/apt/keyrings/opencardev.gpg
+          chmod 0644 /etc/apt/keyrings/opencardev.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages ${{ matrix.distro }} main" > /etc/apt/sources.list.d/opencardev.list
+          apt-get update
+
+          # Install libaasdk (prefer -dev for headers + runtime)
+          # If only libaasdk exists, -dev may be absent; handle gracefully
+          if apt-cache show libaasdk-dev >/dev/null 2>&1; then
+            apt-get install -y --no-install-recommends libaasdk-dev
+          else
+            echo "libaasdk-dev not found; attempting to install runtime-only libaasdk"
+          fi
+          apt-get install -y --no-install-recommends libaasdk || true
+
+          # Install aap_protobuf development package if available (name may vary)
+          if apt-cache show aap-protobuf-dev >/dev/null 2>&1; then
+            apt-get install -y --no-install-recommends aap-protobuf-dev
+          elif apt-cache show aap_protobuf-dev >/dev/null 2>&1; then
+            apt-get install -y --no-install-recommends aap_protobuf-dev
+          else
+            echo "aap_protobuf dev package not found in APT; relying on Findaap_protobuf.cmake to locate it if present"
+          fi
+
+          # Prove installation
+          dpkg -s libaasdk-dev 2>/dev/null || true
+          dpkg -s libaasdk 2>/dev/null || true
+
+      - name: Generate build info (version)
+        id: build_info
+        shell: bash
+        run: |
+          # Generate version matching CMake logic: YYYY.MM.DD +git.<sha> [.dirty]
+          BUILD_YEAR=$(date -u +"%Y")
+          BUILD_MONTH=$(date -u +"%m")
+          BUILD_DAY=$(date -u +"%d")
+          VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
+
+          if git -C "${GITHUB_WORKSPACE}" rev-parse --short HEAD >/dev/null 2>&1; then
+            COMMIT_SHA=$(git -C "${GITHUB_WORKSPACE}" rev-parse --short HEAD)
+            VERSION="${VERSION}+git.${COMMIT_SHA}"
+            if ! git -C "${GITHUB_WORKSPACE}" diff --quiet; then
+              VERSION="${VERSION}.dirty"
+            fi
+          fi
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "commit_sha=${COMMIT_SHA:-unknown}" >> $GITHUB_OUTPUT
+          echo "build_date=${BUILD_YEAR}${BUILD_MONTH}${BUILD_DAY}" >> $GITHUB_OUTPUT
+
+      - name: Configure (CMake)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake --build build -j"$(nproc)"
+
+      - name: Package (optional)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake --build build --target package || true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openauto-${{ matrix.distro }}-apt-aasdk
+          path: |
+            build/**
+            !build/CMakeFiles/**
+          retention-days: 14
+
+      - name: Summary
+        shell: bash
+        run: |
+          set -e
+          echo "## OpenAuto build using APT-provided libaasdk" >> $GITHUB_STEP_SUMMARY
+          echo "- Distribution: ${{ matrix.distro }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Using APT repo: https://opencardev.github.io/packages" >> $GITHUB_STEP_SUMMARY
+          echo "- Artifacts: openauto-${{ matrix.distro }}-apt-aasdk" >> $GITHUB_STEP_SUMMARY
+          echo "- Version: ${{ steps.build_info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+
+  release_triggers:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.trigger_release == 'true' || github.event.inputs.trigger_apt_publish == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    steps:
+      - name: Trigger Release Workflow
+        if: github.event.inputs.trigger_release == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
+          echo "Triggering release workflow with build run ID: ${{ github.run_id }}"
+          gh workflow run release.yml --repo ${{ github.repository }} \
+            -f build_run_id="${{ github.run_id }}" \
+            -f version="${{ github.event.inputs.version }}" \
+            -f create_draft="false"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Trigger APT Publish Workflow
+        if: github.event.inputs.trigger_apt_publish == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
+          echo "Triggering APT repository update via repository_dispatch for build run ${{ github.run_id }}"
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.PACKAGES_REPO_TOKEN }}" \
+            https://api.github.com/repos/opencardev/packages/dispatches \
+            -d '{
+              "event_type": "publish-apt-packages",
+              "client_payload": {
+                "source_repo": "${{ github.repository }}",
+                "build_run_id": "${{ github.run_id }}",
+                "distribution": "bookworm,trixie"
+              }
+            }'
+          echo "✅ Dispatched to opencardev/packages. Check workflow runs there."
+        env:
+          PACKAGES_REPO_TOKEN: ${{ secrets.PACKAGES_REPO_TOKEN }}

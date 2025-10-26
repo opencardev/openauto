@@ -1,0 +1,41 @@
+name: Trigger APT Repository Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Build run ID to publish to APT repo'
+        required: true
+        type: string
+      distribution:
+        description: 'Distribution to publish to'
+        required: false
+        default: 'trixie'
+        type: choice
+        options:
+          - trixie
+          - bookworm
+          - both
+
+jobs:
+  trigger-apt-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch to packages repo
+        run: |
+          echo "Triggering APT repository update for build run ${{ inputs.build_run_id }}"
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.PACKAGES_REPO_TOKEN }}" \
+            https://api.github.com/repos/opencardev/packages/dispatches \
+            -d '{
+              "event_type": "publish-apt-packages",
+              "client_payload": {
+                "source_repo": "${{ github.repository }}",
+                "build_run_id": "${{ inputs.build_run_id }}",
+                "distribution": "${{ inputs.distribution }}"
+              }
+            }'
+
+          echo "✅ APT repository update triggered successfully!"
+          echo "Check: https://github.com/opencardev/packages/actions"

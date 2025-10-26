@@ -1,8 +1,52 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.14)
 
 project(openauto CXX)
 
 message(STATUS "OpenAuto")
+
+# Versioning: align with AASDK (YYYY.MM.DD[+git.<sha>[.dirty]][.debug])
+# Date-based semantic versioning
+string(TIMESTAMP OPENAUTO_BUILD_YEAR "%Y" UTC)
+string(TIMESTAMP OPENAUTO_BUILD_MONTH "%m" UTC)
+string(TIMESTAMP OPENAUTO_BUILD_DAY "%d" UTC)
+
+# Get git commit information
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_ID
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --dirty --always
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_DESCRIBE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    # Check if repository is dirty (has uncommitted changes)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} diff --quiet
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_DIRTY
+        ERROR_QUIET
+    )
+else()
+    set(GIT_COMMIT_ID "unknown")
+    set(GIT_BRANCH "unknown")
+    set(GIT_DESCRIBE "unknown")
+    set(GIT_DIRTY 0)
+endif()
 
 option(NOPI "Build for Non Raspberry Pi" OFF)
 
@@ -10,11 +54,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-# Set Compile Versions
-string(TIMESTAMP OPENAUTO_BUILD_DATE "%Y%m%d")  # Dynamic Binary Release Build Date
-set(OPENAUTO_BUILD_MAJOR_RELEASE 4)             # Binary Release Build Major Number
-set(OPENAUTO_BUILD_MINOR_RELEASE 1)             # Binary Release Build Minor Number
-set(OPENAUTO_BUILD_INCREMENTAL 0)               # Binary Build Version - Increment for Each Build
+# Set version components
+set(OPENAUTO_BUILD_MAJOR_RELEASE ${OPENAUTO_BUILD_YEAR})
+set(OPENAUTO_BUILD_MINOR_RELEASE ${OPENAUTO_BUILD_MONTH})
+set(OPENAUTO_BUILD_PATCH_RELEASE ${OPENAUTO_BUILD_DAY})
 
 # Configure CMAKE
 set(CMAKE_CXX_STANDARD 17)
@@ -38,11 +81,10 @@ set(resources_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 set(sources_directory ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(include_directory ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 # Configure Boost
@@ -147,9 +189,30 @@ target_link_libraries(autoapp PUBLIC
         ${AAP_PROTOBUF_LIB_DIR}
         ${AASDK_LIB_DIR})
 
-set(PROGRAM_VERSION_STRING "${OPENAUTO_BUILD_MAJOR_RELEASE}.${OPENAUTO_BUILD_MINOR_RELEASE}.${OPENAUTO_BUILD_INCREMENTAL}+${OPENAUTO_BUILD_DATE}")
+set(PROGRAM_VERSION_STRING "${OPENAUTO_BUILD_MAJOR_RELEASE}.${OPENAUTO_BUILD_MINOR_RELEASE}.${OPENAUTO_BUILD_PATCH_RELEASE}")
+
+# Add git commit info to version if available
+if(GIT_COMMIT_ID AND NOT GIT_COMMIT_ID STREQUAL "unknown")
+    set(PROGRAM_VERSION_STRING "${PROGRAM_VERSION_STRING}+git.${GIT_COMMIT_ID}")
+    if(GIT_DIRTY GREATER 0)
+        set(PROGRAM_VERSION_STRING "${PROGRAM_VERSION_STRING}.dirty")
+    endif()
+endif()
+
+# Add build type suffix for debug builds
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(PROGRAM_VERSION_STRING "${PROGRAM_VERSION_STRING}.debug")
+endif()
 
 message(STATUS "Project Version: ${PROGRAM_VERSION_STRING}")
+message(STATUS "Git Branch: ${GIT_BRANCH}")
+message(STATUS "Git Commit: ${GIT_COMMIT_ID}")
+message(STATUS "Git Describe: ${GIT_DESCRIBE}")
+if(GIT_DIRTY GREATER 0)
+    message(STATUS "Repository Status: DIRTY (has uncommitted changes)")
+else()
+    message(STATUS "Repository Status: CLEAN")
+endif()
 
 set(btservice_sources_directory ${sources_directory}/btservice)
 
@@ -168,10 +231,81 @@ target_link_libraries(btservice PUBLIC
         ${AAP_PROTOBUF_LIB_DIR})
 
 set_target_properties(autoapp
-        PROPERTIES VERSION ${PROGRAM_VERSION_STRING} SOVERSION ${OPENAUTO_BUILD_INCREMENTAL})
+    PROPERTIES VERSION ${PROGRAM_VERSION_STRING} SOVERSION ${OPENAUTO_BUILD_MAJOR_RELEASE})
 
 # Install rules
-#install(TARGETS autoapp btservice
-#        EXPORT aasdkTargets
-#        RUNTIME DESTINATION bin
-#)
+install(TARGETS autoapp btservice
+    RUNTIME DESTINATION bin
+)
+
+# Packaging configuration (DEB via CPack)
+# Auto-detect architecture for proper Debian packaging
+execute_process(
+    COMMAND dpkg --print-architecture
+    OUTPUT_VARIABLE DETECTED_ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(DETECTED_ARCH)
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${DETECTED_ARCH}")
+    message(STATUS "Detected architecture for packaging: ${DETECTED_ARCH}")
+else()
+    # Fallback to system processor
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "armv7l")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "armhf")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i386|i686")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")
+    else()
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "unknown")
+    endif()
+    message(STATUS "Fallback architecture detection: ${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+endif()
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "openauto")
+set(CPACK_PACKAGE_VENDOR "OpenCarDev")
+set(CPACK_PACKAGE_CONTACT "OpenCarDev Team <team@opencardev.org>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenAuto head unit application using libaasdk")
+set(CPACK_PACKAGE_DESCRIPTION "OpenAuto is an AndroidAuto head unit emulator designed for Raspberry Pi and other embedded platforms.")
+set(CPACK_PACKAGE_VERSION "${PROGRAM_VERSION_STRING}")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/opencardev/openauto")
+
+# Debian package configuration
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenCarDev Team <opencardevuk@gmail.com>")
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/opencardev/openauto")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+# File naming based on architecture
+if(DEFINED CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
+    set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROGRAM_VERSION_STRING}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}.deb")
+else()
+    set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+endif()
+
+# Optional: add basic metadata
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+
+# Source package configuration
+set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${PROGRAM_VERSION_STRING}-src")
+set(CPACK_SOURCE_IGNORE_FILES
+    "/build/"
+    "/build-debug/"
+    "/[.]git/"
+    "/[.]vscode/"
+    "/[.]idea/"
+    "[.]gitignore"
+    "[.]DS_Store"
+    "/lib/"
+    "/bin/"
+    "[.]so$"
+    "[.]a$"
+)
+
+include(CPack)
