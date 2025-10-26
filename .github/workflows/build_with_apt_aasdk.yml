@@ -24,7 +24,7 @@ on:
       distro:
         description: 'Debian distribution to use'
         required: false
-        default: 'bookworm'
+        default: 'trixie'
         type: choice
         options:
           - bookworm
@@ -46,30 +46,37 @@ on:
         type: boolean
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set build matrix
+        id: set-matrix
+        run: |
+          # Determine which distro(s) to build
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DISTRO="${{ inputs.distro }}"
+          else
+            # For push/PR, build both distros
+            DISTRO="bookworm,trixie"
+          fi
+
+          # Generate matrix based on selected distro(s)
+          if [[ "$DISTRO" == *","* ]]; then
+            # Multiple distros
+            echo 'matrix={"include":[{"arch":"amd64","platform":"linux/amd64","distro":"bookworm"},{"arch":"amd64","platform":"linux/amd64","distro":"trixie"},{"arch":"arm64","platform":"linux/arm64","distro":"bookworm"},{"arch":"arm64","platform":"linux/arm64","distro":"trixie"},{"arch":"armhf","platform":"linux/arm/v7","distro":"bookworm"},{"arch":"armhf","platform":"linux/arm/v7","distro":"trixie"}]}' >> $GITHUB_OUTPUT
+          else
+            # Single distro - build all architectures for selected distro only
+            echo "matrix={\"include\":[{\"arch\":\"amd64\",\"platform\":\"linux/amd64\",\"distro\":\"$DISTRO\"},{\"arch\":\"arm64\",\"platform\":\"linux/arm64\",\"distro\":\"$DISTRO\"},{\"arch\":\"armhf\",\"platform\":\"linux/arm/v7\",\"distro\":\"$DISTRO\"}]}" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: prepare
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            platform: linux/amd64
-            distro: bookworm
-          - arch: amd64
-            platform: linux/amd64
-            distro: trixie
-          - arch: arm64
-            platform: linux/arm64
-            distro: bookworm
-          - arch: arm64
-            platform: linux/arm64
-            distro: trixie
-          - arch: armhf
-            platform: linux/arm/v7
-            distro: bookworm
-          - arch: armhf
-            platform: linux/arm/v7
-            distro: trixie
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
       max-parallel: 6
 
     name: Build OpenAuto for ${{ matrix.arch }} on ${{ matrix.distro }}
@@ -114,8 +121,21 @@ jobs:
             echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages ${{ matrix.distro }} main" > /etc/apt/sources.list.d/opencardev.list
             apt-get update
 
-            # Install libaasdk-dev (required for headers and CMake config)
-            apt-get install -y --no-install-recommends libaasdk-dev
+            # Install libaasdk-dev (try architecture-specific name first, then generic)
+            # Current APT repo uses arch-specific naming: libaasdk-<arch>-dev
+            ARCH="${{ matrix.arch }}"
+            if apt-cache show libaasdk-${ARCH}-dev >/dev/null 2>&1; then
+              echo "Installing architecture-specific package: libaasdk-${ARCH}-dev"
+              apt-get install -y --no-install-recommends libaasdk-${ARCH}-dev
+            elif apt-cache show libaasdk-dev >/dev/null 2>&1; then
+              echo "Installing generic multiarch package: libaasdk-dev"
+              apt-get install -y --no-install-recommends libaasdk-dev
+            else
+              echo "ERROR: libaasdk-dev package not found in APT repository"
+              echo "Available libaasdk packages:"
+              apt-cache search libaasdk || true
+              exit 1
+            fi
 
             # Install aap_protobuf development package if available (name may vary)
             if apt-cache show aap-protobuf-dev >/dev/null 2>&1; then
