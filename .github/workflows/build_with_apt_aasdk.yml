@@ -91,6 +91,7 @@ jobs:
         with:
           image: debian:${{ matrix.distro }}
           options: --platform ${{ matrix.platform }} -v ${{ github.workspace }}:/workspace -w /workspace
+          shell: bash
           run: |
             set -euxo pipefail
             export DEBIAN_FRONTEND=noninteractive
