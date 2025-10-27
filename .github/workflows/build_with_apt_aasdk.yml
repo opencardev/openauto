@@ -150,7 +150,18 @@ jobs:
             dpkg -l | grep libaasdk || true
 
             # Configure and build
-            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+            # Use -DNOPI=ON for non-Raspberry Pi targets (amd64, arm64)
+            CMAKE_NOPI_FLAG=""
+            case "${{ matrix.arch }}" in
+              amd64|arm64)
+                CMAKE_NOPI_FLAG="-DNOPI=ON"
+                ;;
+              *)
+                CMAKE_NOPI_FLAG="-DNOPI=OFF"
+                ;;
+            esac
+
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${CMAKE_NOPI_FLAG}
             cmake --build build -j"$(nproc)"
             cmake --build build --target package || true
 
