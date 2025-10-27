@@ -203,7 +203,7 @@ jobs:
           echo "- Artifacts: openauto-${{ matrix.arch }}-${{ matrix.distro }}" >> $GITHUB_STEP_SUMMARY
 
   release_triggers:
-    needs: [build]
+    needs: [build, test]
     runs-on: ubuntu-latest
     if: github.event.inputs.trigger_release == 'true' || github.event.inputs.trigger_apt_publish == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
@@ -232,9 +232,47 @@ jobs:
               "client_payload": {
                 "source_repo": "${{ github.repository }}",
                 "build_run_id": "${{ github.run_id }}",
-                "distribution": "bookworm,trixie"
+                "distribution": "both"
               }
             }'
           echo "✅ Dispatched to opencardev/packages. Check workflow runs there."
         env:
           PACKAGES_REPO_TOKEN: ${{ secrets.PACKAGES_REPO_TOKEN }}
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: openauto-*
+          merge-multiple: true
+          path: ./test-artifacts
+
+      - name: Generate test report
+        shell: bash
+        run: |
+          echo "# OpenAuto Build Test Report" > test-report.md
+          echo "" >> test-report.md
+          echo "## Build Summary" >> test-report.md
+          echo "- Build Date: $(date -u)" >> test-report.md
+          echo "- Commit: ${{ github.sha }}" >> test-report.md
+          echo "- Branch: ${{ github.ref_name }}" >> test-report.md
+          echo "" >> test-report.md
+          echo "## Package Information" >> test-report.md
+          find ./test-artifacts -name "*.deb" -type f | while read -r pkg; do
+            echo "### $(basename "$pkg")" >> test-report.md
+            echo '```' >> test-report.md
+            dpkg-deb --field "$pkg" Package Architecture Version Depends 2>/dev/null >> test-report.md || true
+            echo '```' >> test-report.md
+            echo "" >> test-report.md
+          done
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: openauto-test-report-${{ github.run_number }}
+          path: test-report.md
+          retention-days: 30
