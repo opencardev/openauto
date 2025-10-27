@@ -64,11 +64,22 @@ jobs:
 
           # Generate matrix based on selected distro(s)
           if [[ "$DISTRO" == *","* ]]; then
-            # Multiple distros
-            echo 'matrix={"include":[{"arch":"amd64","platform":"linux/amd64","distro":"bookworm"},{"arch":"amd64","platform":"linux/amd64","distro":"trixie"},{"arch":"arm64","platform":"linux/arm64","distro":"bookworm"},{"arch":"arm64","platform":"linux/arm64","distro":"trixie"},{"arch":"armhf","platform":"linux/arm/v7","distro":"bookworm"},{"arch":"armhf","platform":"linux/arm/v7","distro":"trixie"}]}' >> $GITHUB_OUTPUT
+            # Multiple distros: include armhf only for bookworm (skip trixie due to t64 transitions)
+            echo 'matrix={"include":[
+              {"arch":"amd64","platform":"linux/amd64","distro":"bookworm"},
+              {"arch":"amd64","platform":"linux/amd64","distro":"trixie"},
+              {"arch":"arm64","platform":"linux/arm64","distro":"bookworm"},
+              {"arch":"arm64","platform":"linux/arm64","distro":"trixie"},
+              {"arch":"armhf","platform":"linux/arm/v7","distro":"bookworm"}
+            ]}' >> $GITHUB_OUTPUT
           else
-            # Single distro - build all architectures for selected distro only
-            echo "matrix={\"include\":[{\"arch\":\"amd64\",\"platform\":\"linux/amd64\",\"distro\":\"$DISTRO\"},{\"arch\":\"arm64\",\"platform\":\"linux/arm64\",\"distro\":\"$DISTRO\"},{\"arch\":\"armhf\",\"platform\":\"linux/arm/v7\",\"distro\":\"$DISTRO\"}]}" >> $GITHUB_OUTPUT
+            # Single distro
+            if [ "$DISTRO" = "trixie" ]; then
+              # Skip armhf on trixie
+              echo "matrix={\"include\":[{\"arch\":\"amd64\",\"platform\":\"linux/amd64\",\"distro\":\"$DISTRO\"},{\"arch\":\"arm64\",\"platform\":\"linux/arm64\",\"distro\":\"$DISTRO\"}]}" >> $GITHUB_OUTPUT
+            else
+              echo "matrix={\"include\":[{\"arch\":\"amd64\",\"platform\":\"linux/amd64\",\"distro\":\"$DISTRO\"},{\"arch\":\"arm64\",\"platform\":\"linux/arm64\",\"distro\":\"$DISTRO\"},{\"arch\":\"armhf\",\"platform\":\"linux/arm/v7\",\"distro\":\"$DISTRO\"}]}" >> $GITHUB_OUTPUT
+            fi
           fi
 
   build:
