@@ -110,43 +110,13 @@ RUN export TARGET_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH) && \
             *) CMAKE_NOPI_FLAG="-DNOPI=ON" ;; \
         esac && \
         echo "Using CMAKE_NOPI_FLAG: $CMAKE_NOPI_FLAG" && \
-            # Compute distro-specific release suffix to avoid cross-suite overwrite
-            . /etc/os-release && \
-            ID_LC="$(echo "$ID" | tr '[:upper:]' '[:lower:]')" && \
-            SUITE="${VERSION_CODENAME:-unknown}" && \
-            VERID="${VERSION_ID:-0}" && \
-            case "$ID_LC" in \
-                debian)
-                    # Prefer VERSION_ID (e.g., 12, 13). Map known suites for clarity.
-                    case "$SUITE" in \
-                        bookworm) DEB_NUM=12 ;; \
-                        trixie)   DEB_NUM=13 ;; \
-                        *)        DEB_NUM="${VERID%%.*}" ;; \
-                    esac; \
-                    if [ -n "$DEB_NUM" ]; then \
-                        CPACK_DEB_RELEASE="1+deb${DEB_NUM}u1"; \
-                    else \
-                        CPACK_DEB_RELEASE="1~debian${SUITE}1"; \
-                    fi \
-                    ;;
-                ubuntu)
-                    # Encode series to keep filenames unique across jammy/noble, etc.
-                    # Use 0ubuntu1~YY.MM pattern so each series differs.
-                    SERIES="${VERID}"; \
-                    CPACK_DEB_RELEASE="0ubuntu1~${SERIES}" \
-                    ;;
-                raspbian|raspios)
-                    SERIES="${VERID%%.*}"; \
-                    CPACK_DEB_RELEASE="1+rpi${SERIES}u1" \
-                    ;;
-                *)
-                    # Generic fallback includes distro ID and codename/version
-                    CPACK_DEB_RELEASE="1~${ID_LC}${VERID}-${SUITE}" \
-                    ;;
-            esac && \
+        # Compute distro-specific release suffix to avoid cross-suite overwrite
+        DISTRO_DEB_RELEASE=$(bash /src/scripts/distro_release.sh) && \
+        CPACK_DEB_RELEASE="$DISTRO_DEB_RELEASE" && \
         echo "Using CPACK_DEBIAN_PACKAGE_RELEASE: $CPACK_DEB_RELEASE" && \
         # Configure
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${CMAKE_NOPI_FLAG} -DCPACK_DEBIAN_PACKAGE_RELEASE="$CPACK_DEB_RELEASE" && \
+        env DISTRO_DEB_RELEASE="$CPACK_DEB_RELEASE" \
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${CMAKE_NOPI_FLAG} -DCPACK_DEBIAN_PACKAGE_RELEASE="$CPACK_DEB_RELEASE" -DCPACK_PROJECT_CONFIG_FILE=/src/cmake_modules/CPackProjectConfig.cmake && \
     # Build
     cmake --build build -j$(nproc) && \
     # Package
