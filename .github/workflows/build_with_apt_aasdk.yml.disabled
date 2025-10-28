@@ -24,10 +24,10 @@ on:
       distro:
         description: 'Debian distribution to build'
         required: false
-        default: 'both'
+        default: 'all'
         type: choice
         options:
-          - both
+          - all
           - bookworm
           - trixie
       version:
@@ -60,15 +60,15 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             DISTRO="${{ inputs.distro }}"
           else
-            # For push/PR, build both distros
-            DISTRO="both"
+            # For push/PR, build all distros
+            DISTRO="all"
           fi
           
           echo "distro=${DISTRO}" >> $GITHUB_OUTPUT
 
           # Generate matrix based on selected distro(s)
-          if [ "$DISTRO" = "both" ]; then
-            # Build both distros: all architectures for both
+          if [ "$DISTRO" = "all" ]; then
+            # Build all distros: all architectures for all
             echo 'matrix={"include":[
               {"arch":"amd64","platform":"linux/amd64","distro":"bookworm"},
               {"arch":"amd64","platform":"linux/amd64","distro":"trixie"},
@@ -107,8 +107,8 @@ jobs:
           echo '${{ steps.set-matrix.outputs.matrix }}' | jq '.' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.set-matrix.outputs.distro }}" = "both" ]; then
-            echo "📦 Building for **Bookworm** and **Trixie** (amd64, arm64, armhf each)" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.set-matrix.outputs.distro }}" = "all" ]; then
+            echo "📦 Building for **All distributions** (Bookworm and Trixie - amd64, arm64, armhf each)" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ steps.set-matrix.outputs.distro }}" = "trixie" ]; then
             echo "📦 Building for **Trixie** only (amd64, arm64, armhf)" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ steps.set-matrix.outputs.distro }}" = "bookworm" ]; then
