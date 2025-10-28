@@ -281,9 +281,18 @@ set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/opencardev/openauto")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
-# File naming based on architecture
+# Use full release string for filename (e.g. deb13u1, deb12u2, 0ubuntu1~22.04)
+set(DEB_RELEASE "unknown")
+if(DEFINED CPACK_DEBIAN_PACKAGE_RELEASE)
+    # Remove any leading version numbers (e.g. 1+deb13u1 -> deb13u1)
+    string(REGEX REPLACE "^[0-9]+[+~]?" "" DEB_RELEASE "${CPACK_DEBIAN_PACKAGE_RELEASE}")
+else()
+    set(DEB_RELEASE "unknown")
+endif()
+
+# File naming based on architecture and release
 if(DEFINED CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
-    set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROGRAM_VERSION_STRING}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}.deb")
+    set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROGRAM_VERSION_STRING}_${DEB_RELEASE}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}.deb")
 else()
     set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
 endif()
