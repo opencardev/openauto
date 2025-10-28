@@ -1,0 +1,41 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Build directories
+build/
+build-*/
+bin/
+lib/
+packages/
+buildenv/pi_binaries/
+buildenv/release/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+docs/
+RELEASE.txt
+
+# CI/CD (these are copied separately if needed)
+.github/
+
+# Docker files
+Dockerfile.rootfs
+.dockerignore
+
+# Test files
+tests/
+test_*/
+
+# Temporary files
+*.tmp
+*.log
+*.bak

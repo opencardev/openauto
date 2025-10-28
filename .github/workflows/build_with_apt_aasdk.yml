@@ -22,11 +22,12 @@ on:
   workflow_dispatch:
     inputs:
       distro:
-        description: 'Debian distribution to use'
+        description: 'Debian distribution to build'
         required: false
-        default: 'trixie'
+        default: 'both'
         type: choice
         options:
+          - both
           - bookworm
           - trixie
       version:
@@ -50,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      distro: ${{ steps.set-matrix.outputs.distro }}
     steps:
       - name: Set build matrix
         id: set-matrix
@@ -59,27 +61,58 @@ jobs:
             DISTRO="${{ inputs.distro }}"
           else
             # For push/PR, build both distros
-            DISTRO="bookworm,trixie"
+            DISTRO="both"
           fi
+          
+          echo "distro=${DISTRO}" >> $GITHUB_OUTPUT
 
           # Generate matrix based on selected distro(s)
-          if [[ "$DISTRO" == *","* ]]; then
-            # Multiple distros: include armhf only for bookworm (skip trixie due to t64 transitions)
+          if [ "$DISTRO" = "both" ]; then
+            # Build both distros: all architectures for both
             echo 'matrix={"include":[
               {"arch":"amd64","platform":"linux/amd64","distro":"bookworm"},
               {"arch":"amd64","platform":"linux/amd64","distro":"trixie"},
               {"arch":"arm64","platform":"linux/arm64","distro":"bookworm"},
               {"arch":"arm64","platform":"linux/arm64","distro":"trixie"},
+              {"arch":"armhf","platform":"linux/arm/v7","distro":"bookworm"},
+              {"arch":"armhf","platform":"linux/arm/v7","distro":"trixie"}
+            ]}' >> $GITHUB_OUTPUT
+          elif [ "$DISTRO" = "trixie" ]; then
+            # Trixie only: all architectures
+            echo 'matrix={"include":[
+              {"arch":"amd64","platform":"linux/amd64","distro":"trixie"},
+              {"arch":"arm64","platform":"linux/arm64","distro":"trixie"},
+              {"arch":"armhf","platform":"linux/arm/v7","distro":"trixie"}
+            ]}' >> $GITHUB_OUTPUT
+          elif [ "$DISTRO" = "bookworm" ]; then
+            # Bookworm only: all architectures
+            echo 'matrix={"include":[
+              {"arch":"amd64","platform":"linux/amd64","distro":"bookworm"},
+              {"arch":"arm64","platform":"linux/arm64","distro":"bookworm"},
               {"arch":"armhf","platform":"linux/arm/v7","distro":"bookworm"}
             ]}' >> $GITHUB_OUTPUT
           else
-            # Single distro
-            if [ "$DISTRO" = "trixie" ]; then
-              # Skip armhf on trixie
-              echo "matrix={\"include\":[{\"arch\":\"amd64\",\"platform\":\"linux/amd64\",\"distro\":\"$DISTRO\"},{\"arch\":\"arm64\",\"platform\":\"linux/arm64\",\"distro\":\"$DISTRO\"}]}" >> $GITHUB_OUTPUT
-            else
-              echo "matrix={\"include\":[{\"arch\":\"amd64\",\"platform\":\"linux/amd64\",\"distro\":\"$DISTRO\"},{\"arch\":\"arm64\",\"platform\":\"linux/arm64\",\"distro\":\"$DISTRO\"},{\"arch\":\"armhf\",\"platform\":\"linux/arm/v7\",\"distro\":\"$DISTRO\"}]}" >> $GITHUB_OUTPUT
-            fi
+            echo "ERROR: Unknown distro: $DISTRO"
+            exit 1
+          fi
+
+      - name: Build Plan Summary
+        run: |
+          echo "## 🏗️ OpenAuto Build Plan" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Distribution:** ${{ steps.set-matrix.outputs.distro }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Matrix" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          echo '${{ steps.set-matrix.outputs.matrix }}' | jq '.' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.set-matrix.outputs.distro }}" = "both" ]; then
+            echo "📦 Building for **Bookworm** and **Trixie** (amd64, arm64, armhf each)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.set-matrix.outputs.distro }}" = "trixie" ]; then
+            echo "📦 Building for **Trixie** only (amd64, arm64, armhf)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.set-matrix.outputs.distro }}" = "bookworm" ]; then
+            echo "📦 Building for **Bookworm** only (amd64, arm64, armhf)" >> $GITHUB_STEP_SUMMARY
           fi
 
   build:
@@ -244,20 +277,27 @@ jobs:
       - name: Trigger APT Publish Workflow
         if: github.event.inputs.trigger_apt_publish == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
+          # Determine distribution for APT publish
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DIST="${{ inputs.distro }}"
+          else
+            DIST="both"
+          fi
+          
           echo "Triggering APT repository update via repository_dispatch for build run ${{ github.run_id }}"
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ secrets.PACKAGES_REPO_TOKEN }}" \
             https://api.github.com/repos/opencardev/packages/dispatches \
-            -d '{
-              "event_type": "publish-apt-packages",
-              "client_payload": {
-                "source_repo": "${{ github.repository }}",
-                "build_run_id": "${{ github.run_id }}",
-                "distribution": "both"
+            -d "{
+              \"event_type\": \"publish-apt-packages\",
+              \"client_payload\": {
+                \"source_repo\": \"${{ github.repository }}\",
+                \"build_run_id\": \"${{ github.run_id }}\",
+                \"distribution\": \"${DIST}\"
               }
-            }'
-          echo "✅ Dispatched to opencardev/packages. Check workflow runs there."
+            }"
+          echo "✅ Dispatched to opencardev/packages with distribution: ${DIST}. Check workflow runs there."
         env:
           PACKAGES_REPO_TOKEN: ${{ secrets.PACKAGES_REPO_TOKEN }}
 
