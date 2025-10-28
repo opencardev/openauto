@@ -75,8 +75,13 @@ RUN install -d -m 0755 /etc/apt/keyrings && \
             echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages trixie main" > /etc/apt/sources.list.d/opencardev.list; \
         fi
 
-# Install libaasdk from APT repository
-RUN apt-get update && \
+# Install libaasdk from APT repository (attempt selected distro, fall back to trixie if not yet published)
+RUN set -eux; \
+    if ! apt-get update; then \
+      echo "WARNING: APT update failed for ${DEBIAN_VERSION}. Falling back to 'trixie' for libaasdk source."; \
+      echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages trixie main" > /etc/apt/sources.list.d/opencardev.list; \
+      apt-get update; \
+    fi; \
     ARCH=$(dpkg --print-architecture) && \
     echo "Attempting to install libaasdk for architecture: $ARCH" && \
     if apt-cache show libaasdk-${ARCH}-dev >/dev/null 2>&1; then \
