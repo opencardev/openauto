@@ -246,6 +246,44 @@ jobs:
           fi
         done
 
+    - name: Assert distro suffix in package version
+      run: |
+        echo "Asserting Debian revision suffix for distro: ${{ matrix.distro }}"
+        case "${{ matrix.distro }}" in
+          bookworm)
+            expected_regex='\+deb12u[0-9]+'
+            ;;
+          trixie)
+            expected_regex='\+deb13u[0-9]+'
+            ;;
+          jammy)
+            expected_regex='0ubuntu[0-9]+~22\.04'
+            ;;
+          noble)
+            expected_regex='0ubuntu[0-9]+~24\.04'
+            ;;
+          *)
+            expected_regex='(deb|ubuntu|rpi)'
+            ;;
+        esac
+
+        failed=0
+        for package in ./build-output/*.deb; do
+          [ -f "$package" ] || continue
+          ver=$(dpkg-deb --field "$package" Version)
+          echo "$(basename "$package"): Version=$ver"
+          if echo "$ver" | grep -Eq "$expected_regex"; then
+            echo "✅ Suffix OK: matches $expected_regex"
+          else
+            echo "::error::Version suffix does not match expected regex '$expected_regex' for ${{ matrix.distro }}"
+            failed=1
+          fi
+        done
+        if [ "$failed" -ne 0 ]; then
+          echo "Package version suffix assertion failed."
+          exit 1
+        fi
+
     - name: Debug - Show files before upload
       run: |
         echo "=== Build completed for ${{ matrix.arch }} ==="
