@@ -284,6 +284,27 @@ jobs:
           exit 1
         fi
 
+    - name: Generate version report
+      run: |
+        out="deb-versions-${{ matrix.distro }}-${{ matrix.arch }}.md"
+        echo "# OpenAuto DEB Versions for ${{ matrix.distro }} / ${{ matrix.arch }}" > "$out"
+        echo "" >> "$out"
+        for package in ./build-output/*.deb; do
+          [ -f "$package" ] || continue
+          pkg=$(dpkg-deb --field "$package" Package)
+          ver=$(dpkg-deb --field "$package" Version)
+          arch=$(dpkg-deb --field "$package" Architecture)
+          echo "- $(basename "$package"): $pkg $ver ($arch)" >> "$out"
+        done
+        echo "Wrote $out"
+
+    - name: Upload version report
+      uses: actions/upload-artifact@v4
+      with:
+        name: openauto-deb-versions-${{ matrix.distro }}-${{ matrix.arch }}
+        path: deb-versions-${{ matrix.distro }}-${{ matrix.arch }}.md
+        retention-days: 60
+
     - name: Debug - Show files before upload
       run: |
         echo "=== Build completed for ${{ matrix.arch }} ==="
