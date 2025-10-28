@@ -41,12 +41,12 @@ on:
           - arm64
           - armhf
       distribution:
-        description: 'Debian distribution to build (trixie, bookworm, both)'
+        description: 'Debian distribution to build (trixie, bookworm, all)'
         required: false
-        default: 'both'
+        default: 'all'
         type: choice
         options:
-          - both
+          - all
           - trixie
           - bookworm
       trigger_release:
@@ -78,7 +78,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             DISTRO_INPUT="${{ github.event.inputs.distribution }}"
           else
-            DISTRO_INPUT="both"
+            DISTRO_INPUT="all"
           fi
 
           # Determine architectures
@@ -96,9 +96,9 @@ jobs:
           fi
 
           # Expand distributions list
-          if [ "$DISTRO_INPUT" = "both" ]; then
+          if [ "$DISTRO_INPUT" = "all" ]; then
             DISTROS="bookworm trixie"
-            echo "distribution=both" >> $GITHUB_OUTPUT
+            echo "distribution=all" >> $GITHUB_OUTPUT
           else
             DISTROS="$DISTRO_INPUT"
             echo "distribution=$DISTRO_INPUT" >> $GITHUB_OUTPUT
