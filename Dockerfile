@@ -64,6 +64,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Add OpenCarDev APT repository for libaasdk
+ARG DEBIAN_VERSION
 RUN install -d -m 0755 /etc/apt/keyrings && \
     curl -fsSL https://opencardev.github.io/packages/opencardev.gpg.key -o /etc/apt/keyrings/opencardev.gpg && \
     chmod 0644 /etc/apt/keyrings/opencardev.gpg && \
