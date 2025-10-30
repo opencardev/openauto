@@ -10,44 +10,6 @@ string(TIMESTAMP OPENAUTO_BUILD_YEAR "%Y" UTC)
 string(TIMESTAMP OPENAUTO_BUILD_MONTH "%m" UTC)
 string(TIMESTAMP OPENAUTO_BUILD_DAY "%d" UTC)
 
-# Get git commit information
-find_package(Git QUIET)
-if(GIT_FOUND)
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_COMMIT_ID
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_BRANCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} describe --tags --dirty --always
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_DESCRIBE
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    # Check if repository is dirty (has uncommitted changes)
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} diff --quiet
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        RESULT_VARIABLE GIT_DIRTY
-        ERROR_QUIET
-    )
-else()
-    set(GIT_COMMIT_ID "unknown")
-    set(GIT_BRANCH "unknown")
-    set(GIT_DESCRIBE "unknown")
-    set(GIT_DIRTY 0)
-endif()
-
 option(NOPI "Build for Non Raspberry Pi" OFF)
 
 set(CMAKE_AUTOMOC ON)
@@ -86,6 +48,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
+
+# Get git commit information using gitversion.cmake module
+set(local_dir ${CMAKE_CURRENT_SOURCE_DIR})
+include(gitversion)
+# Include DEB package filename generation module
+include(DebPackageFilename)
 
 # Configure Boost
 set(Boost_USE_STATIC_LIBS OFF)
@@ -208,6 +176,7 @@ message(STATUS "Project Version: ${PROGRAM_VERSION_STRING}")
 message(STATUS "Git Branch: ${GIT_BRANCH}")
 message(STATUS "Git Commit: ${GIT_COMMIT_ID}")
 message(STATUS "Git Describe: ${GIT_DESCRIBE}")
+message(STATUS "Git Timestamp: ${GIT_COMMIT_TIMESTAMP}")
 if(GIT_DIRTY GREATER 0)
     message(STATUS "Repository Status: DIRTY (has uncommitted changes)")
 else()
@@ -281,21 +250,12 @@ set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/opencardev/openauto")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
-# Use full release string for filename (e.g. deb13u1, deb12u2, 0ubuntu1~22.04)
-set(DEB_RELEASE "unknown")
-if(DEFINED CPACK_DEBIAN_PACKAGE_RELEASE)
-    # Remove any leading version numbers (e.g. 1+deb13u1 -> deb13u1)
-    string(REGEX REPLACE "^[0-9]+[\+~]?" "" DEB_RELEASE "${CPACK_DEBIAN_PACKAGE_RELEASE}")
-else()
-    set(DEB_RELEASE "unknown")
-endif()
-
-# File naming based on architecture and release
-if(DEFINED CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
-    set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROGRAM_VERSION_STRING}_${DEB_RELEASE}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}.deb")
-else()
-    set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
-endif()
+# Configure DEB package filename using the DebPackageFilename module
+configure_deb_filename(
+    PACKAGE_NAME "${CPACK_PACKAGE_NAME}"
+    VERSION "${PROGRAM_VERSION_STRING}"
+    ARCHITECTURE "${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}"
+)
 
 # Optional: add basic metadata
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
