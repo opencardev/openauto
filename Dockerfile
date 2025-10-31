@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y \
     cmake \
     pkg-config \
     git \
+    lsb-release \
     curl \
     gnupg \
     ca-certificates \
