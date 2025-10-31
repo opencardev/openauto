@@ -82,16 +82,11 @@ RUN set -eux; \
       echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages trixie main" > /etc/apt/sources.list.d/opencardev.list; \
       apt-get update; \
     fi; \
-    ARCH=$(dpkg --print-architecture) && \
-    echo "Attempting to install libaasdk for architecture: $ARCH" && \
-    if apt-cache show libaasdk-${ARCH}-dev >/dev/null 2>&1; then \
-        echo "Installing architecture-specific package: libaasdk-${ARCH}-dev"; \
-        apt-get install -y --no-install-recommends libaasdk-${ARCH}-dev; \
-    elif apt-cache show libaasdk-dev >/dev/null 2>&1; then \
+    if  apt-cache show libaasdk-dev >/dev/null 2>&1; then \
         echo "Installing generic package: libaasdk-dev"; \
         apt-get install -y --no-install-recommends libaasdk-dev; \
     else \
-        echo "ERROR: No libaasdk package found for ${ARCH}"; \
+        echo "ERROR: No libaasdk package found"; \
         apt-cache search libaasdk || true; \
         exit 1; \
     fi && \
