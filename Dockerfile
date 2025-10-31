@@ -146,3 +146,4 @@ RUN export TARGET_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH) && \
 
 # Default command
 CMD ["bash", "-c", "echo 'OpenAuto build container ready. Packages are in /output/'"]
+
