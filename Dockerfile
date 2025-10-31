@@ -82,15 +82,15 @@ RUN set -eux; \
       echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages trixie main" > /etc/apt/sources.list.d/opencardev.list; \
       apt-get update; \
     fi; \
-    if  apt-cache show libaasdk-dev >/dev/null 2>&1; then \
-        echo "Installing generic package: libaasdk-dev"; \
-        apt-get install -y --no-install-recommends libaasdk-dev; \
+    if apt-cache show libaasdk >/dev/null 2>&1 && apt-cache show libaasdk-dev >/dev/null 2>&1; then \
+        echo "Installing libaasdk and libaasdk-dev together"; \
+        apt-get install -y --no-install-recommends libaasdk libaasdk-dev; \
     else \
-        echo "ERROR: No libaasdk package found"; \
+        echo "ERROR: No libaasdk or libaasdk-dev package found"; \
         apt-cache search libaasdk || true; \
         exit 1; \
     fi && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /src
