@@ -112,7 +112,7 @@ RUN export TARGET_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH) && \
         CMAKE_NOPI_FLAG="" && \
         case "$TARGET_ARCH" in \
             amd64|arm64) CMAKE_NOPI_FLAG="-DNOPI=ON" ;; \
-            armhf) CMAKE_NOPI_FLAG="-DNOPI=OFF" ;; \
+            armhf) CMAKE_NOPI_FLAG="-DNOPI=ON" ;; \
             *) CMAKE_NOPI_FLAG="-DNOPI=ON" ;; \
         esac && \
         echo "Using CMAKE_NOPI_FLAG: $CMAKE_NOPI_FLAG" && \
