@@ -108,6 +108,14 @@ RUN mkdir -p /output
 # Build OpenAuto
 RUN export TARGET_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH) && \
         echo "Building OpenAuto for architecture: $TARGET_ARCH (native compilation)" && \
+        # For armhf builds, clone userland and copy headers
+        if [ "$TARGET_ARCH" = "armhf" ]; then \
+          echo "Cloning Raspberry Pi userland repo for bcm_host.h and headers..."; \
+          git clone https://github.com/raspberrypi/userland.git; \
+          mkdir -p /opt/vc/include/; \
+          cp -r userland/opt/vc/include/* /opt/vc/include/; \
+          echo "Copied userland headers to /opt/vc/include/"; \
+        fi && \
         # Determine if this is a non-Pi architecture
         CMAKE_NOPI_FLAG="" && \
         case "$TARGET_ARCH" in \
