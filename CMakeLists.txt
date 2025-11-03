@@ -207,6 +207,18 @@ install(TARGETS autoapp btservice
     RUNTIME DESTINATION bin
 )
 
+# Install udev rules
+install(FILES packaging/udev/99-openauto.rules
+    DESTINATION /lib/udev/rules.d
+)
+
+# Install systemd service files
+install(FILES 
+    packaging/systemd/openauto.service
+    packaging/systemd/openauto-btservice.service
+    DESTINATION /lib/systemd/system
+)
+
 # Packaging configuration (DEB via CPack)
 # Auto-detect architecture for proper Debian packaging
 execute_process(
@@ -249,6 +261,14 @@ set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/opencardev/openauto")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+# Debian package control scripts
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/postinst"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/prerm"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/postrm"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/preinst"
+)
 
 # Configure DEB package filename using the DebPackageFilename module
 configure_deb_filename(

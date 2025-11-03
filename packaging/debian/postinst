@@ -1,0 +1,54 @@
+#!/bin/bash
+#  * Project: OpenAuto
+#  * This file is part of openauto project.
+#  * Copyright (C) 2025 OpenCarDev Team
+#  *
+#  *  openauto is free software: you can redistribute it and/or modify
+#  *  it under the terms of the GNU General Public License as published by
+#  *  the Free Software Foundation; either version 3 of the License, or
+#  *  (at your option) any later version.
+#  *
+#  *  openauto is distributed in the hope that it will be useful,
+#  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  *  GNU General Public License for more details.
+#  *
+#  *  You should have received a copy of the GNU General Public License
+#  *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+case "$1" in
+    configure)
+        # Reload udev rules
+        if [ -x /bin/udevadm ]; then
+            /bin/udevadm control --reload-rules || true
+            /bin/udevadm trigger || true
+        fi
+
+        # Reload systemd daemon
+        if [ -x /bin/systemctl ]; then
+            /bin/systemctl daemon-reload || true
+        fi
+
+        # Enable but don't start services (user can start manually or on next boot)
+        if [ -x /bin/systemctl ]; then
+            /bin/systemctl enable openauto.service || true
+            /bin/systemctl enable openauto-btservice.service || true
+        fi
+
+        echo "OpenAuto services enabled. Use 'systemctl start openauto' to start now."
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
