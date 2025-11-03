@@ -5,35 +5,35 @@ on:
     branches:
       - main
       - develop
-      - 'feature/*'
-      - 'bugfix/*'
+      - "feature/*"
+      - "bugfix/*"
     paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
-      - '.github/**'
+      - "**.md"
+      - "docs/**"
+      - ".gitignore"
+      - ".github/**"
 
   pull_request:
     branches:
       - main
       - develop
     paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
-      - '.github/**'
+      - "**.md"
+      - "docs/**"
+      - ".gitignore"
+      - ".github/**"
 
   workflow_dispatch:
     inputs:
       version:
-        description: 'Build version (leave empty for auto-generated)'
+        description: "Build version (leave empty for auto-generated)"
         required: false
-        default: ''
+        default: ""
         type: string
       architecture:
-        description: 'Architecture to build (all, amd64, arm64, armhf)'
+        description: "Architecture to build (all, amd64, arm64, armhf)"
         required: false
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - all
@@ -41,21 +41,21 @@ on:
           - arm64
           - armhf
       distribution:
-        description: 'Debian distribution to build (trixie, bookworm, all)'
+        description: "Debian distribution to build (trixie, bookworm, all)"
         required: false
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - all
           - trixie
           - bookworm
       trigger_release:
-        description: 'Trigger release workflow after build'
+        description: "Trigger release workflow after build"
         required: false
         default: false
         type: boolean
       trigger_apt_publish:
-        description: 'Trigger APT publish workflow after build'
+        description: "Trigger APT publish workflow after build"
         required: false
         default: false
         type: boolean
@@ -141,186 +141,186 @@ jobs:
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Set up QEMU for cross-platform builds
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: all
+      - name: Set up QEMU for cross-platform builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
 
-    - name: Generate build info
-      id: build_info
-      run: |
-        # Use manual version if provided, otherwise generate using same scheme as CMake
-        if [ -n "${{ github.event.inputs.version }}" ]; then
-          VERSION="${{ github.event.inputs.version }}"
-        else
-          # Match CMakeLists.txt date-based versioning: YYYY.MM.DD
-          BUILD_YEAR=$(date -u +"%Y")
-          BUILD_MONTH=$(date -u +"%m")
-          BUILD_DAY=$(date -u +"%d")
-          VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
-          
-          # Add git commit info if available (match CMake logic)
-          COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-          if [ "$COMMIT_SHA" != "unknown" ]; then
-            VERSION="${VERSION}+git.${COMMIT_SHA}"
-            
-            # Check if repository is dirty (has uncommitted changes)
-            # In CI, we'll skip dirty check as the workspace should be clean
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && ! git diff --quiet 2>/dev/null; then
-              VERSION="${VERSION}.dirty"
-            fi
-          fi
-        fi
-        
-        COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-        BUILD_DATE=$(date -u +"%Y%m%d_%H%M%S")
-        
-        # For releases, ensure we have a clean version without build date suffix
-        RELEASE_VERSION="${VERSION}"
-        if [ "${{ github.event.inputs.create_release }}" = "true" ] || [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-          # For releases, use a cleaner version format
-          if [ -z "${{ github.event.inputs.version }}" ]; then
-            RELEASE_VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
-            if [ "$COMMIT_SHA" != "unknown" ]; then
-              RELEASE_VERSION="${RELEASE_VERSION}+git.${COMMIT_SHA}"
-            fi
-          fi
-        fi
-        
-        echo "version=${VERSION}" >> $GITHUB_OUTPUT
-        echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
-        echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
-        echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-        echo "package_name=openauto-${{ matrix.arch }}-${VERSION}" >> $GITHUB_OUTPUT
-        
-        echo "Generated version: ${VERSION}"
-        echo "Release version: ${RELEASE_VERSION}"
-
-    - name: Build for ${{ matrix.arch }} on ${{ matrix.distro }}
-      run: |
-        echo "Building OpenAuto for ${{ matrix.arch }} architecture"
-        
-        # Create output directory
-        mkdir -p ./build-output
-        
-        # Build using Docker with platform emulation
-        docker buildx build \
-          --platform ${{ matrix.platform }} \
-          --build-arg TARGET_ARCH=${{ matrix.arch }} \
-          --build-arg DEBIAN_VERSION=${{ matrix.distro }} \
-          --tag openauto-build:${{ matrix.arch }} \
-          --load \
-          .
-        
-        # Extract built packages from container
-        container_id=$(docker create openauto-build:${{ matrix.arch }})
-        docker cp ${container_id}:/output/. ./build-output/
-        docker rm ${container_id}
-        
-        echo "Build completed for ${{ matrix.arch }}"
-        ls -la ./build-output/
-
-    - name: Validate packages
-      run: |
-        echo "Validating packages for ${{ matrix.arch }}..."
-        
-        if [ ! "$(ls -A ./build-output/*.deb 2>/dev/null)" ]; then
-          echo "Error: No .deb packages found for ${{ matrix.arch }}"
-          exit 1
-        fi
-        
-        # Display package information
-        for package in ./build-output/*.deb; do
-          if [ -f "$package" ]; then
-            echo "Package: $(basename $package)"
-            dpkg-deb --info "$package" | head -20
-            echo "---"
-          fi
-        done
-
-    - name: Assert distro suffix in package version
-      run: |
-        echo "Asserting Debian revision suffix for distro: ${{ matrix.distro }}"
-        case "${{ matrix.distro }}" in
-          bookworm)
-            expected_regex='\+deb12u[0-9]+'
-            ;;
-          trixie)
-            expected_regex='\+deb13u[0-9]+'
-            ;;
-          jammy)
-            expected_regex='0ubuntu[0-9]+~22\.04'
-            ;;
-          noble)
-            expected_regex='0ubuntu[0-9]+~24\.04'
-            ;;
-          *)
-            expected_regex='(deb|ubuntu|rpi)'
-            ;;
-        esac
-
-        failed=0
-        for package in ./build-output/*.deb; do
-          [ -f "$package" ] || continue
-          ver=$(dpkg-deb --field "$package" Version)
-          echo "$(basename "$package"): Version=$ver"
-          if echo "$ver" | grep -Eq "$expected_regex"; then
-            echo "✅ Suffix OK: matches $expected_regex"
+      - name: Generate build info
+        id: build_info
+        run: |
+          # Use manual version if provided, otherwise generate using same scheme as CMake
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
           else
-            echo "::error::Version suffix does not match expected regex '$expected_regex' for ${{ matrix.distro }}"
-            failed=1
+            # Match CMakeLists.txt date-based versioning: YYYY.MM.DD
+            BUILD_YEAR=$(date -u +"%Y")
+            BUILD_MONTH=$(date -u +"%m")
+            BUILD_DAY=$(date -u +"%d")
+            VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
+            
+            # Add git commit info if available (match CMake logic)
+            COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+            if [ "$COMMIT_SHA" != "unknown" ]; then
+              VERSION="${VERSION}+git.${COMMIT_SHA}"
+              
+              # Check if repository is dirty (has uncommitted changes)
+              # In CI, we'll skip dirty check as the workspace should be clean
+              if [ "${{ github.event_name }}" = "workflow_dispatch" ] && ! git diff --quiet 2>/dev/null; then
+                VERSION="${VERSION}.dirty"
+              fi
+            fi
           fi
-        done
-        if [ "$failed" -ne 0 ]; then
-          echo "Package version suffix assertion failed."
-          exit 1
-        fi
 
-    - name: Generate version report
-      run: |
-        out="deb-versions-${{ matrix.distro }}-${{ matrix.arch }}.md"
-        echo "# OpenAuto DEB Versions for ${{ matrix.distro }} / ${{ matrix.arch }}" > "$out"
-        echo "" >> "$out"
-        for package in ./build-output/*.deb; do
-          [ -f "$package" ] || continue
-          pkg=$(dpkg-deb --field "$package" Package)
-          ver=$(dpkg-deb --field "$package" Version)
-          arch=$(dpkg-deb --field "$package" Architecture)
-          echo "- $(basename "$package"): $pkg $ver ($arch)" >> "$out"
-        done
-        echo "Wrote $out"
+          COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+          BUILD_DATE=$(date -u +"%Y%m%d_%H%M%S")
 
-    - name: Upload version report
-      uses: actions/upload-artifact@v4
-      with:
-        name: openauto-deb-versions-${{ matrix.distro }}-${{ matrix.arch }}
-        path: deb-versions-${{ matrix.distro }}-${{ matrix.arch }}.md
-        retention-days: 60
+          # For releases, ensure we have a clean version without build date suffix
+          RELEASE_VERSION="${VERSION}"
+          if [ "${{ github.event.inputs.create_release }}" = "true" ] || [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            # For releases, use a cleaner version format
+            if [ -z "${{ github.event.inputs.version }}" ]; then
+              RELEASE_VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
+              if [ "$COMMIT_SHA" != "unknown" ]; then
+                RELEASE_VERSION="${RELEASE_VERSION}+git.${COMMIT_SHA}"
+              fi
+            fi
+          fi
 
-    - name: Debug - Show files before upload
-      run: |
-        echo "=== Build completed for ${{ matrix.arch }} ==="
-        echo "Files in build-output directory:"
-        ls -la ./build-output/ || echo "No build-output directory found"
-        echo "DEB files found:"
-        find ./build-output -name "*.deb" 2>/dev/null || echo "No .deb files found"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+          echo "package_name=openauto-${{ matrix.arch }}-${VERSION}" >> $GITHUB_OUTPUT
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: openauto-packages-${{ matrix.distro }}-${{ matrix.arch }}
-        path: |
-          ./build-output/*.deb
-          ./build-output/*.tar.*
-        retention-days: 30
+          echo "Generated version: ${VERSION}"
+          echo "Release version: ${RELEASE_VERSION}"
+
+      - name: Build for ${{ matrix.arch }} on ${{ matrix.distro }}
+        run: |
+          echo "Building OpenAuto for ${{ matrix.arch }} architecture"
+
+          # Create output directory
+          mkdir -p ./build-output
+
+          # Build using Docker with platform emulation
+          docker buildx build \
+            --platform ${{ matrix.platform }} \
+            --build-arg TARGET_ARCH=${{ matrix.arch }} \
+            --build-arg DEBIAN_VERSION=${{ matrix.distro }} \
+            --tag openauto-build:${{ matrix.arch }} \
+            --load \
+            .
+
+          # Extract built packages from container
+          container_id=$(docker create openauto-build:${{ matrix.arch }})
+          docker cp ${container_id}:/output/. ./build-output/
+          docker rm ${container_id}
+
+          echo "Build completed for ${{ matrix.arch }}"
+          ls -la ./build-output/
+
+      - name: Validate packages
+        run: |
+          echo "Validating packages for ${{ matrix.arch }}..."
+
+          if [ ! "$(ls -A ./build-output/*.deb 2>/dev/null)" ]; then
+            echo "Error: No .deb packages found for ${{ matrix.arch }}"
+            exit 1
+          fi
+
+          # Display package information
+          for package in ./build-output/*.deb; do
+            if [ -f "$package" ]; then
+              echo "Package: $(basename $package)"
+              dpkg-deb --info "$package" | head -20
+              echo "---"
+            fi
+          done
+
+      - name: Assert distro suffix in package version
+        run: |
+          echo "Asserting Debian revision suffix for distro: ${{ matrix.distro }}"
+          case "${{ matrix.distro }}" in
+            bookworm)
+              expected_regex='\+deb12u[0-9]+'
+              ;;
+            trixie)
+              expected_regex='\+deb13u[0-9]+'
+              ;;
+            jammy)
+              expected_regex='0ubuntu[0-9]+~22\.04'
+              ;;
+            noble)
+              expected_regex='0ubuntu[0-9]+~24\.04'
+              ;;
+            *)
+              expected_regex='(deb|ubuntu|rpi)'
+              ;;
+          esac
+
+          failed=0
+          for package in ./build-output/*.deb; do
+            [ -f "$package" ] || continue
+            ver=$(dpkg-deb --field "$package" Version)
+            echo "$(basename "$package"): Version=$ver"
+            if echo "$ver" | grep -Eq "$expected_regex"; then
+              echo "✅ Suffix OK: matches $expected_regex"
+            else
+              echo "::error::Version suffix does not match expected regex '$expected_regex' for ${{ matrix.distro }}"
+              failed=1
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "Package version suffix assertion failed."
+            exit 1
+          fi
+
+      - name: Generate version report
+        run: |
+          out="deb-versions-${{ matrix.distro }}-${{ matrix.arch }}.md"
+          echo "# OpenAuto DEB Versions for ${{ matrix.distro }} / ${{ matrix.arch }}" > "$out"
+          echo "" >> "$out"
+          for package in ./build-output/*.deb; do
+            [ -f "$package" ] || continue
+            pkg=$(dpkg-deb --field "$package" Package)
+            ver=$(dpkg-deb --field "$package" Version)
+            arch=$(dpkg-deb --field "$package" Architecture)
+            echo "- $(basename "$package"): $pkg $ver ($arch)" >> "$out"
+          done
+          echo "Wrote $out"
+
+      - name: Upload version report
+        uses: actions/upload-artifact@v4
+        with:
+          name: openauto-deb-versions-${{ matrix.distro }}-${{ matrix.arch }}
+          path: deb-versions-${{ matrix.distro }}-${{ matrix.arch }}.md
+          retention-days: 60
+
+      - name: Debug - Show files before upload
+        run: |
+          echo "=== Build completed for ${{ matrix.arch }} ==="
+          echo "Files in build-output directory:"
+          ls -la ./build-output/ || echo "No build-output directory found"
+          echo "DEB files found:"
+          find ./build-output -name "*.deb" 2>/dev/null || echo "No .deb files found"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openauto-packages-${{ matrix.distro }}-${{ matrix.arch }}
+          path: |
+            ./build-output/*.deb
+            ./build-output/*.tar.*
+          retention-days: 30
 
   test:
     needs: build
@@ -328,84 +328,84 @@ jobs:
     if: success()
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        pattern: openauto-packages-*
-        merge-multiple: true
-        path: ./test-packages
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: openauto-packages-*
+          merge-multiple: true
+          path: ./test-packages
 
-    - name: Test package installation
-      run: |
-        echo "Testing package installation..."
-        
-        # Test AMD64 packages on native Ubuntu
-        for package in ./test-packages/*amd64*.deb; do
-          if [ -f "$package" ]; then
-            echo "Testing installation of $(basename $package)"
-            
-            # Check package structure
-            dpkg-deb --contents "$package" | head -20
-            
-            # Verify package dependencies
-            dpkg-deb --field "$package" Depends
-            
-            echo "Package $(basename $package) structure looks good"
-          fi
-        done
+      - name: Test package installation
+        run: |
+          echo "Testing package installation..."
 
-    - name: Generate test report
-      run: |
-        echo "# OpenAuto Build Test Report" > test-report.md
-        echo "" >> test-report.md
-        echo "## Build Summary" >> test-report.md
-        echo "- Build Date: $(date -u)" >> test-report.md
-        echo "- Commit: ${{ github.sha }}" >> test-report.md
-        echo "- Branch: ${{ github.ref_name }}" >> test-report.md
-        echo "" >> test-report.md
-        echo "## Package Information" >> test-report.md
-        
-        for package in ./test-packages/*.deb; do
-          if [ -f "$package" ]; then
-            echo "### $(basename $package)" >> test-report.md
-            echo '```' >> test-report.md
-            dpkg-deb --field "$package" Package Architecture Version Depends >> test-report.md
-            echo '```' >> test-report.md
-            echo "" >> test-report.md
-          fi
-        done
+          # Test AMD64 packages on native Ubuntu
+          for package in ./test-packages/*amd64*.deb; do
+            if [ -f "$package" ]; then
+              echo "Testing installation of $(basename $package)"
+              
+              # Check package structure
+              dpkg-deb --contents "$package" | head -20
+              
+              # Verify package dependencies
+              dpkg-deb --field "$package" Depends
+              
+              echo "Package $(basename $package) structure looks good"
+            fi
+          done
 
-    - name: Upload test report
-      uses: actions/upload-artifact@v4
-      with:
-        name: openauto-test-report-${{ github.run_number }}
-        path: test-report.md
-        retention-days: 90
+      - name: Generate test report
+        run: |
+          echo "# OpenAuto Build Test Report" > test-report.md
+          echo "" >> test-report.md
+          echo "## Build Summary" >> test-report.md
+          echo "- Build Date: $(date -u)" >> test-report.md
+          echo "- Commit: ${{ github.sha }}" >> test-report.md
+          echo "- Branch: ${{ github.ref_name }}" >> test-report.md
+          echo "" >> test-report.md
+          echo "## Package Information" >> test-report.md
+
+          for package in ./test-packages/*.deb; do
+            if [ -f "$package" ]; then
+              echo "### $(basename $package)" >> test-report.md
+              echo '```' >> test-report.md
+              dpkg-deb --field "$package" Package Architecture Version Depends >> test-report.md
+              echo '```' >> test-report.md
+              echo "" >> test-report.md
+            fi
+          done
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: openauto-test-report-${{ github.run_number }}
+          path: test-report.md
+          retention-days: 90
 
   release:
     needs: [prepare, build, test]
     runs-on: ubuntu-latest
     if: github.event.inputs.trigger_release == 'true' || github.event.inputs.trigger_apt_publish == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    
-    steps:
-    - name: Trigger Release Workflow
-      if: github.event.inputs.trigger_release == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-      run: |
-        echo "Triggering release workflow with build run ID: ${{ github.run_id }}"
-        gh workflow run release.yml --repo ${{ github.repository }} \
-          -f build_run_id="${{ github.run_id }}" \
-          -f version="${{ github.event.inputs.version }}" \
-          -f create_draft="false"
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GH_REPO: ${{ github.repository }}
 
-    - name: Trigger APT Publish Workflow
-      if: github.event.inputs.trigger_apt_publish == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-      run: |
+    steps:
+      - name: Trigger Release Workflow
+        if: github.event.inputs.trigger_release == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
+          echo "Triggering release workflow with build run ID: ${{ github.run_id }}"
+          gh workflow run release.yml --repo ${{ github.repository }} \
+            -f build_run_id="${{ github.run_id }}" \
+            -f version="${{ github.event.inputs.version }}" \
+            -f create_draft="false"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Trigger APT Publish Workflow
+        if: github.event.inputs.trigger_apt_publish == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
           echo "Dispatching to packages repo Aptly workflow with build run ID: ${{ github.run_id }} (distribution: ${{ needs.prepare.outputs.distribution }})"
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
@@ -416,21 +416,22 @@ jobs:
               "client_payload": {
                 "source_repo": "${{ github.repository }}",
                 "build_run_id": "${{ github.run_id }}",
+                "apt_import": true,
                 "distribution": "${{ needs.prepare.outputs.distribution }}"
               }
             }'
           echo "✅ APT repository update triggered successfully!"
           echo "Check: https://github.com/opencardev/packages/actions"
-      env:
+        env:
           PACKAGES_REPO_TOKEN: ${{ secrets.PACKAGES_REPO_TOKEN }}
 
-    - name: Build Summary
-      run: |
-        echo "## Build Complete! 🎉"
-        echo "Build Run ID: \`${{ github.run_id }}\`"
-        echo ""
-        echo "### Next Steps:"
-        echo "You can now manually trigger workflows using this build:"
-        echo ""
-        echo "- Trigger release: release.yml with build_run_id=${{ github.run_id }}"
-        echo "- Trigger APT publish: apt-publish-aptly.yml or packages repo dispatch"
+      - name: Build Summary
+        run: |
+          echo "## Build Complete! 🎉"
+          echo "Build Run ID: \`${{ github.run_id }}\`"
+          echo ""
+          echo "### Next Steps:"
+          echo "You can now manually trigger workflows using this build:"
+          echo ""
+          echo "- Trigger release: release.yml with build_run_id=${{ github.run_id }}"
+          echo "- Trigger APT publish: apt-publish-aptly.yml or packages repo dispatch"
