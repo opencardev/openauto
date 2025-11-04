@@ -20,6 +20,7 @@
 
 #include <QMediaPlayer>
 #include <QVideoWidget>
+#include <mutex>
 #include <boost/noncopyable.hpp>
 #include <f1x/openauto/autoapp/Projection/VideoOutput.hpp>
 #include <f1x/openauto/autoapp/Projection/SequentialBuffer.hpp>
@@ -52,11 +53,19 @@ protected slots:
     void createVideoOutput();
     void onStartPlayback();
     void onStopPlayback();
+    void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
+    void onStateChanged(QMediaPlayer::State state);
+    void onError(QMediaPlayer::Error error);
 
 private:
     SequentialBuffer videoBuffer_;
     std::unique_ptr<QVideoWidget> videoWidget_;
     std::unique_ptr<QMediaPlayer> mediaPlayer_;
+    bool playerReady_;
+    bool initialBufferingDone_;
+    size_t bytesWritten_;
+    std::mutex writeMutex_;
+    static constexpr size_t INITIAL_BUFFER_SIZE = 65536; // 64KB initial buffer before checking state
 };
 
 }

@@ -219,6 +219,22 @@ install(FILES
     DESTINATION /lib/systemd/system
 )
 
+# Install crankshaft scripts to /opt/crankshaft
+install(FILES
+    packaging/opt/crankshaft/crankshaft_default_env.sh
+    packaging/opt/crankshaft/crankshaft_system_env.sh
+    packaging/opt/crankshaft/usb_action.sh
+    DESTINATION /opt/crankshaft
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+
+# Install crankshaft launcher to /usr/local/bin
+install(FILES
+    packaging/usr/local/bin/crankshaft
+    DESTINATION /usr/local/bin
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+
 # Packaging configuration (DEB via CPack)
 # Auto-detect architecture for proper Debian packaging
 execute_process(
@@ -261,6 +277,10 @@ set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/opencardev/openauto")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+# Explicit dependencies for GStreamer video codec support
+# These are required for H.264/H.265 video decoding from Android Auto
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "gstreamer1.0-libav, gstreamer1.0-plugins-bad, gstreamer1.0-plugins-ugly")
 
 # Debian package control scripts
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
