@@ -27,6 +27,15 @@ RestartSec=5s
 User=root
 Environment="QT_QPA_PLATFORM=eglfs"
 Environment="QT_QPA_EGLFS_ALWAYS_SET_MODE=1"
+Environment="DISPLAY=:0"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="GST_DEBUG=3,video_sink:5"
+Environment="QT_QPA_EGLFS_SWAPINTERVAL=0"
+Environment="QT_QPA_EGLFS_FORCEVSYNC=0"
+Environment="QT_QPA_EGLFS_INTEGRATION=eglfs_kms"
+Environment="QT_QPA_EGLFS_KMS_ATOMIC=1"
+Environment="QT_QPA_EGLFS_LAYER_INDEX=0"
+Environment="QT_QPA_EGLFS_NO_VSYNC=1"
 
 # Ensure audio is accessible
 SupplementaryGroups=audio video plugdev
