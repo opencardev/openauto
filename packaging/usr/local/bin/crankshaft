@@ -1,0 +1,3890 @@
+#!/bin/bash
+# * Project: OpenAuto
+# * This file is part of openauto project.
+# * Copyright (C) 2025 OpenCarDev Team
+# *
+# *  openauto is free software: you can redistribute it and/or modify
+# *  it under the terms of the GNU General Public License as published by
+# *  the Free Software Foundation; either version 3 of the License, or
+# *  (at your option) any later version.
+# *
+# *  openauto is distributed in the hope that it will be useful,
+# *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# *  GNU General Public License for more details.
+# *
+# *  You should have received a copy of the GNU General Public License
+# *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
+
+version=2.4.0
+
+source /opt/crankshaft/crankshaft_default_env.sh
+source /opt/crankshaft/crankshaft_system_env.sh
+
+# force exit as script not updated for bookworm/trixie
+exit 0
+
+CS_VOLUME_STORE_FILE=/boot/crankshaft/volume
+
+# FS functions default mode - ignored on dev mode
+function cs_bootrw () {
+    if [ ! -f /tmp/dev_mode_enabled ] ; then
+	sudo mount -o remount,rw /boot
+    fi
+}
+function cs_bootro() {
+    if [ ! -f /tmp/dev_mode_enabled ] && [ ! -f /tmp/keeprw ] ; then
+	sudo mount -o remount,ro /boot
+    fi
+}
+function cs_systemrw() {
+    if [ ! -f /tmp/dev_mode_enabled ] ; then
+	sudo mount -o remount,rw /
+    fi
+}
+function cs_systemro() {
+    if [ ! -f /tmp/dev_mode_enabled ] && [ ! -f /tmp/keeprw ] ; then
+	sudo mount -o remount,ro /
+    fi
+}
+
+function start_trigger() {
+    echo "#!/bin/bash" > /tmp/download_trigger
+    echo "" >> /tmp/download_trigger
+    echo "while [ ! -f /tmp/system_update_ready ]; do" >> /tmp/download_trigger
+    echo "    touch /tmp/tic" >> /tmp/download_trigger
+    echo "    sleep 1" >> /tmp/download_trigger
+    echo "    rm /tmp/tic" >> /tmp/download_trigger
+    echo "    sleep 1" >> /tmp/download_trigger
+    echo "done" >> /tmp/download_trigger
+    sudo chmod 777 /tmp/download_trigger
+    /tmp/download_trigger &
+}
+
+# Audio functions
+function cs_audio_clean() {
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i 's/^dtparam=audio=.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=hifiberry.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=audioinjector.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=allo.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=iqaudio.*//' /boot/config.txt
+    sudo sed -i 's/^dtparam=i2s=on.*//' /boot/config.txt
+    sudo sed -i 's/^# Enable audio (loads snd_bcm2835).*//' /boot/config.txt
+    sudo sed -i 's/^# Audio Setup.*//' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sh -c "rm -f /boot/crankshaft/alsactl.state"
+}
+
+function cs_audio_rpi() {
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i 's/^dtparam=audio=.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=hifiberry.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=audioinjector.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=allo.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=iqaudio.*//' /boot/config.txt
+    sudo sed -i 's/^dtparam=i2s=on.*//' /boot/config.txt
+    sudo sed -i 's/^# Enable audio (loads snd_bcm2835).*//' /boot/config.txt
+    sudo sed -i 's/^# Audio Setup.*//' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sh -c "echo '' >> /boot/config.txt"
+    sudo sh -c "echo '# Audio Setup' >> /boot/config.txt"
+    sudo sh -c "echo 'dtparam=audio=on' >> /boot/config.txt"
+    sudo sh -c "rm -f /boot/crankshaft/alsactl.state"
+}
+
+function cs_audio_hifiberry() {
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i 's/^dtparam=audio=.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=hifiberry.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=audioinjector.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=allo.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=iqaudio.*//' /boot/config.txt
+    sudo sed -i 's/^dtparam=i2s=on.*//' /boot/config.txt
+    sudo sed -i 's/^# Enable audio (loads snd_bcm2835).*//' /boot/config.txt
+    sudo sed -i 's/^# Audio Setup.*//' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sh -c "echo '' >> /boot/config.txt"
+    sudo sh -c "echo '# Audio Setup' >> /boot/config.txt"
+    sudo sh -c "echo 'dtoverlay=hifiberry-'$1 >> /boot/config.txt"
+    sudo sh -c "echo 'dtparam=i2s=on' >> /boot/config.txt"
+    sudo sh -c "rm -f /boot/crankshaft/alsactl.state"
+    cs_check_i2c
+}
+
+function cs_audio_audioinjector() {
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i 's/^dtparam=audio=.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=hifiberry.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=audioinjector.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=allo.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=iqaudio.*//' /boot/config.txt
+    sudo sed -i 's/^dtparam=i2s=on.*//' /boot/config.txt
+    sudo sed -i 's/^# Enable audio (loads snd_bcm2835).*//' /boot/config.txt
+    sudo sed -i 's/^# Audio Setup.*//' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sh -c "echo '' >> /boot/config.txt"
+    sudo sh -c "echo '# Audio Setup' >> /boot/config.txt"
+    sudo sh -c "echo 'dtoverlay=audioinjector-'$1 >> /boot/config.txt"
+    sudo sh -c "echo 'dtparam=i2s=on' >> /boot/config.txt"
+    sudo sh -c "rm -f /boot/crankshaft/alsactl.state"
+    cs_check_i2c
+}
+function cs_audio_audioinjector_controls() {
+    TEMPSTATE="/tmp/alsa.dummy"
+    echo "state.audioinjectorpi {" > $TEMPSTATE
+    echo "	control.1 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Master Playback Volume'" >> $TEMPSTATE
+    echo "		value.0 121" >> $TEMPSTATE
+    echo "		value.1 121" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type INTEGER" >> $TEMPSTATE
+    echo "			count 2" >> $TEMPSTATE
+    echo "			range '0 - 127'" >> $TEMPSTATE
+    echo "			dbmin -9999999" >> $TEMPSTATE
+    echo "			dbmax 600" >> $TEMPSTATE
+    echo "			dbvalue.0 0" >> $TEMPSTATE
+    echo "			dbvalue.1 0" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.2 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Master Playback ZC Switch'" >> $TEMPSTATE
+    echo "		value.0 false" >> $TEMPSTATE
+    echo "		value.1 false" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 2" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.3 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Capture Volume'" >> $TEMPSTATE
+    echo "		value.0 31" >> $TEMPSTATE
+    echo "		value.1 31" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type INTEGER" >> $TEMPSTATE
+    echo "			count 2" >> $TEMPSTATE
+    echo "			range '0 - 31'" >> $TEMPSTATE
+    echo "			dbmin -3450" >> $TEMPSTATE
+    echo "			dbmax 1200" >> $TEMPSTATE
+    echo "			dbvalue.0 1200" >> $TEMPSTATE
+    echo "			dbvalue.1 1200" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.4 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Line Capture Switch'" >> $TEMPSTATE
+    echo "		value.0 false" >> $TEMPSTATE
+    echo "		value.1 false" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 2" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.5 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Mic Boost Volume'" >> $TEMPSTATE
+    echo "		value 1" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type INTEGER" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "			range '0 - 1'" >> $TEMPSTATE
+    echo "			dbmin 0" >> $TEMPSTATE
+    echo "			dbmax 2000" >> $TEMPSTATE
+    echo "			dbvalue.0 2000" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.6 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Mic Capture Switch'" >> $TEMPSTATE
+    echo "		value true" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.7 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Sidetone Playback Volume'" >> $TEMPSTATE
+    echo "		value 0" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type INTEGER" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "			range '0 - 3'" >> $TEMPSTATE
+    echo "			dbmin -1500" >> $TEMPSTATE
+    echo "			dbmax -600" >> $TEMPSTATE
+    echo "			dbvalue.0 -1500" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.8 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'ADC High Pass Filter Switch'" >> $TEMPSTATE
+    echo "		value true" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.9 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Store DC Offset Switch'" >> $TEMPSTATE
+    echo "		value false" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.10 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Playback Deemphasis Switch'" >> $TEMPSTATE
+    echo "		value false" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.11 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Output Mixer Line Bypass Switch'" >> $TEMPSTATE
+    echo "		value false" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.12 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Output Mixer Mic Sidetone Switch'" >> $TEMPSTATE
+    echo "		value false" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.13 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Output Mixer HiFi Playback Switch'" >> $TEMPSTATE
+    echo "		value true" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type BOOLEAN" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "	control.14 {" >> $TEMPSTATE
+    echo "		iface MIXER" >> $TEMPSTATE
+    echo "		name 'Input Mux'" >> $TEMPSTATE
+    echo "		value Mic" >> $TEMPSTATE
+    echo "		comment {" >> $TEMPSTATE
+    echo "			access 'read write'" >> $TEMPSTATE
+    echo "			type ENUMERATED" >> $TEMPSTATE
+    echo "			count 1" >> $TEMPSTATE
+    echo "			item.0 'Line In'" >> $TEMPSTATE
+    echo "			item.1 Mic" >> $TEMPSTATE
+    echo "		}" >> $TEMPSTATE
+    echo "	}" >> $TEMPSTATE
+    echo "}" >> $TEMPSTATE
+    sudo sh -c "cp -f $TEMPSTATE /boot/crankshaft/alsactl.firstinit"
+}
+
+function cs_audio_allo() {
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i 's/^dtparam=audio=.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=hifiberry.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=audioinjector.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=allo.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=iqaudio.*//' /boot/config.txt
+    sudo sed -i 's/^dtparam=i2s=on.*//' /boot/config.txt
+    sudo sed -i 's/^# Enable audio (loads snd_bcm2835).*//' /boot/config.txt
+    sudo sed -i 's/^# Audio Setup.*//' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sh -c "echo '' >> /boot/config.txt"
+    sudo sh -c "echo '# Audio Setup' >> /boot/config.txt"
+    sudo sh -c "echo 'dtoverlay=allo-'$1'-dac-pcm512x-audio' >> /boot/config.txt"
+    sudo sh -c "echo 'dtparam=i2s=on' >> /boot/config.txt"
+    sudo sh -c "rm -f /boot/crankshaft/alsactl.state"
+    cs_check_i2c
+}
+
+function cs_audio_iqaudio() {
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i 's/^dtparam=audio=.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=hifiberry.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=audioinjector.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=allo.*//' /boot/config.txt
+    sudo sed -i 's/^dtoverlay=iqaudio.*//' /boot/config.txt
+    sudo sed -i 's/^dtparam=i2s=on.*//' /boot/config.txt
+    sudo sed -i 's/^# Enable audio (loads snd_bcm2835).*//' /boot/config.txt
+    sudo sed -i 's/^# Audio Setup.*//' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sh -c "echo '' >> /boot/config.txt"
+    sudo sh -c "echo '# Audio Setup' >> /boot/config.txt"
+    if [ "$1" == "dacplus" ]; then
+        sudo sh -c "echo 'dtoverlay=iqaudio-dacplus' >> /boot/config.txt"
+    elif [ "$1" == "digiampplus" ]; then
+        sudo sh -c "echo 'dtoverlay=iqaudio-dacplus,unmute_amp' >> /boot/config.txt"
+    elif [ "$1" == "digiampplusauto" ]; then
+        sudo sh -c "echo 'dtoverlay=iqaudio-dacplus,auto_mute_amp' >> /boot/config.txt"
+    elif [ "$1" == "digiplus" ]; then
+        sudo sh -c "echo 'dtoverlay=iqaudio-digi-wm8804-audio' >> /boot/config.txt"
+    fi
+    sudo sh -c "echo 'dtparam=i2s=on' >> /boot/config.txt"
+    sudo sh -c "rm -f /boot/crankshaft/alsactl.state"
+    cs_check_i2c
+}
+
+# RTC functions
+function cs_rtc() {
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i 's/^# RTC Setup.*//' /boot/config.txt
+    sudo sed -i '/dtoverlay=i2c-rtc/d' /boot/config.txt
+    sudo sed -i '/rtc/d' /etc/modules
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /etc/modules
+    sudo sh -c "echo 'rtc-'$1 >> /etc/modules"
+    sudo sh -c "echo '' >> /boot/config.txt"
+    sudo sh -c "echo '# RTC Setup' >> /boot/config.txt"
+    sudo sh -c "echo 'dtoverlay=i2c-rtc,'$1 >> /boot/config.txt"
+    sudo sed -i 's/^RTC_DAYNIGHT=.*/RTC_DAYNIGHT=1/' /boot/crankshaft/crankshaft_env.sh
+    sudo systemctl enable hwclock-load.service >/dev/null 2>&1
+    sudo systemctl daemon-reload
+    echo $2
+    if [ ! -z $2 ]; then
+	sudo timedatectl set-timezone "$2"
+    else
+	sudo timedatectl set-timezone "$(cat /etc/timezone)"
+    fi
+    cs_check_i2c
+}
+
+function cs_timezone() {
+    echo $1
+    if [ ! -z $1 ]; then
+	sudo timedatectl set-timezone "$1"
+    else
+	sudo timedatectl set-timezone "$(cat /etc/timezone)"
+    fi
+}
+
+function cs_check_i2c() {
+    cs_systemrw
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i '/dtparam=i2c_arm=/d' /boot/config.txt
+    sudo sed -i 's/^# I2C Bus.*//' /boot/config.txt
+    sudo sed -i '/i2c*/d' /etc/modules
+    sudo sed -i '/./,/^$/!d' /boot/config.txt
+    sudo sed -i '/./,/^$/!d' /etc/modules
+    sudo sh -c "echo '' >> /boot/config.txt"
+    sudo sh -c "echo '# I2C Bus' >> /boot/config.txt"
+    sudo sh -c "echo 'dtparam=i2c_arm=on' >> /boot/config.txt"
+    sudo sh -c "echo 'i2c-dev' >> /etc/modules"
+    cs_systemro
+}
+
+function cs_clear_screen_header() {
+    PPIDCHECK=$(ps $PPID | tail -1 | awk '{print $6}')
+    if [[ ! $SHLVL -gt 2 ]] && [ -z $PPIDCHECK ]; then
+	clear
+	cs_echo "${MAGENTA}${BOLD}Crankshaft Management Tool v$version is executing command...${RESET}"
+	cs_echo ""
+    fi
+}
+
+function cs_clear_bluetooth() {
+    # Remove all previous paired devices
+    list=""
+    bt-device -l | grep -E -o '[[:xdigit:]]{2}(:[[:xdigit:]]{2}){5}' | while read line
+    do
+	echo -e 'disconnect '$line'\nquit' | bluetoothctl > /dev/null 2>&1
+	echo -e 'remove '$line'\nquit' | bluetoothctl > /dev/null 2>&1
+    done
+}
+
+function cs_bluetooth_pairable() {
+    sudo bt-adapter --set Powered 1
+    sudo bt-adapter --set Discoverable 1
+    sudo bt-adapter --set DiscoverableTimeout 0
+    sudo bt-adapter --set Pairable 1
+    sudo bt-adapter --set PairableTimeout 120
+    touch /tmp/enable_pairing >/dev/null 2>&1
+    touch /tmp/bluetooth_pairable >/dev/null 2>&1
+    sleep 120 && sudo rm /tmp/bluetooth_pairable &
+    sleep 2 && sudo rm /tmp/enable_pairing &
+}
+
+function cs_pi_power() {
+	for id in core sdram_c sdram_i sdram_p ; do \
+	echo -e "$id:\t$(vcgencmd measure_volts $id)" ; \
+	done
+	vcgencmd measure_clock arm; vcgencmd measure_clock core; vcgencmd measure_temp; vcgencmd get_throttled; vcgencmd measure_volts core; vcgencmd measure_volts 2711;
+}
+
+# echo if user logged in
+function cs_echo() {
+    PPIDCHECK=$(ps $PPID | tail -1 | awk '{print $6}')
+    if [[ ! $SHLVL -gt 2 ]] && [ -z $PPIDCHECK ]; then
+	echo $1
+    else
+	logger "CSMT-LOGGER: --------------------------------------------------------------------"
+	logger "CSMT-LOGGER: $1"
+	logger "CSMT-LOGGER: --------------------------------------------------------------------"
+    fi
+}
+
+function cs_noecho() {
+    PPIDCHECK=$(ps $PPID | tail -1 | awk '{print $6}')
+    if [[ ! $SHLVL -gt 2 ]] && [ -z $PPIDCHECK ]; then
+	echo $1
+    fi
+}
+
+# Abort if file does not exist
+
+if [ ! -z $1 ]; then
+    declare -a array=('display' 'brightness' 'filesystem' 'system' 'boot' 'timers' 'settings' 'services' 'branch' 'update' 'audio' 'rtc' 'timezone' 'state' 'reset' 'rpicam' 'resize' 'usb' 'gpio' 'hotspot' 'syslog' 'bluetooth' 'buttons' 'sdcard' 'temp' 'lightsensor' 'screenshot' 'splash' 'mode' 'initramfs' 'oalog' 'debuglog' 'i2ccheck' 'network' 'samba' 'rearcam' 'resizebg' 'cover' 'systemcheck' 'version')
+    if [[ ! "${array[@]}" =~ "$1" ]]; then
+	cs_echo "Unknown command:"
+	cs_echo "${YELLOW}${BOLD}Syntax: crankshaft display|brightness|filesystem|system|boot|timers|settings|services|update|audio|rtc|timezone|state|reset|rpicam|resize|usb|gpio|hotspot|syslog|bluetooth|buttons|sdcard|temp|lightsensor|screenshot|splash|mode|initramfs|oalog|debuglog|i2ccheck|network|samba|rearcam|resizebg|cover|systemcheck|version${RESET}"
+	exit 0
+    fi
+
+    cs_clear_screen_header
+
+    # brightness
+    if [ $1 == "brightness" ]; then
+        case $2 in
+	    save)
+		if [ -f ${BRIGHTNESS_FILE} ] || [ -f /tmp/custombrightness ]; then
+		    cs_bootrw
+                    if [ -f /tmp/night_mode_enabled ]; then
+			if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    sudo sed -i 's/BR_NIGHT=.*/BR_NIGHT='$(cat /tmp/custombrightness)'/' /boot/crankshaft/crankshaft_env.sh
+			    cs_echo "Custom Brightness Level Night Saved"
+			else
+			    sudo sed -i 's/BR_NIGHT=.*/BR_NIGHT='$(cat ${BRIGHTNESS_FILE})'/' /boot/crankshaft/crankshaft_env.sh
+			    cs_echo "Brightness Level Night Saved"
+			fi
+                    else
+			if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    sudo sed -i 's/BR_DAY=.*/BR_DAY='$(cat /tmp/custombrightness)'/' /boot/crankshaft/crankshaft_env.sh
+			    cs_echo "Custom Brightness Level Day Saved"
+			else
+			    sudo sed -i 's/BR_DAY=.*/BR_DAY='$(cat ${BRIGHTNESS_FILE})'/' /boot/crankshaft/crankshaft_env.sh
+			    cs_echo "Brightness Level Day Saved"
+			fi
+		    fi
+		    cs_bootro
+		else
+		    cs_echo "No device brightness file present"
+		fi
+		;;
+	    restore)
+		if [ -f ${BRIGHTNESS_FILE} ] || [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+		    if [ -f /tmp/night_mode_enabled ]; then
+			if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    echo ${BR_NIGHT} > /tmp/custombrightness
+			    sudo chmod 666 /tmp/custombrightness
+			    if [ -f ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			        ${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+			    else
+			        cs_echo "Custom Brightness Command is missing!"
+			    fi
+			    cs_echo "Custom Brightness Level Night Restored"
+			else
+			    LVL=`cat ${BRIGHTNESS_FILE}`
+			    cs_echo "Start Restore Brightness Level Night - Current: ${LVL}"
+			    if [ ${BR_NIGHT} -lt ${LVL} ]; then
+			        while [ ${LVL} -gt ${BR_NIGHT} ];do
+				    LVL=$((${LVL}-1))
+				    echo ${LVL} > ${BRIGHTNESS_FILE}
+				    sleep 0.005
+				done
+			    elif [ ${BR_NIGHT} -gt ${LVL} ]; then
+				while [ ${LVL} -lt ${BR_NIGHT} ];do
+				    LVL=$((${LVL}+1))
+				    echo ${LVL} > ${BRIGHTNESS_FILE}
+				    sleep 0.005
+				done
+			    fi
+			    cs_echo "Brightness Level Night Restored: ${LVL}"
+			fi
+                    else
+			if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    echo ${BR_DAY} > /tmp/custombrightness
+			    sudo chmod 666 /tmp/custombrightness
+			    if [ -f ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+				${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+			    else
+				cs_echo "Custom Brightness Command is missing!"
+			    fi
+			    cs_echo "Custom Brightness Level Day Restored"
+			else
+			    LVL=`cat ${BRIGHTNESS_FILE}`
+			    cs_echo "Start Restore Brightness Level Day - Current: ${LVL}"
+			    if [ ${BR_DAY} -lt ${LVL} ]; then
+			        while [ ${LVL} -gt ${BR_DAY} ];do
+				    LVL=$((${LVL}-1))
+				    echo ${LVL} > ${BRIGHTNESS_FILE}
+				    sleep 0.005
+				done
+			    elif [ ${BR_DAY} -gt ${LVL} ]; then
+				while [ ${LVL} -lt ${BR_DAY} ];do
+				    LVL=$((${LVL}+1))
+				    echo ${LVL} > ${BRIGHTNESS_FILE}
+				    sleep 0.005
+				done
+			    fi
+			    cs_echo "Brightness Level Day Restored: ${LVL}"
+			fi
+                    fi
+		else
+		    cs_echo "No device brightness file present"
+		fi
+		;;
+	    up)
+		if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+		    LVL=`cat /tmp/custombrightness`
+		    if [ -z ${LVL} ]; then
+			LVL=${BR_MAX}
+		    fi
+		    if [ $((${LVL} + ${BR_STEP})) -le ${BR_MAX} ]; then
+			echo $((${LVL} + ${BR_STEP})) > /tmp/custombrightness
+			if [ -f ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    ${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+			else
+			    cs_echo "Custom Brightness Command is missing!"
+			fi
+			cs_echo "Custom Brightness Level Increased To: $((${LVL} + ${BR_STEP}))"
+		    fi
+		elif [ -f ${BRIGHTNESS_FILE} ]; then
+		    LVL=`cat ${BRIGHTNESS_FILE}`
+		    if [ -z ${LVL} ]; then
+			LVL=${BR_MAX}
+		    fi
+		    if [ $((${LVL} + ${BR_STEP})) -le ${BR_MAX} ]; then
+			echo $((${LVL} + ${BR_STEP})) > ${BRIGHTNESS_FILE}
+			cs_echo "Brightness Level Increased To: $((${LVL} + ${BR_STEP}))"
+		    fi
+		else
+    		    cs_echo "No device brightness file present"
+		fi
+		;;
+	    down)
+		if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+		    LVL=`cat /tmp/custombrightness`
+		    if [ -z ${LVL} ]; then
+			LVL=${BR_MAX}
+		    fi
+		    if [ $((${LVL} - ${BR_STEP})) -ge ${BR_MIN} ]; then
+			echo $((${LVL} - ${BR_STEP})) > /tmp/custombrightness
+			if [ -f ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    ${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+			else
+			    cs_echo "Custom Brightness Command is missing!"
+			fi
+			cs_echo "Custom Brightness Level Reduced To: $((${LVL} + ${BR_STEP}))"
+		    fi
+		elif [ -f ${BRIGHTNESS_FILE} ]; then
+		    LVL=`cat ${BRIGHTNESS_FILE}`
+		    if [ -z ${LVL} ]; then
+			LVL=${BR_MAX}
+		    fi
+		    if [ $((${LVL} - ${BR_STEP})) -ge ${BR_MIN} ]; then
+			echo $((${LVL} - ${BR_STEP})) > ${BRIGHTNESS_FILE}
+			cs_echo "Brightness Level Reduced To: $((${LVL} + ${BR_STEP}))"
+		    fi
+		else
+    		    cs_echo "No device brightness file present"
+		fi
+		;;
+	    min)
+		if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+		    echo ${BR_MIN} > /tmp/custombrightness
+		    if [ -f ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+		    else
+			cs_echo "Custom Brightness Command is missing!"
+		    fi
+		    cs_echo "Custom Brightness Level Set To Min: ${BR_MIN}"
+		elif [ -f ${BRIGHTNESS_FILE} ]; then
+		    LVL=`cat ${BRIGHTNESS_FILE}`
+		    if [ ${BR_MIN} -lt ${LVL} ]; then
+		        while [ ${LVL} -gt ${BR_MIN} ];do
+			    LVL=$((${LVL}-1))
+			    echo ${LVL} > ${BRIGHTNESS_FILE}
+			    sleep 0.005
+			done
+		    elif [ ${BR_MIN} -gt ${LVL} ]; then
+			while [ ${LVL} -lt ${BR_MIN} ];do
+			    LVL=$((${LVL}+1))
+			    echo ${LVL} > ${BRIGHTNESS_FILE}
+			    sleep 0.005
+			done
+		    fi
+		    cs_echo "Brightness Level Set To Min: ${BR_MIN}"
+		else
+		    cs_echo "No device brightness file present"
+		fi
+		;;
+	    max)
+		if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+		    echo ${BR_MAX} > /tmp/custombrightness
+		    if [ -f ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+		    else
+			cs_echo "Custom Brightness Command is missing!"
+		    fi
+		    cs_echo "Custom Brightness Level Set To Max: ${BR_MAX}"
+		elif [ -f ${BRIGHTNESS_FILE} ]; then
+		    LVL=`cat ${BRIGHTNESS_FILE}`
+		    if [ ${BR_MAX} -lt ${LVL} ]; then
+		        while [ ${LVL} -gt ${BR_MAX} ];do
+			    LVL=$((${LVL}-1))
+			    echo ${LVL} > ${BRIGHTNESS_FILE}
+			    sleep 0.005
+			done
+		    elif [ ${BR_MAX} -gt ${LVL} ]; then
+			while [ ${LVL} -lt ${BR_MAX} ];do
+			    LVL=$((${LVL}+1))
+			    echo ${LVL} > ${BRIGHTNESS_FILE}
+			    sleep 0.005
+			done
+		    fi
+		    cs_echo "Brightness Level Set To Max: ${BR_MAX}"
+		else
+		    cs_echo "No device brightness file present"
+		fi
+		;;
+	    get)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "location" ]; then
+			if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    echo "/tmp/custombrightness"
+			else
+			    echo ${BRIGHTNESS_FILE}
+			fi
+		    elif [ $3 == "level" ]; then
+			if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    LVL=`cat /tmp/custombrightness`
+			    cs_echo "Custom current Brightness Level: $LVL"
+			elif [ -f ${BRIGHTNESS_FILE} ]; then
+			    # get current brightness level
+			    LVL=`cat ${BRIGHTNESS_FILE}`
+			    cs_echo "Current Brightness Level: $LVL"
+			else
+    			    cs_echo "No device brightness file present"
+			fi
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft brightness get location|level${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft brightness get location|level${RESET}"
+		fi
+		;;
+	    set)
+		if [ ! -z $3 ]; then
+		    if [ ! -z ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			echo $3 > /tmp/custombrightness
+			if [ -f ${CUSTOM_BRIGHTNESS_COMMAND} ]; then
+			    ${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+			else
+			    cs_echo "Custom Brightness Command is missing!"
+			fi
+			cs_echo "Custom Brightness Level Set To: $3"
+		    elif [ -f ${BRIGHTNESS_FILE} ]; then
+			LVL=`cat ${BRIGHTNESS_FILE}`
+			if [ $3 -lt ${LVL} ]; then
+			    while [ ${LVL} -gt $3 ];do
+				LVL=$((${LVL}-1))
+				echo ${LVL} > ${BRIGHTNESS_FILE}
+				sleep 0.005
+			    done
+			elif [ $3 -gt ${LVL} ]; then
+			    while [ ${LVL} -lt $3 ];do
+				LVL=$((${LVL}+1))
+				echo ${LVL} > ${BRIGHTNESS_FILE}
+				sleep 0.005
+			    done
+			fi
+			cs_echo "Brightness Level Set To: $3"
+		    else
+			cs_echo "No device brightness file present"
+		    fi
+		fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft brightness save|restore|up|down|min|max|set|get${RESET}"
+		;;
+	esac
+    fi
+
+    # filesystem
+    if [ $1 == "filesystem" ]; then
+	case $2 in
+	    system)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "unlock" ]; then
+			cs_echo "Reqeust: unlock system"
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+			    cs_echo "Before: read-only"
+			else
+			    cs_echo "Before: read-write"
+			fi
+			cs_systemrw
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+			    cs_echo "After : read-only"
+			else
+			    cs_echo "After : read-write"
+			fi
+		    elif [ $3 == "lock" ]; then
+			cs_echo "Reqeust: lock system"
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+			    cs_echo "Before: read-only"
+			else
+			    cs_echo "Before: read-write"
+			fi
+			cs_systemro
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+			    cs_echo "After : read-only"
+			else
+			    cs_echo "After : read-write"
+			fi
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft filesystem system lock|unlock|check${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft filesystem system lock|unlock${RESET}"
+		fi
+		;;
+	    boot)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "unlock" ]; then
+			cs_echo "Reqeust: unlock boot"
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+			    cs_echo "Before: read-only"
+			else
+			    cs_echo "Before: read-write"
+			fi
+			cs_bootrw
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+			    cs_echo "After : read-only"
+			else
+			    cs_echo "After : read-write"
+			fi
+		    elif [ $3 == "lock" ]; then
+			cs_echo "Reqeust: lock boot"
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+			    cs_echo "Before: read-only"
+			else
+			    cs_echo "Before: read-write"
+			fi
+			cs_bootro
+			if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+			    cs_echo "After : read-only"
+			else
+			    cs_echo "After : read-write"
+			fi
+		    elif [ $3 == "check" ]; then
+			sudo umount /dev/mmcblk0p1
+			if [ ! $(cat /proc/mounts | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+			    sudo fsck -f -y /dev/mmcblk0p1
+			    sudo mount /dev/mmcblk0p1 /boot
+			else
+			    cs_echo "Sorry! The drive can't be unmounted. Abort."
+			    cs_echo ""
+			fi
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft filesystem boot lock|unlock|check${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft filesystem boot lock|unlock|check${RESET}"
+		fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft filesystem system|boot${RESET}"
+		;;
+	esac
+    fi
+
+    # system
+    if [ $1 == "system" ]; then
+	case $2 in
+	    unlock)
+		cs_echo "Reqeust: unlock system"
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+		    cs_echo "Before: read-only"
+		else
+		    cs_echo "Before: read-write"
+		fi
+		cs_systemrw
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+		    cs_echo "After : read-only"
+		else
+		    cs_echo "After : read-write"
+		fi
+		;;
+	    lock)
+		cs_echo "Reqeust: lock system"
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+		    cs_echo "Before: read-only"
+		else
+		    cs_echo "Before: read-write"
+		fi
+		cs_systemro
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/root " | awk '{print $1}') ]; then
+		    cs_echo "After : read-only"
+		else
+		    cs_echo "After : read-write"
+		fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft system lock|unlock${RESET}"
+		;;
+	esac
+    fi
+
+    # mode
+    if [ $1 == "mode" ]; then
+	case $2 in
+	    default)
+		cs_echo "System mode changed: default"
+		cs_bootrw
+		sudo sed -i 's/^DEV_MODE=.*/DEV_MODE=0/' /boot/crankshaft/crankshaft_env.sh
+		sudo sed -i 's/^DEBUG_MODE=.*/DEBUG_MODE=0/' /boot/crankshaft/crankshaft_env.sh
+		cs_bootro
+		;;
+	    dev)
+		cs_echo "System mode changed: dev"
+		cs_bootrw
+		sudo sed -i 's/^DEV_MODE=.*/DEV_MODE=1/' /boot/crankshaft/crankshaft_env.sh
+		sudo sed -i 's/^DEV_MODE_APP=.*/DEV_MODE_APP=0/' /boot/crankshaft/crankshaft_env.sh
+		cs_bootro
+		;;
+	    devapp)
+		cs_echo "System mode changed: devapp"
+		cs_bootrw
+		sudo sed -i 's/^DEV_MODE=.*/DEV_MODE=1/' /boot/crankshaft/crankshaft_env.sh
+		sudo sed -i 's/^DEV_MODE_APP=.*/DEV_MODE_APP=1/' /boot/crankshaft/crankshaft_env.sh
+		cs_bootro
+		;;
+	    debug)
+		cs_echo "System mode changed: debug"
+		cs_bootrw
+		sudo sed -i 's/^DEBUG_MODE=.*/DEBUG_MODE=1/' /boot/crankshaft/crankshaft_env.sh
+		cs_bootro
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft mode default|dev|debug${RESET}"
+		;;
+	esac
+    fi
+
+    # boot
+    if [ $1 == "boot" ]; then
+	case $2 in
+	    unlock)
+		cs_echo "Reqeust: unlock boot"
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+		    cs_echo "Before: read-only"
+		else
+		    cs_echo "Before: read-write"
+		fi
+		cs_bootrw
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+		    cs_echo "After : read-only"
+		else
+		    cs_echo "After : read-write"
+		fi
+		;;
+	    lock)
+		cs_echo "Reqeust: lock boot"
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+		    cs_echo "Before: read-only"
+		else
+		    cs_echo "Before: read-write"
+		fi
+		cs_bootro
+		if [ $(cat /proc/mounts | grep -P "\sro[\s,]" | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+		    cs_echo "After : read-only"
+		else
+		    cs_echo "After : read-write"
+		fi
+		;;
+	    check)
+		sudo umount /dev/mmcblk0p1
+		if [ ! $(cat /proc/mounts | grep "/dev/mmcblk0p1 " | awk '{print $1}') ]; then
+		    sudo fsck -f -y /dev/mmcblk0p1
+		    sudo mount /dev/mmcblk0p1 /boot
+		else
+		    cs_echo "Sorry! The drive can't be unmounted. Abort."
+		    cs_echo ""
+		fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft boot lock|unlock|check${RESET}"
+		;;
+	esac
+    fi
+
+    #timers
+    if [ $1 == "timers" ]; then
+	case $2 in
+	    status)
+		cs_echo "${CYAN}${BOLD}"
+	    	sudo systemctl list-timers --all --no-pager | head -1
+		cs_echo "_____________________________________________________________________________________________________________________${RESET}"
+		cs_echo ""
+		cs_echo "${GREEN}${BOLD}Day mode${RESET}"
+		cs_echo "---------------------------------------------------------------------------------------------------------------------"
+		cs_echo "${YELLOW}"
+    		sudo systemctl list-timers --all --no-pager | grep daymode
+		cs_echo "${RESET}"
+		cs_echo ""
+		cs_echo "${GREEN}${BOLD}Night mode${RESET}"
+		cs_echo "---------------------------------------------------------------------------------------------------------------------"
+		cs_echo "${YELLOW}"
+    		sudo systemctl list-timers --all --no-pager | grep nightmode
+		cs_echo "${RESET}"
+		cs_echo ""
+		cs_echo "${GREEN}${BOLD}Display backlight off/blank while no phone connected${RESET}"
+		cs_echo "---------------------------------------------------------------------------------------------------------------------"
+		cs_echo "${YELLOW}"
+    		sudo systemctl list-timers --all --no-pager | grep disconnect
+		cs_echo "${RESET}"
+		cs_echo ""
+		cs_echo "${GREEN}${BOLD}Shutdown while no phone connected${RESET}"
+		cs_echo "---------------------------------------------------------------------------------------------------------------------"
+		cs_echo "${YELLOW}"
+    		sudo systemctl list-timers --all --no-pager | grep shutdown
+		cs_echo "${RESET}"
+		cs_echo ""
+		cs_echo "${GREEN}${BOLD}Update check${RESET}"
+		cs_echo "---------------------------------------------------------------------------------------------------------------------"
+		cs_echo "${YELLOW}"
+    		sudo systemctl list-timers --all --no-pager | grep update
+		cs_echo "${RESET}"
+		;;
+	    disconnect)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "stop" ]; then
+			sudo systemctl stop disconnect.timer >/dev/null 2>&1
+			sudo systemctl stop disconnect.service >/dev/null 2>&1
+		    elif [ $3 == "start" ]; then
+			sudo systemctl stop disconnect.timer >/dev/null 2>&1
+			sudo systemctl stop disconnect.service >/dev/null 2>&1
+
+			cs_systemrw
+			if [ ! -z $DISCONNECTION_SCREEN_POWEROFF_SECS ]; then
+			    if [ -f /etc/cs_first_start_done ]; then
+				sudo sed -i 's/.*OnActiveSec=.*/ OnActiveSec='$DISCONNECTION_SCREEN_POWEROFF_SECS's/' /etc/systemd/system/disconnect.timer
+			    else
+				sudo sed -i 's/.*OnActiveSec=.*/ OnActiveSec=300s/' /etc/systemd/system/disconnect.timer
+			    fi
+			fi
+			cs_systemro
+			if [ ! -f /tmp/android_device ]; then
+			    if [ $DISCONNECTION_SCREEN_POWEROFF_DISABLE -eq 0 ]; then
+				if [ ! -f /tmp/btdevice ] && [ ! -f /tmp/media_playing ]; then
+				    sudo systemctl start disconnect.timer >/dev/null 2>&1
+				fi
+			    fi
+			fi
+		    elif [ $3 == "set" ] && [ ! -z $4 ]; then
+			re='^[0-9]+$'
+			if [[ $4 =~ $re ]]; then
+			    cs_bootrw
+			    sudo sed -i 's/^DISCONNECTION_SCREEN_POWEROFF_SECS=.*/DISCONNECTION_SCREEN_POWEROFF_SECS='$4'/' /boot/crankshaft/crankshaft_env.sh
+			    cs_bootro
+			else
+			    cs_echo "Not numeric"
+			fi
+		    elif [ $3 == "enable" ]; then
+			cs_bootrw
+			sudo sed -i 's/^DISCONNECTION_SCREEN_POWEROFF_DISABLE=.*/DISCONNECTION_SCREEN_POWEROFF_DISABLE=0/' /boot/crankshaft/crankshaft_env.sh
+			cs_bootro
+		    elif [ $3 == "disable" ]; then
+			cs_bootrw
+			sudo sed -i 's/^DISCONNECTION_SCREEN_POWEROFF_DISABLE=.*/DISCONNECTION_SCREEN_POWEROFF_DISABLE=1/' /boot/crankshaft/crankshaft_env.sh
+			cs_bootro
+			sudo systemctl stop disconnect.timer >/dev/null 2>&1
+			sudo systemctl stop disconnect.service >/dev/null 2>&1
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers disconnect start|stop|set|enable|disable${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers disconnect start|stop|set|enable|disable${RESET}"
+		fi
+		;;
+	    shutdown)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "stop" ]; then
+			sudo systemctl stop shutdown.timer >/dev/null 2>&1
+			sudo systemctl stop shutdown.service >/dev/null 2>&1
+		    elif [ $3 == "start" ]; then
+			sudo systemctl stop shutdown.timer >/dev/null 2>&1
+			sudo systemctl stop shutdown.service >/dev/null 2>&1
+			if [ ! -z $DISCONNECTION_POWEROFF_MINS ]; then
+			    cs_systemrw
+			    sudo sed -i 's/.*OnActiveSec=.*/ OnActiveSec='$DISCONNECTION_POWEROFF_MINS'm/' /etc/systemd/system/shutdown.timer
+			    cs_systemrw
+			fi
+			if [ ! -f /tmp/android_device ]; then
+			    if [ $DISCONNECTION_POWEROFF_DISABLE -eq 0 ]; then
+				if [ ! -f /tmp/btdevice ] && [ ! -f /tmp/media_playing ]; then
+				    sudo systemctl start shutdown.timer >/dev/null 2>&1
+				fi
+			    fi
+			fi
+		    elif [ $3 == "set" ] && [ ! -z $4 ]; then
+			re='^[0-9]+$'
+			if [[ $4 =~ $re ]]; then
+			    cs_bootrw
+			    sudo sed -i 's/^DISCONNECTION_POWEROFF_MINS=.*/DISCONNECTION_POWEROFF_MINS='$4'/' /boot/crankshaft/crankshaft_env.sh
+			    cs_bootro
+			else
+			    cs_echo "Not numeric"
+			fi
+		    elif [ $3 == "enable" ]; then
+			cs_bootrw
+			sudo sed -i 's/^DISCONNECTION_POWEROFF_DISABLE=.*/DISCONNECTION_POWEROFF_DISABLE=0/' /boot/crankshaft/crankshaft_env.sh
+			cs_bootro
+		    elif [ $3 == "disable" ]; then
+			cs_bootrw
+			sudo sed -i 's/^DISCONNECTION_POWEROFF_DISABLE=.*/DISCONNECTION_POWEROFF_DISABLE=1/' /boot/crankshaft/crankshaft_env.sh
+			cs_bootro
+			sudo systemctl stop shutdown.timer >/dev/null 2>&1
+			sudo systemctl stop shutdown.service >/dev/null 2>&1
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers shutdown start|stop|set|enable|disable${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers shutdown start|stop|set|enable|disable${RESET}"
+		fi
+		;;
+	    stop)
+		sudo systemctl stop disconnect.timer >/dev/null 2>&1
+		sudo systemctl stop disconnect.service >/dev/null 2>&1
+		sudo systemctl stop shutdown.timer >/dev/null 2>&1
+		sudo systemctl stop shutdown.service >/dev/null 2>&1
+		;;
+	    start)
+		sudo systemctl stop disconnect.timer >/dev/null 2>&1
+		sudo systemctl stop disconnect.service >/dev/null 2>&1
+		sudo systemctl stop shutdown.timer >/dev/null 2>&1
+		sudo systemctl stop shutdown.service >/dev/null 2>&1
+		if [ ! -f /tmp/dev_mode_enabled ]; then
+		    cs_systemrw
+		    if [ ! -z $DISCONNECTION_SCREEN_POWEROFF_SECS ]; then
+			if [ -f /etc/cs_first_start_done ]; then
+			    sudo sed -i 's/.*OnActiveSec=.*/ OnActiveSec='$DISCONNECTION_SCREEN_POWEROFF_SECS's/' /etc/systemd/system/disconnect.timer
+			else
+			    sudo sed -i 's/.*OnActiveSec=.*/ OnActiveSec=300s/' /etc/systemd/system/disconnect.timer
+			fi
+		    fi
+		    if [ ! -z $DISCONNECTION_POWEROFF_MINS ]; then
+			sudo sed -i 's/.*OnActiveSec=.*/ OnActiveSec='$DISCONNECTION_POWEROFF_MINS'm/' /etc/systemd/system/shutdown.timer
+		    fi
+		    if [ ! -f /tmp/android_device ]; then
+			if [ $DISCONNECTION_POWEROFF_DISABLE -eq 0 ]; then
+			    if [ ! -f /tmp/btdevice ] && [ ! -f /tmp/media_playing ]; then
+				sudo systemctl start shutdown.timer >/dev/null 2>&1
+			    fi
+			fi
+			if [ $DISCONNECTION_SCREEN_POWEROFF_DISABLE -eq 0 ]; then
+			    if [ ! -f /tmp/btdevice ] && [ ! -f /tmp/media_playing ]; then
+				sudo systemctl start disconnect.timer >/dev/null 2>&1
+			    fi
+			fi
+		    fi
+		    cs_systemro
+		fi
+		;;
+	    daynight)
+		if [ -z $3 ] || [ -z $4 ]; then
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers daynight 0-23 0-23 | 1${RESET}"
+		else
+		    if [[ "$3" =~ ^[0-9]+$ ]] && [[ "$4" =~ ^[0-9]+$ ]]; then
+			if [ "$3" -ge 24 ] || [ "$4" -ge 24 ]; then
+			    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers daynight 0-23 0-23 | 2${RESET}"
+			else
+			    if [ "$3" -gt "$4" ]; then
+				cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers daynight 0-23 0-23 | 3${RESET}"
+			    else
+				night=$(expr $4 - 1)
+				dayhours="$3..$night"
+				cs_echo "Day hours: $3..$night"
+				# Night hours 0 -> day start
+				hours="0"
+				for ((i=1; i<$3; ++i))
+				do
+				    hours="$hours,$i"
+				done
+				# Night hours day end - 24(0)
+				for ((i=$4; i<24; ++i))
+				do
+				    hours="$hours,$i"
+				done
+				cs_echo "Night hours: $hours"
+				# Setup env
+                                cs_bootrw
+                                cs_systemrw
+				sudo sed -i 's/^RTC_DAY_START=.*/RTC_DAY_START='$3'/' /boot/crankshaft/crankshaft_env.sh
+				sudo sed -i 's/^RTC_NIGHT_START=.*/RTC_NIGHT_START='$4'/' /boot/crankshaft/crankshaft_env.sh
+				# Setup timers
+				# skip old style checking every minute
+				#sudo sed -i 's/.*OnCalendar=.*/ OnCalendar=*-*-* '$3'..'$night':*:00/' /etc/systemd/system/daymode.timer
+				#sudo sed -i 's/.*OnCalendar=.*/ OnCalendar=*-*-* '$hours':*:00/' /etc/systemd/system/nightmode.timer
+				# use new style only checking on trigger time
+				sudo sed -i 's/.*OnCalendar=.*/ OnCalendar=*-*-* '$3':00:00/' /etc/systemd/system/daymode.timer
+				sudo sed -i 's/.*OnCalendar=.*/ OnCalendar=*-*-* '$4':00:00/' /etc/systemd/system/nightmode.timer
+				sudo systemctl daemon-reload >/dev/null 2>&1
+				if [ -z $5 ]; then
+				    sudo systemctl stop daymode.timer >/dev/null 2>&1
+				    sudo systemctl stop daymode.service >/dev/null 2>&1
+				    sudo systemctl stop nightmode.timer >/dev/null 2>&1
+				    sudo systemctl stop nightmode.service >/dev/null 2>&1
+				    sudo systemctl start daymode.timer >/dev/null 2>&1
+				    sudo systemctl start nightmode.timer >/dev/null 2>&1
+				fi
+                                cs_bootro
+                                cs_systemro
+			    fi
+			fi
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers daynight 0-23 0-23 | 3${RESET}"
+		    fi
+		fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timers status|shutdown|disconnect|start|stop|daynight${RESET}"
+		;;
+	esac
+    fi
+
+    #audio
+    if [ $1 == "audio" ]; then
+	case $2 in
+	    rpi)
+		cs_bootrw
+		cs_audio_rpi
+		cs_bootrw
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    hifiberry)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "dac" ]; then
+			cs_bootrw
+			cs_audio_hifiberry "dac"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "dacplus" ]; then
+			cs_bootrw
+			cs_audio_hifiberry "dacplus"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "digi" ]; then
+			cs_bootrw
+			cs_audio_hifiberry "digi"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "digipro" ]; then
+			cs_bootrw
+			cs_audio_hifiberry "digi-pro"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "amp" ]; then
+			cs_bootrw
+			cs_audio_hifiberry "amp"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio hifiberry dac|dacplus|digi|digipro|amp${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio hifiberry dac|dacplus|digi|digipro|amp${RESET}"
+		fi
+		;;
+	    audioinjector)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "zero" ]; then
+			cs_bootrw
+			cs_audio_audioinjector "wm8731-audio"
+                        cs_audio_audioinjector_controls
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "stereo" ]; then
+			cs_bootrw
+			cs_audio_audioinjector "wm8731-audio"
+                        cs_audio_audioinjector_controls
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "octo" ]; then
+			cs_bootrw
+			cs_audio_audioinjector "addons"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio audioinjector zero|stereo|octo${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio audioinjector zero|stereo|octo${RESET}"
+		fi
+		;;
+	    allo)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "boss" ]; then
+			cs_bootrw
+			cs_audio_allo "boss"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "piano" ]; then
+			cs_bootrw
+			cs_audio_allo "piano"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio allo boss|piano${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio allo boss|piano${RESET}"
+		fi
+		;;
+	    iqaudio)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "dacplus" ] || [ $3 == "daczero" ] || [ $3 == "dacpro" ]; then
+			cs_bootrw
+			cs_audio_iqaudio "dacplus"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "digiampplus" ]; then
+			cs_bootrw
+			cs_audio_iqaudio "digiampplus"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "digiampplusauto" ]; then
+			cs_bootrw
+			cs_audio_iqaudio "digiampplusauto"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    elif [ $3 == "digiplus" ]; then
+			cs_bootrw
+			cs_audio_iqaudio "digiplus"
+			cs_bootro
+			cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio iqaudio dacplus|daczero|dacpro|digiampplus|digiampplusauto|digiplus${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio iqaudio dacplus|daczero|dacpro|digiampplus|digiampplusauto|digiplus${RESET}"
+		fi
+		;;
+	    clean)
+		cs_bootrw
+		cs_audio_clean
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    volume)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "set" ] && [ ! -z $4 ]; then
+			pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			pactl set-sink-volume $pulsedeviceplay $4%
+		    elif [ $3 == "set" ] && [ -z $4 ]; then
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio volume set (0-100)${RESET}"
+		    elif [ $3 == "get" ]; then
+			pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			volume=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+			cs_echo "Volume: $volume%"
+		    elif [ $3 == "up" ]; then
+			pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			volume_old=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+			pactl set-sink-volume $pulsedeviceplay +5%
+			volume=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+			cs_echo "Old volume: $volume_old - New volume: $volume"
+		    elif [ $3 == "down" ]; then
+			pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			volume_old=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+			pactl set-sink-volume $pulsedeviceplay -5%
+			volume=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+			cs_echo "Old volume: $volume_old - New volume: $volume"
+		    elif [ $3 == "save" ]; then
+			pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			volume=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+			pulsedevicecap=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			capvolume=$(pactl list sources | grep -A8 $pulsedevicecap | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+			if [ ! -z $pulsedeviceplay ] && [ ! -z $volume ] && [ ! -z $pulsedevicecap ] && [ ! -z $capvolume ]; then
+			    cs_bootrw
+			    sudo sh -c 'echo "'$volume'" > /boot/crankshaft/volume'
+			    cs_echo "Saving volume done"
+			    sudo sh -c 'echo "'$capvolume'" > /boot/crankshaft/capvolume'
+			    cs_echo "Saving capture volume done"
+			    cs_bootro
+			else
+			    cs_echo "Saving volume skipped..."
+			fi
+		    elif [ $3 == "restore" ]; then
+			volume=$(cat /boot/crankshaft/volume)
+			pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			if [ ! -z $pulsedeviceplay ] && [ ! -z $volume ]; then
+			    # unmute
+			    pactl set-sink-mute $pulsedeviceplay 0
+                            # check min volume
+                            if [ $volume -lt ${STARTUP_VOL_MIN} ];then
+                                volume=${STARTUP_VOL_MIN}
+                            fi
+                            # check max volume
+                            if [ $volume -gt ${STARTUP_VOL_MAX} ];then
+                                volume=${STARTUP_VOL_MAX}
+                            fi
+			    # set volume
+			    pactl set-sink-volume $pulsedeviceplay $volume%
+			    cs_echo "Restoring volume done"
+			else
+			    cs_echo "Restoring volume skipped..."
+			fi
+			# set capture volume
+			capvolume=$(cat /boot/crankshaft/capvolume)
+			pulsedevicecap=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+			if [ ! -z $pulsedevicecap ] && [ ! -z $capvolume ]; then
+			    # unmute
+			    pactl set-source-mute $pulsedevicecap 0
+                            # check min volume
+                            if [ $capvolume -lt ${STARTUP_VOL_MIN} ];then
+                                capvolume=${STARTUP_VOL_MIN}
+                            fi
+                            # check max volume
+                            if [ $capvolume -gt ${STARTUP_VOL_MAX} ];then
+                                capvolume=${STARTUP_VOL_MAX}
+                            fi
+			    # set volume
+			    pactl set-source-volume $pulsedevicecap $capvolume%
+			    cs_echo "Restoring capture volume done"
+			else
+			    cs_echo "Restoring capture volume skipped..."
+			fi
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio volume set|get|up|down|save|restore${RESET}"
+		    fi
+		fi
+		;;
+	    alsastate)
+		if [ ! -z $3 ]; then
+		    if [ $3 == "save" ]; then
+			cs_bootrw
+			sudo alsactl -f /tmp/alsactl.state store
+			sudo cp -f /tmp/alsactl.state /boot/crankshaft/alsactl.state
+			cs_echo "Alsa state saved"
+			log_echo "Alsa state saved"
+			cs_bootro
+		    elif [ $3 == "restore" ]; then
+			if [ -f /boot/crankshaft/alsactl.firstinit ]; then
+			    sudo alsactl -f /boot/crankshaft/alsactl.firstinit restore
+			    log_echo "Alsa state firstinit restored"
+			    cs_bootrw
+			    sudo rm -f /boot/crankshaft/alsactl.firstinit
+			    log_echo "Alsa state firstinit file removed"
+			    cs_bootro
+			else
+			    if [ -f /boot/crankshaft/alsactl.state ]; then
+				sudo alsactl -f /boot/crankshaft/alsactl.state restore
+				cs_echo "Alsa state restored"
+				log_echo "Alsa state restored"
+			    else
+				cs_echo "No alsa state file to restored"
+				log_echo "No alsa state file to restored"
+			    fi
+			fi
+		    else
+			cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio alsastate save|restore${RESET}"
+		    fi
+		else
+		    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio alsastate save|restore${RESET}"
+		fi
+		;;
+	    test)
+		cs_echo "You have 5 seconds speak time - after this you will hear the playback..."
+		pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+		pulsedevicecap=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+		if [ ! -z $pulsedeviceplay ] && [ ! -z $pulsedevicecap ]; then
+		    parecord -d $pulsedevicecap /tmp/parecord.wav &
+		    cs_echo ""
+		    cs_echo "Speak now!"
+		    timer=1
+		    while [ $timer -lt 6 ]; do
+			sleep 1
+			cs_echo ""
+			cs_echo "Time left: $((6-$timer))"
+			timer=$((timer+1))
+		    done
+		    sudo killall parecord
+		    cs_echo ""
+		    cs_echo "Playback..."
+		    paplay -d $pulsedeviceplay /tmp/parecord.wav
+		else
+		    cs_echo ""
+		    cs_echo "pulseaudio sink or source not configured in client.conf! -> abort."
+		fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft audio rpi|hifiberry|audioinjector|clean|volume|test${RESET}"
+		;;
+	esac
+    fi
+
+    #display
+    if [ $1 == "display" ]; then
+	case $2 in
+	    on)
+		sudo vcgencmd display_power 1 >/dev/null 2>&1
+		if [ -f /sys/class/backlight/rpi_backlight/bl_power ]; then
+		    sudo sh -c 'echo 0 > /sys/class/backlight/rpi_backlight/bl_power'
+		fi
+		if [ -f /tmp/custombrightness ]; then
+		    ${CUSTOM_BRIGHTNESS_COMMAND} $(cat /tmp/custombrightness)
+		fi
+		rm -f /tmp/blankscreen >/dev/null 2>&1
+		rm -f /tmp/screensaver >/dev/null 2>&1
+		;;
+	    off)
+		if [ ! -f /tmp/btdevice ] && [ ! -f /tmp/media_playing ]; then
+		    if [ ${SCREEN_POWEROFF_OVERRIDE} -eq 1 ]; then
+			touch /tmp/screensaver
+		    else
+			sudo vcgencmd display_power 0 >/dev/null 2>&1
+			if [ -f /sys/class/backlight/rpi_backlight/bl_power ]; then
+			    sudo sh -c 'echo 1 > /sys/class/backlight/rpi_backlight/bl_power'
+			fi
+			if [ -f /tmp/custombrightness ]; then
+			    ${CUSTOM_BRIGHTNESS_COMMAND} 0
+			fi
+			touch /tmp/blankscreen
+		    fi
+		fi
+		;;
+	    toggle)
+		if [ "$(cat /sys/class/backlight/rpi_backlight/bl_power)" == "0" ]; then
+		    sudo sh -c 'echo 1 > /sys/class/backlight/rpi_backlight/bl_power'
+		    sudo vcgencmd display_power 0 >/dev/null 2>&1
+		else
+		    sudo sh -c 'echo 0 > /sys/class/backlight/rpi_backlight/bl_power'
+		    sudo vcgencmd display_power 1 >/dev/null 2>&1
+		fi
+		;;
+	    forcelcd)
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i 's/^# Default Display.*//' /boot/config.txt
+		sudo sed -i 's/^hdmi_force_hotplug=.*//' /boot/config.txt
+		sudo sed -i 's/^display_default_lcd=.*//' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Default Display' >> /boot/config.txt"
+		sudo sh -c "echo 'hdmi_force_hotplug=1' >> /boot/config.txt"
+		sudo sh -c "echo 'display_default_lcd=1' >> /boot/config.txt"
+		;;
+	    forcehdmi)
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i 's/^# Default Display.*//' /boot/config.txt
+		sudo sed -i 's/^hdmi_force_hotplug=.*//' /boot/config.txt
+		sudo sed -i 's/^display_default_lcd=.*//' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Default Display' >> /boot/config.txt"
+		sudo sh -c "echo 'hdmi_force_hotplug=1' >> /boot/config.txt"
+		sudo sh -c "echo 'display_default_lcd=0' >> /boot/config.txt"
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft display on|off|forcelcd|forcehdmi${RESET}"
+		;;
+	esac
+    fi
+
+    #settings
+    if [ $1 == "settings" ]; then
+	case $2 in
+	    save)
+		cs_bootrw
+		# Copy settings file
+		sudo cp -f /tmp/openauto.ini /boot/crankshaft/openauto.ini
+		sudo cp -f /tmp/openauto-logs.ini /boot/crankshaft/openauto-logs.ini
+
+		if [ -f /tmp/zoomlevel ]; then
+		    sudo sed -i 's/^RPICAM_ZOOM=.*/RPICAM_ZOOM='$(cat /tmp/zoomlevel)'/' /boot/crankshaft/crankshaft_env.sh
+		    sudo rm /tmp/zoomlevel >/dev/null 2>&1
+		fi
+		# save position changes if made
+		if [ -f /tmp/ycorrection ]; then
+		    sudo sed -i 's/^RPICAM_YCORRECTION=.*/RPICAM_YCORRECTION='$(cat /tmp/ycorrection)'/' /boot/crankshaft/crankshaft_env.sh
+		    sudo rm /tmp/ycorrection >/dev/null 2>&1
+		fi
+		if [ "$(systemctl is-active rpicamserver)" == "active" ]; then
+		    sudo systemctl restart rpicamserver
+		fi
+		cs_bootro
+		;;
+	    restore)
+		if [ -f /boot/crankshaft/openauto.ini ]; then
+		    sudo cp -f /boot/crankshaft/openauto.ini /tmp/openauto.ini
+		else
+		    echo "[General]" > /tmp/openauto.ini
+		    echo "ShowClock=true" >> /tmp/openauto.ini
+		    echo "[Video]" >> /tmp/openauto.ini
+		    echo "FPS=1" >> /tmp/openauto.ini
+		    echo "OMXLayerIndex=0" >> /tmp/openauto.ini
+		fi
+		if [ -f /boot/crankshaft/openauto-logs.ini ]; then
+		    sudo cp -f /boot/crankshaft/openauto-logs.ini /tmp/openauto-logs.ini
+    else
+        echo "[Core]" > /tmp/openauto-logs.ini
+        echo "Filter=\"%Settings% >= info\"" >> /tmp/openauto-logs.ini
+        echo "DisableLogging=\"false\"" >> /tmp/openauto-logs.ini
+    fi
+		sudo chown pi:pi /tmp/openauto.ini
+		sudo chmod 777 /tmp/openauto.ini
+    sudo chown pi:pi /tmp/openauto-logs.ini
+    sudo chmod 777 /tmp/openauto-logs.ini
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft settings save|restore${RESET}"
+		;;
+	esac
+    fi
+
+    #rtc
+    if [ $1 == "rtc" ]; then
+	case $2 in
+	    abx80x)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "abx80x" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    ds1307)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "ds1307" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    ds1339)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "ds1339" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    mcp7940x)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "mcp7940x" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    mcp7941x)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "mcp7941x" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    ds3231)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "ds3231" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    pcf2127)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "pcf2127" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    pcf8523)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "pcf8523" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    pcf8563)
+		cs_bootrw
+		cs_systemrw
+		cs_rtc "pcf8563" "$3"
+		cs_systemro
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    sync)
+		# sync rtc time with sys
+		sudo hwclock -s >/dev/null 2>&1
+		# try sync with timeserver
+		ping -c1 -w1 google.com >/dev/null 2>&1
+		if [ "$?" = 0 ]
+		then
+		    cs_echo "---------------------------------------------------------"
+		    cs_echo "Internet connection present. Syncing RTC with time server"
+		    cs_systemrw
+		    # disable/enable timesyncd to trigger resync
+		    sudo timedatectl set-ntp 0
+		    sudo timedatectl set-ntp 1
+		    cs_echo "---------------------------------------------------------"
+		    cs_echo "Wait for timesync..."
+		    sleep 10
+		    # write time from server to hwclock
+		    sudo hwclock --systohc | logger
+		    # write time from hwclock to sys
+		    sudo hwclock --hctosys | logger
+		    # show result
+		    sudo timedatectl status
+		    sudo timedatectl status | logger
+		    result=$(cat /var/log/syslog | grep Synchronized | tail -n1 | awk {'print $3" "$6" "$7" "$8" "$9" "$10'})
+		    cs_echo "$result"
+		    cs_systemrw
+		else
+		    cs_echo "---------------------------------------------------------"
+		    cs_echo "No internet connection!"
+		    cs_echo "---------------------------------------------------------"
+		fi
+		;;
+	    status)
+		sudo timedatectl status
+		;;
+	    disable)
+		cs_bootrw
+		cs_systemrw
+		#delete clock
+		sudo sed -i 's/^# RTC Setup.*//' /boot/config.txt
+		sudo sed -i '/dtoverlay=i2c-rtc/d' /boot/config.txt
+		sudo sed -i '/rtc/d' /etc/modules
+		sudo sed -i 's/^RTC_DAYNIGHT=.*/RTC_DAYNIGHT=0/' /boot/crankshaft/crankshaft_env.sh
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/crankshaft/crankshaft_env.sh
+		if [ ! -z $3 ]; then
+		    sudo timedatectl set-timezone "$3"
+		fi
+		cs_check_i2c
+		sudo systemctl disable hwclock-load.service >/dev/null 2>&1
+		sudo systemctl daemon-reload
+		cs_systemro
+		cs_bootro
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft rtc abx80x|ds1307|ds1339|mcp7940x|mcp7941x|ds3231|pcf2127|pcf8523|pcf8563|sync|status|disable${RESET}"
+		;;
+	esac
+    fi
+
+    #timezone
+    if [ $1 == "timezone" ]; then
+	if [ ! -z $2 ]; then
+	    cs_systemrw
+	    date
+	    sudo timedatectl set-timezone "$2"
+	    date
+	    cs_systemro
+	else
+	    cs_echo "${YELLOW}${BOLD}Syntax: crankshaft timezone xx (xx=Europe/London for example)${RESET}"
+	fi
+    fi
+
+    #state
+    if [ $1 == "state" ]; then
+	case $2 in
+	    day)
+		/opt/crankshaft/service_daynight.sh app day
+		;;
+	    night)
+		/opt/crankshaft/service_daynight.sh app night
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft state day|night${RESET}"
+		;;
+	esac
+    fi
+
+    #services
+    if [ $1 == "services" ]; then
+	case $2 in
+	    reset)
+		# Set default startup services state
+		sudo systemctl enable gpio2kbd.service >/dev/null 2>&1
+		sudo systemctl enable crankshaft.service >/dev/null 2>&1
+		sudo systemctl enable user_startup.service >/dev/null 2>&1
+		sudo systemctl enable devmode.service >/dev/null 2>&1
+		sudo systemctl enable debugmode.service >/dev/null 2>&1
+		sudo systemctl enable display.service >/dev/null 2>&1
+		sudo systemctl enable user_startup.service >/dev/null 2>&1
+		sudo systemctl enable update.service >/dev/null 2>&1
+		sudo systemctl enable usbrestore.service >/dev/null 2>&1
+		sudo systemctl enable usbdetect.service >/dev/null 2>&1
+		sudo systemctl enable daymode.timer >/dev/null 2>&1
+		sudo systemctl enable nightmode.timer >/dev/null 2>&1
+		sudo systemctl enable tap2wake.service >/dev/null 2>&1
+		sudo systemctl enable openauto.service >/dev/null 2>&1
+		sudo systemctl enable gpiotrigger.service >/dev/null 2>&1
+		sudo systemctl enable timerstart.service >/dev/null 2>&1
+		sudo systemctl enable regensshkeys.service >/dev/null 2>&1
+		sudo systemctl enable ssh.service >/dev/null 2>&1
+		sudo systemctl enable kodimonitor.service >/dev/null 2>&1
+		sudo systemctl disable rpicamserver.service >/dev/null 2>&1
+		sudo systemctl disable wpa_supplicant.service >/dev/null 2>&1
+		sudo systemctl disable networking.service >/dev/null 2>&1
+		sudo systemctl disable dhcpcd.service >/dev/null 2>&1
+		sudo systemctl disable regenerate_ssh_host_keys.service >/dev/null 2>&1
+		sudo systemctl disable wifisetup.service >/dev/null 2>&1
+		sudo systemctl disable systemd-rfkill.service >/dev/null 2>&1
+		sudo systemctl disable systemd-rfkill.socket >/dev/null 2>&1
+		sudo systemctl disable systemd-timesyncd.service >/dev/null 2>&1
+		sudo systemctl disable hwclock-load.service >/dev/null 2>&1
+		sudo systemctl disable resize2fs_once.service >/dev/null 2>&1
+		sudo systemctl disable bluetooth.service >/dev/null 2>&1
+		sudo systemctl disable hciuart.service >/dev/null 2>&1
+		sudo systemctl disable hostapd.service >/dev/null 2>&1
+		sudo systemctl disable dnsmasq.service >/dev/null 2>&1
+		sudo systemctl disable hotspot.service >/dev/null 2>&1
+		sudo systemctl disable alsa-state.service >/dev/null 2>&1
+		sudo systemctl disable apply_noobs_os_config.service >/dev/null 2>&1
+		sudo systemctl disable wifi-country.service >/dev/null 2>&1
+		sudo systemctl disable alsa-restore.service >/dev/null 2>&1
+		sudo systemctl disable raspi-config.service >/dev/null 2>&1
+		sudo systemctl disable bluetooth >/dev/null 2>&1
+		sudo systemctl disable hciuart >/dev/null 2>&1
+		sudo systemctl disable ofono >/dev/null 2>&1
+		sudo systemctl enable csng-bluetooth >/dev/null 2>&1
+		sudo systemctl enable btautopair >/dev/null 2>&1
+		sudo systemctl enable btautoconnect >/dev/null 2>&1
+		sudo systemctl enable btdevicedetect >/dev/null 2>&1
+		sudo systemctl enable btrestore >/dev/null 2>&1
+		sudo systemctl daemon-reload >/dev/null 2>&1
+		;;
+	    status)
+		systemctl list-units --type=service --all | grep 'Crankshaft\|UNIT'
+		;;
+	    failed)
+		systemctl list-units --state=failed --no-pager --all
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft services status|reset|failed${RESET}"
+		;;
+	esac
+    fi
+
+    #reset
+    if [ $1 == "reset" ]; then
+	case $2 in
+	    config.txt)
+		cs_bootrw
+
+		# display
+		hdmi_group=`cat /boot/config.txt | grep ^hdmi_group= | cut -d= -f2`
+		hdmi_mode=`cat /boot/config.txt | grep ^hdmi_mode= | cut -d= -f2`
+		hdmi_cvt=`cat /boot/config.txt | grep ^hdmi_cvt= | cut -d= -f2`
+		# in many samples hdmi_cvt ist set as 'hdmi_cvt xyz' which is wrong by missing '=' - failsafe
+		if [ -z $hdmi_cvt ]; then
+		    hdmi_cvt=`cat /boot/config.txt | grep '^hdmi_cvt ' | cut -d' ' -f2-`
+		fi
+		hdmi_drive=`cat /boot/config.txt | grep ^hdmi_drive= | cut -d= -f2`
+		hdmi_force_hotplug=`cat /boot/config.txt | grep ^hdmi_force_hotplug= | cut -d= -f2`
+		config_hdmi_boost=`cat /boot/config.txt | grep ^config_hdmi_boost= | cut -d= -f2`
+
+		# power
+		current_limit_override=`cat /boot/config.txt | grep ^current_limit_override= | cut -d= -f2`
+		max_usb_current=`cat /boot/config.txt | grep ^max_usb_current= | cut -d= -f2`
+		avoid_warnings=`cat /boot/config.txt | grep ^avoid_warnings= | cut -d= -f2`
+
+		# Clear config.txt		
+		sudo sh -c "echo '' > /boot/config.txt"
+
+		# Custom Display settings
+		if [ ! -z "$hdmi_group" ] || [ ! -z "$hdmi_mode" ] || [ ! -z "$hdmi_cvt" ] || [ ! -z "$hdmi_drive" ] || [ ! -z "$hdmi_force_hotplug" ] || [ ! -z "$config_hdmi_boost" ]; then
+		    sudo sh -c "echo '' >> /boot/config.txt"
+		    sudo sh -c "echo '# Custom display settings' >> /boot/config.txt"
+		    if [ ! -z "$hdmi_group" ]; then
+			sudo sh -c "echo 'hdmi_group=$hdmi_group' >> /boot/config.txt"
+		    fi
+		    if [ ! -z "$hdmi_mode" ]; then
+			sudo sh -c "echo 'hdmi_mode=$hdmi_mode' >> /boot/config.txt"
+		    fi
+		    if [ ! -z "$hdmi_cvt" ]; then
+			sudo sh -c "echo 'hdmi_cvt=$hdmi_cvt' >> /boot/config.txt"
+		    fi
+		    if [ ! -z "$hdmi_drive" ]; then
+			sudo sh -c "echo 'hdmi_drive=$hdmi_drive' >> /boot/config.txt"
+		    fi
+		    if [ ! -z "$hdmi_force_hotplug" ]; then
+			sudo sh -c "echo 'hdmi_force_hotplug=$hdmi_force_hotplug' >> /boot/config.txt"
+		    fi
+		    if [ ! -z "$config_hdmi_boost" ]; then
+			sudo sh -c "echo 'config_hdmi_boost=$config_hdmi_boost' >> /boot/config.txt"
+		    fi
+		fi
+
+		# Custom power settings
+		if [ ! -z "$current_limit_override" ] || [ ! -z "$max_usb_current" ] || [ ! -z "$avoid_warnings" ]; then
+		    sudo sh -c "echo '' >> /boot/config.txt"
+		    sudo sh -c "echo '# Custom power settings' >> /boot/config.txt"
+		    if [ ! -z "$current_limit_override" ]; then
+			sudo sh -c "echo 'current_limit_override=$current_limit_override' >> /boot/config.txt"
+		    fi
+		    if [ ! -z "$max_usb_current" ]; then
+			sudo sh -c "echo 'max_usb_current=$max_usb_current' >> /boot/config.txt"
+		    fi
+		    if [ ! -z "$avoid_warnings" ]; then
+			sudo sh -c "echo 'avoid_warnings=$avoid_warnings' >> /boot/config.txt"
+		    fi
+		fi
+
+		# Crankshaft Base params
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Disable Rainbow splash' >> /boot/config.txt"
+		sudo sh -c "echo 'disable_splash=1' >> /boot/config.txt"
+
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Disable the PWR LED.' >> /boot/config.txt"
+		sudo sh -c "echo 'dtparam=pwr_led_trigger=none' >> /boot/config.txt"
+		sudo sh -c "echo 'dtparam=pwr_led_activelow=off' >> /boot/config.txt"
+
+	        sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Audio Setup' >> /boot/config.txt"
+		sudo sh -c "echo 'dtparam=audio=on' >> /boot/config.txt"
+
+	        sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# GPU Mem' >> /boot/config.txt"
+		sudo sh -c "echo 'gpu_mem=256' >> /boot/config.txt"
+
+		# mount /boot ro after saving if not in dev mode
+		cs_bootro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		cs_echo " --- Check config.txt before! ---"
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft reset config.txt${RESET}"
+		;;
+	esac
+    fi
+
+    #branch select
+    if [ $1 == "branch" ]; then
+	case $2 in
+	    release)
+		echo "Current branch: $(cat /etc/crankshaft.branch)"
+		cs_systemrw
+		sudo sh -c 'echo "crankshaft-ng" > /etc/crankshaft.branch'
+		sudo sh -c 'echo "0000-00-00" > /etc/crankshaft.date'
+		cs_systemro
+		echo "New branch: $(cat /etc/crankshaft.branch)"
+		;;
+	    dev)
+		echo "Current branch: $(cat /etc/crankshaft.branch)"
+		cs_systemrw
+		sudo sh -c 'echo "csng-dev" > /etc/crankshaft.branch'
+		sudo sh -c 'echo "0000-00-00" > /etc/crankshaft.date'
+		cs_systemro
+		echo "New branch: $(cat /etc/crankshaft.branch)"
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft branch release|dev${RESET}"
+		;;
+	esac
+    fi
+
+    #updates
+    if [ $1 == "update" ]; then
+	case $2 in
+	    udev)
+		touch udev_updating
+		sudo rm /tmp/51-android.rules.md5 > /dev/null 2>&1
+		sudo wget -q -O /tmp/51-android.rules.md5 --no-check-certificate https://raw.githubusercontent.com/opencardev/prebuilts/master/udev/51-android.rules.md5
+                REMOTE=$(cat /tmp/51-android.rules.md5 | awk {'print $1'})
+		LOCAL=$(md5sum /etc/udev/rules.d/51-android.master | awk {'print $1'})
+                cs_echo "New file:     $REMOTE"
+                cs_echo "Current file: $LOCAL"
+                if [ -z $REMOTE ] || [ -z $LOCAL ]; then
+                    cs_echo "ABORT: checksum fail."
+		    sudo rm /tmp/udev_updating > /dev/null 2>&1
+                    exit 1
+                fi
+		if [ "$REMOTE" == "$LOCAL" ]; then
+		    cs_echo ""
+		    cs_echo "ABORT: udev rules are up to date."
+		else
+                    cs_systemrw
+		    # get source file
+		    sudo wget -q --no-check-certificate -O /etc/udev/rules.d/51-android.master https://raw.githubusercontent.com/opencardev/prebuilts/master/udev/51-android.rules
+		    # File which will be transformed
+		    DEST=/etc/udev/rules.d/51-android.rules
+		    sudo touch /etc/udev/rules.d/51-android.rules
+		    sudo chmod 666 /etc/udev/rules.d/51-android.rules
+		    # add master stuff
+		    echo '' > $DEST
+		    echo '# Skip storage devices' >> $DEST
+                    echo 'KERNEL=="sd*", GOTO="SKIP_DEVICE"' >> $DEST
+                    echo 'KERNEL=="sg*", GOTO="SKIP_DEVICE"' >> $DEST
+                    echo 'SUBSYSTEM!="usb", GOTO="SKIP_DEVICE"' >> $DEST
+		    cat /etc/udev/rules.d/51-android.master >> $DEST
+		    # Add action
+		    sudo sed -i 's/GROUP="plugdev"$/GROUP="plugdev", RUN+="\/opt\/crankshaft\/usb_action.sh add '\'\$env\{ID_MODEL\}\'' '\''%E\{DEVNAME\}'\''"/' $DEST
+		    # Add disconnect action
+		    echo '' >> $DEST
+		    echo '# Disconnect action' >> $DEST
+		    echo 'SUBSYSTEM=="usb", ACTION=="remove", RUN+="/opt/crankshaft/usb_action.sh remove '\'\$env\{ID_MODEL\}\'' '\''%E{DEVNAME}'\''"' >> $DEST
+		    # Add disconnect action
+		    echo '' >> $DEST
+		    echo '# Skip action' >> $DEST
+		    echo 'LABEL="SKIP_DEVICE"' >> $DEST
+		    echo '' >> $DEST
+		    # Reload rules
+		    sudo udevadm control --reload-rules
+		    cs_echo ""
+		    cs_echo "OK: udev rules updated."
+		    sudo rm /tmp/udev_update_available >/dev/null 2>&1
+                    cs_systemro
+		fi
+		sudo rm /tmp/udev_updating > /dev/null 2>&1
+		;;
+	    csmt)
+		touch /tmp/csmt_updating
+		sudo rm /tmp/crankshaft.md5 > /dev/null 2>&1
+		if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			sudo wget -q --no-check-certificate -O /tmp/crankshaft.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/csmt/crankshaft.md5
+		    fi
+		else
+		    sudo wget -q --no-check-certificate -O /tmp/crankshaft.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/csmt/crankshaft.md5
+		fi
+		REMOTE=$(cat /tmp/crankshaft.md5 | awk {'print $1'})
+		LOCAL=$(md5sum /usr/local/bin/crankshaft | awk {'print $1'})
+		cs_echo "New csmt file:     $REMOTE"
+		cs_echo "Current csmt file: $LOCAL"
+		if [ -z $REMOTE ] || [ -z $LOCAL ]; then
+		    cs_echo "ABORT: csmt - checksum fail."
+		else
+		    if [ "$REMOTE" == "$LOCAL" ]; then
+			cs_echo ""
+			cs_echo "ABORT: crankshaft management tool is up to date."
+		    else
+			cs_systemrw
+			sudo rm /usr/local/bin/crankshaft.update >/dev/null 2>&1
+			sudo rm /usr/local/bin/crankshaft.old >/dev/null 2>&1
+			# get source file
+			if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+				cs_echo "DOWNLOAD: csmt dev"
+				sudo wget -q --no-check-certificate -O /usr/local/bin/crankshaft.update https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/csmt/crankshaft
+			    fi
+			else
+			    cs_echo "DOWNLOAD: csmt"
+			    sudo wget -q --no-check-certificate -O /usr/local/bin/crankshaft.update https://raw.githubusercontent.com/opencardev/prebuilts/master/csmt/crankshaft
+			fi
+			# check download
+			LOCAL=$(md5sum /usr/local/bin/crankshaft.update | awk {'print $1'})
+			if [ "$REMOTE" == "$LOCAL" ]; then
+			    sudo mv -f /usr/local/bin/crankshaft /usr/local/bin/crankshaft.old
+			    sudo cp -f /usr/local/bin/crankshaft.update /usr/local/bin/crankshaft
+			    sudo chmod 777 /usr/local/bin/crankshaft
+			    sudo rm /usr/local/bin/crankshaft.update
+			    cs_echo ""
+			    cs_echo "OK: crankshaft management tool updated."
+			    sudo rm /tmp/csmt_update_available >/dev/null 2>&1
+			else
+			    cs_echo "ABORT: csmt download checksum fail."
+			fi
+			cs_systemro
+		    fi
+		fi
+		sudo rm /tmp/csmt_updating > /dev/null 2>&1
+
+		# csmt failsave restore if missing and old build present
+		if [ ! -f /usr/local/bin/crankshaft ] && [ -f /usr/local/bin/crankshaft.old ]; then
+		    cs_systemrw
+		    cs_echo "WARN: csmt was missing - failsave restore done!"
+		    sudo mv -f /usr/local/bin/crankshaft.old /usr/local/bin/crankshaft
+		    cs_systemro
+		fi
+
+		;;
+	    openauto)
+		touch /tmp/openauto_updating
+		# openauto
+		restart=0
+		sudo rm /tmp/autoapp.md5 > /dev/null 2>&1
+		if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			sudo wget -q --no-check-certificate -O /tmp/autoapp.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/autoapp.md5
+		    fi
+		else
+		    sudo wget -q --no-check-certificate -O /tmp/autoapp.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/autoapp.md5
+		fi
+		REMOTE=$(cat /tmp/autoapp.md5 | awk {'print $1'})
+		LOCAL=$(md5sum /usr/local/bin/autoapp | awk {'print $1'})
+		cs_echo "New openauto file:     $REMOTE"
+		cs_echo "Current openauto file: $LOCAL"
+		if [ -z $REMOTE ] || [ -z $LOCAL ]; then
+		    cs_echo "ABORT: openauto checksum fail."
+		else
+		    if [ "$REMOTE" == "$LOCAL" ]; then
+			cs_echo ""
+			cs_echo "ABORT: openauto is up to date."
+			cs_echo ""
+		    else
+			cs_systemrw
+			sudo rm /usr/local/bin/autoapp.update >/dev/null 2>&1
+			sudo rm /usr/local/bin/autoapp.old >/dev/null 2>&1
+			# get source file
+			if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+				cs_echo "DOWNLOAD: openauto dev"
+				sudo wget -q --no-check-certificate -O /usr/local/bin/autoapp.update https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/autoapp
+			    fi
+			else
+			    cs_echo "DOWNLOAD: openauto"
+			    sudo wget -q --no-check-certificate -O /usr/local/bin/autoapp.update https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/autoapp
+			fi
+			# check download
+			LOCAL=$(md5sum /usr/local/bin/autoapp.update | awk {'print $1'})
+			if [ "$REMOTE" == "$LOCAL" ]; then
+			    cs_echo "REPLACE: openauto"
+			    sudo mv -f /usr/local/bin/autoapp /usr/local/bin/autoapp.old
+			    sudo cp -f /usr/local/bin/autoapp.update /usr/local/bin/autoapp
+			    sudo chmod 777 /usr/local/bin/autoapp
+			    sudo rm /usr/local/bin/autoapp.update
+			    cs_echo ""
+			    cs_echo "OK: openauto updated."
+			    cs_echo ""
+			    sudo rm /tmp/openauto_update_available >/dev/null 2>&1
+			    restart=1
+			else
+			    sudo rm /usr/local/bin/autoapp.update >/dev/null 2>&1
+			    cs_echo "ABORT: openauto download checksum fail."
+			fi
+			cs_systemro
+		    fi
+		fi
+
+		# openauto failsave restore if missing and old build present
+		if [ ! -f /usr/local/bin/autoapp ] && [ -f /usr/local/bin/autoapp.old ]; then
+		    cs_systemrw
+		    cs_echo "WARN: openauto was missing - failsave restore done!"
+		    sudo mv -f /usr/local/bin/autoapp.old /usr/local/bin/autoapp
+		    cs_systemro
+		fi
+
+		# autoapp_helper
+		sudo rm /tmp/autoapp_helper.md5 > /dev/null 2>&1
+		if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		        sudo wget -q --no-check-certificate -O /tmp/autoapp_helper.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/autoapp_helper.md5
+		    fi
+		else
+		    sudo wget -q --no-check-certificate -O /tmp/autoapp_helper.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/autoapp_helper.md5
+		fi
+		REMOTE=$(cat /tmp/autoapp_helper.md5 | awk {'print $1'})
+		LOCAL=$(md5sum /usr/local/bin/autoapp_helper | awk {'print $1'})
+		cs_echo "New autoapp_helper file:     $REMOTE"
+		cs_echo "Current autoapp_helper file: $LOCAL"
+		if [ -z $REMOTE ] || [ -z $LOCAL ]; then
+		    cs_echo "ABORT: autoapp_helper checksum fail."
+		else
+		    if [ "$REMOTE" == "$LOCAL" ]; then
+			cs_echo ""
+			cs_echo "ABORT: autoapp_helper is up to date."
+			cs_echo ""
+		    else
+			cs_systemrw
+			sudo rm /usr/local/bin/autoapp_helper.update >/dev/null 2>&1
+			sudo rm /usr/local/bin/autoapp_helper.old >/dev/null 2>&1
+			# get source file
+			if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+				cs_echo "DOWNLOAD: autoapp_helper dev"
+				sudo wget -q --no-check-certificate -O /usr/local/bin/autoapp_helper.update https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/autoapp_helper
+			    fi
+			else
+			    cs_echo "DOWNLOAD: autoapp_helper"
+			    sudo wget -q --no-check-certificate -O /usr/local/bin/autoapp_helper.update https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/autoapp_helper
+			fi
+			# check download
+			LOCAL=$(md5sum /usr/local/bin/autoapp_helper.update | awk {'print $1'})
+			if [ "$REMOTE" == "$LOCAL" ]; then
+			    cs_echo "REPLACE: openauto"
+			    sudo mv -f /usr/local/bin/autoapp_helper /usr/local/bin/autoapp_helper.old
+			    sudo cp -f /usr/local/bin/autoapp_helper.update /usr/local/bin/autoapp_helper
+			    sudo chmod 777 /usr/local/bin/autoapp_helper
+			    sudo rm /usr/local/bin/autoapp_helper.update
+			    cs_echo ""
+			    cs_echo "OK: autoapp_helper updated."
+			    restart=1
+			else
+			    sudo rm /usr/local/bin/autoapp_helper.update >/dev/null 2>&1
+			    cs_echo "ABORT: autoapp_helper download checksum fail."
+			fi
+			cs_systemro
+		    fi
+		fi
+
+		# autoapp_helper failsave restore if missing and old build present
+		if [ ! -f /usr/local/bin/autoapp_helper ] && [ -f /usr/local/bin/autoapp_helper.old ]; then
+		    cs_systemrw
+		    cs_echo "WARN: autoapp_helper was missing - failsave restore done!"
+		    sudo mv -f /usr/local/bin/autoapp_helper.old /usr/local/bin/autoapp_helper
+		    cs_systemro
+		fi
+		
+		# libaasdk
+		sudo rm /tmp/libaasdk.so.md5 > /dev/null 2>&1
+		if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		        sudo wget -q --no-check-certificate -O /tmp/libaasdk.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/libaasdk.so.md5
+		    fi
+		else
+		    sudo wget -q --no-check-certificate -O /tmp/libaasdk.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/libaasdk.so.md5
+		fi
+		REMOTE=$(cat /tmp/libaasdk.so.md5 | awk {'print $1'})
+		LOCAL=$(md5sum /usr/local/lib/libaasdk.so | awk {'print $1'})
+		cs_echo "New libaasdk.so file:     $REMOTE"
+		cs_echo "Current libaasdk.so file: $LOCAL"
+		if [ -z $REMOTE ] || [ -z $LOCAL ]; then
+		    cs_echo "ABORT: libaasdk.so checksum fail."
+		else
+		    if [ "$REMOTE" == "$LOCAL" ]; then
+			cs_echo ""
+			cs_echo "ABORT: libaasdk.so is up to date."
+			cs_echo ""
+		    else
+			cs_systemrw
+			sudo rm /usr/local/lib/libaasdk.so.update >/dev/null 2>&1
+			sudo rm /usr/local/lib/libaasdk.so.old >/dev/null 2>&1
+			# get source file
+			if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+				cs_echo "DOWNLOAD: libaasdk.so dev"
+				sudo wget -q --no-check-certificate -O /usr/local/lib/libaasdk.so.update https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/libaasdk.so
+			    fi
+			else
+			    cs_echo "DOWNLOAD: libaasdk.so"
+			    sudo wget -q --no-check-certificate -O /usr/local/lib/libaasdk.so.update https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/libaasdk.so
+			fi
+			# check download
+			LOCAL=$(md5sum /usr/local/lib/libaasdk.so.update | awk {'print $1'})
+			if [ "$REMOTE" == "$LOCAL" ]; then
+			    cs_echo "REPLACE: openauto"
+			    sudo mv -f /usr/local/lib/libaasdk.so /usr/local/lib/libaasdk.so.old
+			    sudo cp -f /usr/local/lib/libaasdk.so.update /usr/local/lib/libaasdk.so
+			    sudo chmod 644 /usr/local/lib/libaasdk.so
+			    sudo rm /usr/local/lib/libaasdk.so.update
+			    cs_echo ""
+			    cs_echo "OK: libaasdk.so updated."
+			    restart=1
+			else
+			    sudo rm /usr/local/lib/libaasdk.so.update >/dev/null 2>&1
+			    cs_echo "ABORT: libaasdk.so download checksum fail."
+			fi
+			cs_systemro
+		    fi
+		fi
+
+		# libaasdk.so failsave restore if missing and old build present
+		if [ ! -f /usr/local/lib/libaasdk.so ] && [ -f /usr/local/lib/libaasdk.so.old ]; then
+		    cs_systemrw
+		    cs_echo "WARN: libaasdk.so was missing - failsave restore done!"
+		    sudo mv -f /usr/local/lib/libaasdk.so.old /usr/local/lib/libaasdk.so
+		    cs_systemro
+		fi
+
+		# libaasdk_proto
+		sudo rm /tmp/libaasdk_proto.so.md5 > /dev/null 2>&1
+		if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		        sudo wget -q --no-check-certificate -O /tmp/libaasdk_proto.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/libaasdk_proto.so.md5
+		    fi
+		else
+		    sudo wget -q --no-check-certificate -O /tmp/libaasdk_proto.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/libaasdk_proto.so.md5
+		fi
+		REMOTE=$(cat /tmp/libaasdk_proto.so.md5 | awk {'print $1'})
+		LOCAL=$(md5sum /usr/local/lib/libaasdk_proto.so | awk {'print $1'})
+		cs_echo "New libaasdk_proto.so file:     $REMOTE"
+		cs_echo "Current libaasdk_proto.so file: $LOCAL"
+		if [ -z $REMOTE ] || [ -z $LOCAL ]; then
+		    cs_echo "ABORT: libaasdk_proto.so checksum fail."
+		else
+		    if [ "$REMOTE" == "$LOCAL" ]; then
+			cs_echo ""
+			cs_echo "ABORT: libaasdk_proto.so is up to date."
+			cs_echo ""
+		    else
+			cs_systemrw
+			sudo rm /usr/local/lib/libaasdk_proto.so.update >/dev/null 2>&1
+			sudo rm /usr/local/lib/libaasdk_proto.so.old >/dev/null 2>&1
+			# get source file
+			if [ ! -z $3 ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			    if [ "$3" == "dev" ] || [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+				cs_echo "DOWNLOAD: libaasdk_proto.so dev"
+				sudo wget -q --no-check-certificate -O /usr/local/lib/libaasdk_proto.so.update https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/libaasdk_proto.so
+			    fi
+			else
+			    cs_echo "DOWNLOAD: libaasdk_proto.so"
+			    sudo wget -q --no-check-certificate -O /usr/local/lib/libaasdk_proto.so.update https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/libaasdk_proto.so
+			fi
+			# check download
+			LOCAL=$(md5sum /usr/local/lib/libaasdk_proto.so.update | awk {'print $1'})
+			if [ "$REMOTE" == "$LOCAL" ]; then
+			    cs_echo "REPLACE: openauto"
+			    sudo mv -f /usr/local/lib/libaasdk_proto.so /usr/local/lib/libaasdk_proto.so.old
+			    sudo cp -f /usr/local/lib/libaasdk_proto.so.update /usr/local/lib/libaasdk_proto.so
+			    sudo chmod 644 /usr/local/lib/libaasdk_proto.so
+			    sudo rm /usr/local/lib/libaasdk_proto.so.update
+			    cs_echo ""
+			    cs_echo "OK: libaasdk_proto.so updated."
+			    restart=1
+			else
+			    sudo rm /usr/local/lib/libaasdk_proto.so.update >/dev/null 2>&1
+			    cs_echo "ABORT: libaasdk_proto.so download checksum fail."
+			fi
+			cs_systemro
+		    fi
+		fi
+
+		# libaasdk_proto.so failsave restore if missing and old build present
+		if [ ! -f /usr/local/lib/libaasdk_proto.so ] && [ -f /usr/local/lib/libaasdk_proto.so.old ]; then
+		    cs_systemrw
+		    cs_echo "WARN: libaasdk_proto.so was missing - failsave restore done!"
+		    sudo mv -f /usr/local/lib/libaasdk_proto.so.old /usr/local/lib/libaasdk_proto.so
+		    cs_systemro
+		fi
+
+		if [ $restart -eq 1 ]; then
+		    cs_echo "Restarting openauto after update"
+		    touch /tmp/openauto_restart_updated > /dev/null 2>&1
+		    sudo rm /tmp/openauto_updating > /dev/null 2>&1
+			# ldconfig to ensure libaasdk linked correctly
+			sudo ldconfig 2>&1
+		    sudo systemctl restart openauto
+		fi
+		sudo rm /tmp/openauto_updating > /dev/null 2>&1
+		;;
+	    system)
+		sudo rm /tmp/latestimage > /dev/null 2>&1
+		if [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+		    DEV_LATEST_FILE=`curl 'ftp://cloud.hawknetwork.de/FTP/' 2>/dev/null | grep zip | tail -1 | rev | cut -d" " -f1 | rev`
+		    echo "ftp://cloud.hawknetwork.de/FTP/$DEV_LATEST_FILE" > /tmp/latestimage
+		else
+		    sudo wget -q --no-check-certificate -O /tmp/latestimage https://raw.githubusercontent.com/opencardev/prebuilts/master/latestimage/latest
+		fi
+		if [ "$(cat /tmp/latestimage)" != "" ]; then
+		    BUILDID_LATEST=`echo "$(basename $(cat /tmp/latestimage))" | cut -d. -f1 | rev | cut -d- -f1 | rev`
+		    BUILDDATE_LATEST=`echo "$(basename $(cat /tmp/latestimage))" | cut -d- -f1-3 | sed 's/-//g'`
+		    BUILDDATE_CURRENT=`cat /etc/crankshaft.date | sed 's/-//g'`
+		    if [ ${BUILDDATE_LATEST} -eq ${BUILDDATE_CURRENT} ] || [ ${BUILDDATE_LATEST} -gt ${BUILDDATE_CURRENT} ] || [ "$3" == "force" ]; then
+			if [ "$BUILDID_LATEST" != "$(cat /etc/crankshaft.build)" ] || [ ${BUILDDATE_LATEST} -gt ${BUILDDATE_CURRENT} ] || [ "$3" == "force" ]; then
+			    if [ -d /media/USBDRIVES/CSSTORAGE ]; then
+				cs_echo "Start downloading..."
+				touch /tmp/system_update_downloading > /dev/null 2>&1
+				start_trigger
+				sudo wget --no-check-certificate -t 3 -T 60 -O "/media/USBDRIVES/CSSTORAGE/$(basename $(cat /tmp/latestimage))" "$(cat /tmp/latestimage)"
+				if [ $? == 0 ]; then
+				    cs_echo "OK: Download finished."
+				    touch /tmp/system_update_ready > /dev/null 2>&1
+				    if [ "$3" == "force" ]; then
+					touch /media/USBDRIVES/CSSTORAGE/FORCE_FLASH > /dev/null 2>&1
+				    fi
+				else
+				    sudo rm /media/USBDRIVES/CSSTORAGE/$(basename $(cat /tmp/latestimage))
+				    sudo rm /media/USBDRIVES/CSSTORAGE/FORCE_FLASH > /dev/null 2>&1
+				    cs_echo "ABORT: Download failed."
+				fi
+				sudo rm /tmp/system_update_downloading > /dev/null 2>&1
+				sudo killall download_trigger > /dev/null 2>&1
+				sudo rm /tmp/download_trigger > /dev/null 2>&1
+			    else
+				cs_echo "ABORT: CSSTORAGE not available as download destination."
+			    fi
+			else
+			    cs_echo ""
+			    cs_echo "ABORT: system is up to date."
+			    cs_echo ""
+			fi
+		    else
+			cs_echo ""
+			cs_echo "ABORT: system is up to date."
+			cs_echo ""
+		    fi
+		else
+		    cs_echo "ABORT: Empty image url."
+		fi
+		;;
+	    check)
+		if [ "`ping -c 1 google.com`" ]; then
+		    cs_echo "Internet connection available"
+		    cs_echo ""
+		    # Check udev rules
+		    sudo rm /tmp/51-android.rules.md5 > /dev/null 2>&1
+		    if [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			sudo wget -q -O /tmp/51-android.rules.md5 --no-check-certificate https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/udev/51-android.rules.md5
+		    else
+			sudo wget -q -O /tmp/51-android.rules.md5 --no-check-certificate https://raw.githubusercontent.com/opencardev/prebuilts/master/udev/51-android.rules.md5
+		    fi
+		    REMOTE_UDEV=$(cat /tmp/51-android.rules.md5 | awk {'print $1'})
+		    LOCAL_UDEV=$(md5sum /etc/udev/rules.d/51-android.master | awk {'print $1'})
+		    sudo rm /tmp/51-android.rules.md5 > /dev/null 2>&1
+
+		    # Check crankshaft management tool
+		    sudo rm /tmp/crankshaft.md5 > /dev/null 2>&1
+		    if [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			sudo wget -q --no-check-certificate -O /tmp/crankshaft.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/csmt/crankshaft.md5
+		    else
+			sudo wget -q --no-check-certificate -O /tmp/crankshaft.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/csmt/crankshaft.md5
+		    fi
+		    REMOTE_CSMT=$(cat /tmp/crankshaft.md5 | awk {'print $1'})
+		    LOCAL_CSMT=$(md5sum /usr/local/bin/crankshaft | awk {'print $1'})
+		    sudo rm /tmp/crankshaft.md5 > /dev/null 2>&1
+
+		    # Check openauto
+		    sudo rm /tmp/autoapp.md5 > /dev/null 2>&1
+		    if [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			sudo wget -q --no-check-certificate -O /tmp/autoapp.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/autoapp.md5
+		    else
+			sudo wget -q --no-check-certificate -O /tmp/autoapp.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/autoapp.md5
+		    fi
+		    REMOTE_OPENAUTO=$(cat /tmp/autoapp.md5 | awk {'print $1'})
+		    LOCAL_OPENAUTO=$(md5sum /usr/local/bin/autoapp | awk {'print $1'})
+		    sudo rm /tmp/autoapp.md5 > /dev/null 2>&1
+
+		    # Check libaasdk
+		    sudo rm /tmp/libaasdk.so.md5 > /dev/null 2>&1
+		    if [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			sudo wget -q --no-check-certificate -O /tmp/libaasdk.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/libaasdk.so.md5
+		    else
+			sudo wget -q --no-check-certificate -O /tmp/libaasdk.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/libaasdk.so.md5
+		    fi
+		    REMOTE_LIBAASDK=$(cat /tmp/libaasdk.so.md5 | awk {'print $1'})
+		    LOCAL_LIBAASDK=$(md5sum /usr/local/lib/libaasdk.so | awk {'print $1'})
+		    sudo rm /tmp/libaasdk.so.md5 > /dev/null 2>&1
+
+			# Check libaasdk_proto
+		    sudo rm /tmp/libaasdk_proto.so.md5 > /dev/null 2>&1
+		    if [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			sudo wget -q --no-check-certificate -O /tmp/libaasdk_proto.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/csng-dev/openauto/libaasdk_proto.so.md5
+		    else
+			sudo wget -q --no-check-certificate -O /tmp/libaasdk_proto.so.md5 https://raw.githubusercontent.com/opencardev/prebuilts/master/openauto/libaasdk_proto.so.md5
+		    fi
+		    REMOTE_LIBAASDK_PROTO=$(cat /tmp/libaasdk_proto.so.md5 | awk {'print $1'})
+		    LOCAL_LIBAASDK_PROTO=$(md5sum /usr/local/lib/libaasdk_proto.so | awk {'print $1'})
+		    sudo rm /tmp/libaasdk_proto.so.md5 > /dev/null 2>&1
+
+		    # Check latest image
+		    sudo rm /tmp/latestimage > /dev/null 2>&1
+		    if [ "$(cat /etc/crankshaft.branch)" == "csng-dev" ]; then
+			DEV_LATEST_FILE=`curl 'ftp://cloud.hawknetwork.de/FTP/' 2>/dev/null | grep crankshaft | grep zip | tail -1 | rev | cut -d" " -f1 | rev`
+			if [ "$DEV_LATEST_FILE" == "" ]; then
+			    cs_echo "No file on ftp!"
+			    cs_echo ""
+			    DEV_LATEST_FILE="$(cat /etc/crankshaft.date)-crankshaft-ng-$(cat /etc/crankshaft.build).zip"
+			fi
+			echo "ftp://cloud.hawknetwork.de/FTP/$DEV_LATEST_FILE" > /tmp/latestimage
+		    else
+			sudo wget -q --no-check-certificate -O /tmp/latestimage https://raw.githubusercontent.com/opencardev/prebuilts/master/latestimage/latest
+		    fi
+
+		    # Check latest patron image (upcoming public release)
+		    sudo rm /tmp/latestpatreon > /dev/null 2>&1
+		    sudo wget -q --no-check-certificate -O /tmp/latestpatreon https://raw.githubusercontent.com/opencardev/prebuilts/master/latestimage/patreon
+
+		    # Notifications
+		    # udev
+		    if [ "$REMOTE_UDEV" != "$LOCAL_UDEV" ]; then
+			cs_echo "New udev rules available!"
+			sudo rm /tmp/udev_update_available > /dev/null 2>&1
+			touch /tmp/udev_update_available
+		    else
+			sudo rm /tmp/udev_update_available > /dev/null 2>&1
+		    fi
+		    # csmt
+		    if [ "$REMOTE_CSMT" != "$LOCAL_CSMT" ]; then
+			cs_echo "New csmt available!"
+			sudo rm /tmp/csmt_update_available > /dev/null 2>&1
+			touch /tmp/csmt_update_available
+		    else
+			sudo rm /tmp/csmt_update_available > /dev/null 2>&1
+		    fi
+		    # openauto, libaasdk, libaasdk_proto
+		    if [ "$REMOTE_OPENAUTO" != "$LOCAL_OPENAUTO" ] | [ "$REMOTE_LIBAASDK" != "$LOCAL_LIBAASDK" ] | [ "$REMOTE_LIBAASDK_PROTO" != "$LOCAL_LIBAASDK_PROTO" ]; then
+			cs_echo "New openauto available!"
+			sudo rm /tmp/openauto_update_available > /dev/null 2>&1
+			touch /tmp/openauto_update_available
+		    else
+			sudo rm /tmp/openauto_update_available > /dev/null 2>&1
+		    fi
+
+		    # latest image
+		    if [ "$(cat /tmp/latestimage)" != "" ]; then
+			REMOTE_IMAGE=""
+			BUILDID_LATEST=`echo "$(basename $(cat /tmp/latestimage))" | cut -d. -f1 | rev | cut -d- -f1 | rev`
+			BUILDDATE_LATEST=`echo "$(basename $(cat /tmp/latestimage))" | cut -d- -f1-3 | sed 's/-//g'`
+			BUILDDATE_CURRENT=`cat /etc/crankshaft.date | sed 's/-//g'`
+			if [ ${BUILDDATE_LATEST} -eq ${BUILDDATE_CURRENT} ] || [ ${BUILDDATE_LATEST} -gt ${BUILDDATE_CURRENT} ]; then
+			    if [ "$BUILDID_LATEST" != "$(cat /etc/crankshaft.build)" ] || [ ${BUILDDATE_LATEST} -gt ${BUILDDATE_CURRENT} ]; then
+				cs_echo "New system image available!"
+				sudo rm /tmp/system_update_available > /dev/null 2>&1
+				sudo touch /tmp/system_update_available
+				# Skip other updates cause newer system available including it
+				sudo rm /tmp/openauto_update_available >/dev/null 2>&1
+				sudo rm /tmp/csmt_update_available >/dev/null 2>&1
+				sudo rm /tmp/udev_update_available >/dev/null 2>&1
+				REMOTE_IMAGE="new"
+			    else
+				sudo rm /tmp/system_update_available > /dev/null 2>&1
+			    fi
+			else
+			    sudo rm /tmp/system_update_available > /dev/null 2>&1
+			fi
+		    fi
+
+		    if [ "$(cat /tmp/latestpatreon)" != "" ]; then
+			BUILDDATE_LATESTPATREON=`echo "$(basename $(cat /tmp/latestpatreon))" | cut -d- -f1-3 | sed 's/-//g'`
+			BUILDDATE_CURRENT=`cat /etc/crankshaft.date | sed 's/-//g'`
+			if [ ${BUILDDATE_LATESTPATREON} -eq  ${BUILDDATE_CURRENT} ] && [ "$(cat /etc/crankshaft.branch)" != "csng-dev" ]; then
+			    cs_echo "You are on latest patreon image - skipping updates until public release!"
+			    # Skip updates cause newer system image is in pipeline for public release
+			    sudo rm /tmp/system_update_available > /dev/null 2>&1
+			    sudo rm /tmp/openauto_update_available >/dev/null 2>&1
+			    sudo rm /tmp/csmt_update_available >/dev/null 2>&1
+			    sudo rm /tmp/udev_update_available >/dev/null 2>&1
+			    REMOTE_IMAGE=""
+			fi
+		    fi
+
+		    # no updates
+		    if [ "$REMOTE_CSMT" == "$LOCAL_CSMT" ] && [ "$REMOTE_UDEV" == "$LOCAL_UDEV" ] && [ "$REMOTE_OPENAUTO" == "$LOCAL_OPENAUTO" ] && [ "$REMOTE_LIBAASDK" == "$LOCAL_LIBAASDK"] && [ "$REMOTE_LIBAASDK_PROTO" == "$LOCAL_LIBAASDK_PROTO"] && [ "$REMOTE_IMAGE" != "new" ]; then
+			cs_echo "No new updates"
+		    fi
+		else
+		    cs_echo ""
+		    cs_echo "No internet connection available"
+		fi
+		;;
+	    cancel)
+		sudo killall wget > /dev/null 2>&1
+		sudo killall download_trigger > /dev/null 2>&1
+		sudo rm /tmp/system_update_available > /dev/null 2>&1
+		sudo rm /tmp/openauto_update_available >/dev/null 2>&1
+		sudo rm /tmp/csmt_update_available >/dev/null 2>&1
+		sudo rm /tmp/udev_update_available >/dev/null 2>&1
+		sudo rm /tmp/system_update_downloading > /dev/null 2>&1
+		sudo rm /media/USBDRIVES/CSSTORAGE/FORCE_FLASH > /dev/null 2>&1
+		sudo rm /tmp/system_update_ready > /dev/null 2>&1
+		sudo rm /tmp/download_trigger > /dev/null 2>&1
+		sudo rm /media/USBDRIVES/CSSTORAGE/$(basename $(cat /tmp/latestimage))
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft update udev|csmt|openauto|check|cancel${RESET}"
+		;;
+	esac
+    fi
+
+    #rpi cam
+    if [ $1 == "rpicam" ]; then
+	case $2 in
+	    enable)
+		cs_bootrw
+		cs_systemrw
+		#setup cam
+		sudo sed -i 's/^# RPI Camera Module.*//' /boot/config.txt
+    		sudo sed -i '/start_x/d' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# RPI Camera Module' >> /boot/config.txt"
+		sudo sh -c 'echo "start_x=1" >> /boot/config.txt'
+                sudo touch /etc/button_camera_visible
+                sudo systemctl enable rpicamserver.service >/dev/null 2>&1
+		cs_bootro
+		cs_systemro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    disable)
+		cs_bootrw
+		cs_systemrw
+		#remove cam
+		sudo sed -i 's/^# RPI Camera Module.*//' /boot/config.txt
+    		sudo sed -i '/start_x/d' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+                sudo rm /etc/button_camera_visible
+                sudo systemctl disable rpicamserver.service >/dev/null 2>&1
+		cs_bootro
+		cs_systemro
+		cs_echo "${RED}${BOLD}Reboot needed to activate!${RESET}"
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft rpicam enable|disable${RESET}"
+		;;
+	esac
+    fi
+
+    #systemcheck
+    if [ $1 == "systemcheck" ]; then
+	cs_echo "Checking systemd automount flag:"
+	cs_echo ""
+	CHECK=`cat /lib/systemd/system/systemd-udevd.service | grep ^MountFlags | cut -d= -f2`
+	if  [ "$CHECK" != "shared" ]; then
+	    cs_echo "${RED}${BOLD}CSMT has detected a wrong setup in systemd for usb drives!${RESET}"
+	    cs_echo "${RED}${BOLD}Applying fix for it...${RESET}"
+	    cs_systemrw
+	    # Make udev mountpoints shared
+	    sudo sed -i 's/^MountFlags=.*/MountFlags=shared/' /lib/systemd/system/systemd-udevd.service
+	    cs_systemro
+	    cs_echo "${BOLD}${CYAN}Reboot your system to activate the fix!${RESET}"
+	    cs_echo ""
+	else
+	    cs_echo "Automount flag: ${BOLD}${GREEN}OK${RESET}"
+	    cs_echo ""
+	fi
+	cs_echo "Checking dkms exfat module:"
+	cs_echo ""
+	if [ "$(dkms status | grep exfat | cut -d: -f2 | sed 's/ //g')" == "installed" ]; then
+	    cs_echo "Exfat module: ${BOLD}${GREEN}OK${RESET}"
+	else
+	    cs_echo "${RED}${BOLD}CSMT has detected mising exfat module!${RESET}"
+	    cs_echo "${RED}${BOLD}Trying to rebuild it...${RESET}"
+	    cs_systemrw
+	    sudo dkms autoinstall
+	    cs_systemro
+	    if [ "$(dkms status | grep exfat | cut -d: -f2 | sed 's/ //g')" == "installed" ]; then
+		cs_echo "${BOLD}${CYAN}Reboot your system to activate the fix!${RESET}"
+		cs_echo ""
+	    else
+		cs_echo "${BOLD}${CYAN}Module build failed.${RESET}"
+		cs_echo ""
+	    fi
+	fi
+	cs_echo ""
+	cs_echo "All checks done."
+    fi
+
+    #usb
+    if [ $1 == "usb" ]; then
+	case $2 in
+	    list)
+		cs_echo "This usb mass storage drives was detected:"
+		cs_echo ""
+		REMOVABLE_DRIVES=""
+		for _device in /sys/block/*/device; do
+		    if echo $(readlink -f "$_device")|egrep -q "usb"; then
+		        _disk=$(echo "$_device" | cut -f4 -d/)
+			COUNT=1
+			while [ $COUNT -lt 4 ]; do
+			    LABEL=$(sudo blkid /dev/${_disk}$COUNT | sed 's/.*LABEL="//' | cut -d'"' -f1)
+			    FSTYPE=$(sudo blkid /dev/${_disk}$COUNT | sed 's/.*TYPE="//' | cut -d'"' -f1)
+			    if [ "$LABEL" != "" ] || [ "$FSTYPE" != "" ]; then
+				cs_echo "Detected Drive: ${CYAN}${BOLD}${_disk}$COUNT${RESET}"
+				cs_echo "Label 1st Part: ${GREEN}${BOLD}${LABEL}${RESET}"
+				cs_echo "PartFilesystem: ${YELLOW}${BOLD}${FSTYPE}${RESET}"
+				if [ "${LABEL}" == "CSSTORAGE" ]; then
+				    cs_echo "${RED}${BOLD}This drive is controlled by system and can't be manually mounted/unmounted!${RESET}"
+				else
+				    cs_echo "Mount Command : ${MAGENTA}${BOLD}crankshaft usb mount ${RESET}${CYAN}${BOLD}${_disk}$COUNT${RESET}"
+				fi
+				cs_echo ""
+			    fi
+			    let COUNT=COUNT+1
+			done
+			cs_echo "--------------------------------------------------------------------------"
+		    fi
+		done
+		;;
+	    mount)
+		if [ ! -z $3 ]; then
+		    DEVICE=$3
+                    if sudo mount | grep CSSTORAGE | grep /dev/$DEVICE > /dev/null; then
+		        cs_echo "${YELLOW}${BOLD}USB device is CSSTORAGE and handled by system - exit...${RESET}"
+		        cs_echo ""
+		        cs_echo "Done."
+			exit 0
+                    else
+		        if [ ! -d /media/USBDRIVES/$DEVICE ]; then
+			    cs_systemrw
+			    sudo mkdir /media/USBDRIVES/$DEVICE
+			    cs_systemro
+		        fi
+		        if sudo mount | grep /media/USBDRIVES/$DEVICE > /dev/null; then
+			    cs_echo "${YELLOW}${BOLD}Destination folder is still mounted - unmount it before new mount!${RESET}"
+		    	    cs_echo ""
+		    	    cs_echo "Done."
+			    exit 0
+		        fi
+		        sudo mount -o sync /dev/$DEVICE /media/USBDRIVES/$DEVICE
+		        if [ $? -ne 0 ]; then
+			    cs_echo "${RED}${BOLD}Mount was not possible - abbort...${RESET}"
+		        else
+			    cs_echo "${GREEN}${BOLD}Mount successfull${RESET} - Device /dev/$DEVICE ($(sudo blkid /dev/$DEVICE | sed 's/.*LABEL="//' | cut -d'"' -f1))  mountet to /media/USBDRIVES/$DEVICE"
+		        fi
+                    fi
+		fi
+		;;
+	    umount)
+		if [ ! -z $3 ]; then
+		    DEVICE=$3
+		    sudo umount /media/USBDRIVES/$DEVICE
+		    if [ $? -ne 0 ]; then
+			cs_echo "${RED}${BOLD}Unmount was not possible - abbort...${RESET}"
+			cs_echo ""
+		    else
+			cs_echo "${GREEN}${BOLD}Unmount successfull - You can now remove device.${RESET}"
+			sudo rmdir /media/USBDRIVES/$DEVICE
+			cs_echo ""
+			cs_echo "Done."
+		    fi
+		fi
+		;;
+	    identify)
+		    RUN=0
+		    CHECK=`ps -ax | grep autoapp | grep -v grep | tail -n 1`
+		    if [ "$CHECK" != "" ]; then
+			echo "Auto exit OpenAuto (restart after exit of this check)..."
+			echo ""
+			sudo systemctl stop openauto
+			RUN=1
+			if [ -f /tmp/android_device ]; then
+			    echo "Please disconnect your phone and reconnect to get correct id's"
+			    echo "cause device switches the id's in android auto mode!"
+			    echo ""
+			    echo "Script is waiting 30 seconds..."
+			    sleep 30
+			fi
+		    fi
+		    sudo lsusb | cut -d" " -f2,4 | sed 's/://g' |
+		    while IFS= read -r line
+		    do
+			bus=$(echo $line | cut -d" " -f1)
+			device=$(echo $line | cut -d" " -f2)
+			echo ""
+			echo "${RED}${BOLD}USB-Device $bus/$device:${RESET}"
+			echo ""
+			FULLDESC=`sudo udevadm info -q all -n /dev/bus/usb/$bus/$device | grep -Ei '(ID_MODEL=|ID_MODEL_ID=|ID_VENDOR=|ID_VENDOR_ID=)' | sed 's/E: //g'`
+			ID_MODEL=`echo $FULLDESC | cut -d" " -f1 | grep ID_MODEL= | cut -d= -f2`
+			ID_MODEL_ID=`echo $FULLDESC | cut -d" " -f2 | grep ID_MODEL_ID= | cut -d= -f2`
+			ID_MODEL_FROM_DATABASE=`sudo udevadm info -q all -n /dev/bus/usb/$bus/$device | grep -Ei '(ID_MODEL_FROM_DATABASE=)' | sed 's/E: //g' | cut -d= -f2`
+			ID_VENDOR=`echo $FULLDESC | cut -d" " -f3 | grep ID_VENDOR= | cut -d= -f2`
+			ID_VENDOR_ID=`echo $FULLDESC | cut -d" " -f4 | grep ID_VENDOR_ID= | cut -d= -f2`
+			ID_VENDOR_FROM_DATABASE=`sudo udevadm info -q all -n /dev/bus/usb/$bus/$device | grep -Ei '(ID_VENDOR_FROM_DATABASE=)' | sed 's/E: //g' | cut -d= -f2`
+			echo "Model ID : "$ID_MODEL_ID
+			echo "Vendor ID: "$ID_VENDOR_ID
+			echo "Model    : "$ID_MODEL" ("$ID_MODEL_FROM_DATABASE")"
+			echo "Vendor   : "$ID_VENDOR" ("$ID_VENDOR_FROM_DATABASE")"
+		    done
+		    if [ $RUN -eq 1 ]; then
+			sudo systemctl start openauto
+		    fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft usb list|mount|umount|identify${RESET}"
+		;;
+	esac
+    fi
+
+    #hotspot
+    if [ $1 == "hotspot" ]; then
+	case $2 in
+	    status)
+		HOSTAPD=`systemctl status hostapd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		DNSMASQ=`systemctl status hostapd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		cs_echo "Hostapd: $HOSTAPD"
+		cs_echo "Dnsmasq: $DNSMASQ"
+		cs_echo ""
+                if [ -f /tmp/dnsmasq.leases ]; then
+		    while read -r line
+		    do
+		        LEASE=`echo $line | awk {'print "Device: "$4" ("$2") - IP-Lease: "$3'}`
+		        cs_echo "$LEASE"
+		    done < "/tmp/dnsmasq.leases"
+                else
+                    cs_echo "No DHCP lease file present"
+                fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft hotspot status${RESET}"
+		;;
+	esac
+    fi
+
+    #sdcard
+    if [ $1 == "sdcard" ]; then
+	case $2 in
+	    ocenable)
+		cs_bootrw
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i 's/^dtoverlay=sdtweak.*//' /boot/config.txt
+		sudo sed -i 's/^# Overclocking Setup.*//' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Overclocking Setup' >> /boot/config.txt"
+		sudo sh -c "echo 'dtoverlay=sdtweak,overclock_50=80' >> /boot/config.txt"
+		cs_bootro
+		;;
+	    ocdisable)
+		cs_bootrw
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i 's/^dtoverlay=sdtweak.*//' /boot/config.txt
+		sudo sed -i 's/^# Overclocking Setup.*//' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		cs_bootro
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft sdcard ocenable|ocdisable${RESET}"
+		;;
+	esac
+    fi
+
+    #custom buttons
+    if [ $1 == "buttons" ]; then
+	case $2 in
+	    create)
+		if [[ $3 =~ ^[0-9] ]]; then
+		    if [ $3 -gt 0 ] && [ $3 -lt 9 ]; then
+			if [ ! -f "/boot/crankshaft/button_$3" ]; then
+			    cs_bootrw
+			    sudo sh -c 'echo "Button'$3'#/your/command#186,189,182#" > /boot/crankshaft/button_'$3''
+			    cs_bootro
+			    cs_echo "Button $3 config created."
+			    cs_echo "You can now customize the button config."
+			    cs_echo ""
+			    cs_echo "Syntax:"
+			    cs_echo ""
+			    cs_echo "${BLUE}${BOLD}Name of Button ${GREEN}#${BLUE} your commnand (no params possible) ${GREEN}#${BLUE} rgb color ${GREEN}#${RESET}"
+			    cs_echo ""
+			    cs_echo "Samples:"
+			    cs_echo ""
+			    cs_echo "${BLUE}${BOLD}MyButton${GREEN}#${BLUE}/path/to/my/command${GREEN}#${BLUE}255,255,255${GREEN}#${RESET}"
+			    cs_echo ""
+			    cs_echo "${BLUE}${BOLD}MyButton${GREEN}#${BLUE}/path/to/my/command${GREEN}#${BLUE}${GREEN}#${RESET}"
+			    cs_echo ""
+			    cs_echo "Note: color code is optional - if not set gray is assigned."
+			    cs_echo ""
+			else
+			    cs_echo "Button $3 config already exists! - Abort."
+			fi
+		    else
+			echo "Only button 1-8 is possible!"
+		    fi
+		fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft buttons create 1|2|3|4|5|6|7|8${RESET}"
+		;;
+	esac
+    fi
+
+    #syslog
+    if [ $1 == "syslog" ]; then
+	cat /var/log/syslog
+    fi
+
+    #oalog
+    if [ $1 == "oalog" ]; then
+	cat /tmp/openauto.log
+    fi
+
+    #bluetooth
+    if [ $1 == "bluetooth" ]; then
+	case $2 in
+	    save)
+		cs_bootrw
+		sudo rm -f /boot/crankshaft/bluetooth-pairings.tar.gz
+		sudo tar -cvf /boot/crankshaft/bluetooth-pairings.tar.gz /tmp/bluetooth
+		cs_bootro
+		;;
+	    restore)
+		sudo tar -xvf /boot/crankshaft/bluetooth-pairings.tar.gz -C /
+		sudo chmod -R 777 /tmp/bluetooth/
+		;;
+	    status)
+		bt-device -l | grep -e '(' | grep -e ':' | cut -d'(' -f2 | cut -d')' -f1 | while read paired; do
+		    device=$(bt-device -i  $paired | grep -e 'Name:' | cut -d':' -f2 | sed 's/^ //g' | sed 's/ *$//g')
+		    state=$(bt-device -i  $paired | grep -e 'Connected:' | cut -d':' -f2 |  sed 's/^ //g' | sed 's/ *$//g')
+		    if [ "$state" == "1" ]; then
+			echo "Device: $device | MAC: $paired | State: Connected"
+		    else
+			echo "Device: $device | MAC: $paired | State: Disconnected"
+		    fi
+		done
+		;;
+	    unpair)
+		cs_clear_bluetooth
+		cs_bootrw
+		sudo rm -f /boot/crankshaft/bluetooth-pairings.tar.gz
+		cs_bootro
+		cs_bluetooth_pairable
+		;;
+	    pairable)
+		cs_bluetooth_pairable
+		;;
+	    builtin)
+		cs_bootrw
+		cs_systemrw
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i 's/^dtoverlay=pi3-disable-bt.*//' /boot/config.txt
+		sudo sed -i 's/^# Bluetooth.*//' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo systemctl enable hciuart >/dev/null 2>&1
+		sudo systemctl enable bluetooth >/dev/null 2>&1
+		sudo systemctl enable ofono >/dev/null 2>&1
+                sudo sed -i 's/^ENABLE_BLUETOOTH=.*/ENABLE_BLUETOOTH=1/' /boot/crankshaft/crankshaft_env.sh
+                sudo sed -i 's/^EXTERNAL_BLUETOOTH=.*/EXTERNAL_BLUETOOTH=0/' /boot/crankshaft/crankshaft_env.sh
+		cs_bootro
+		cs_systemro
+		;;
+	    external)
+		cs_bootrw
+		cs_systemrw
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i 's/^dtoverlay=pi3-disable-bt.*//' /boot/config.txt
+		sudo sed -i 's/^# Bluetooth.*//' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Bluetooth' >> /boot/config.txt"
+		sudo sh -c "echo 'dtoverlay=pi3-disable-bt' >> /boot/config.txt"
+		sudo systemctl disable hciuart >/dev/null 2>&1
+		sudo systemctl enable bluetooth >/dev/null 2>&1
+		sudo systemctl enable ofono >/dev/null 2>&1
+                sudo sed -i 's/^ENABLE_BLUETOOTH=.*/ENABLE_BLUETOOTH=1/' /boot/crankshaft/crankshaft_env.sh
+                sudo sed -i 's/^EXTERNAL_BLUETOOTH=.*/EXTERNAL_BLUETOOTH=1/' /boot/crankshaft/crankshaft_env.sh
+		cs_bootro
+		cs_systemro
+		;;
+	    disable)
+		cs_bootrw
+		cs_systemrw
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sed -i 's/^dtoverlay=pi3-disable-bt.*//' /boot/config.txt
+		sudo sed -i 's/^# Bluetooth.*//' /boot/config.txt
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo sh -c "echo '' >> /boot/config.txt"
+		sudo sh -c "echo '# Bluetooth' >> /boot/config.txt"
+		sudo sh -c "echo 'dtoverlay=pi3-disable-bt' >> /boot/config.txt"
+		sudo systemctl disable hciuart >/dev/null 2>&1
+		sudo systemctl disable bluetooth >/dev/null 2>&1
+		sudo systemctl disable ofono >/dev/null 2>&1
+                sudo sed -i 's/^ENABLE_BLUETOOTH=.*/ENABLE_BLUETOOTH=0/' /boot/crankshaft/crankshaft_env.sh
+                sudo sed -i 's/^EXTERNAL_BLUETOOTH=.*/EXTERNAL_BLUETOOTH=0/' /boot/crankshaft/crankshaft_env.sh
+		cs_bootro
+		cs_systemro
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft bluetooth save|restore|status|unpair|pairable|builtin|external|disable${RESET}"
+		;;
+	esac
+    fi
+
+    #gpio
+    if [ $1 == "gpio" ]; then
+	case $2 in
+	    status)
+		if [ $ENABLE_GPIO -ne 1 ]; then
+		    cs_echo ""
+		    cs_echo "${RED}${BOLD}Note${RESET}: Usage of gpio's is not enabled during boot."
+		    cs_echo ""
+		fi
+
+		if [ ${DEV_PIN} -ne 0 ]; then
+		    DEV=$(gpio -g read $DEV_PIN)
+		    if [ ${#DEV_PIN} -ne 2 ]; then
+			SHOW_DEV="0"$DEV_PIN
+		    else
+			SHOW_DEV=$DEV_PIN
+		    fi
+		else
+		    DEV=0
+		    SHOW_DEV="--"
+		fi
+
+		if [ ${INVERT_PIN} -ne 0 ]; then
+		    INV=$(gpio -g read $INVERT_PIN)
+		    if [ ${#INVERT_PIN} -ne 2 ]; then
+			SHOW_INV="0"$INVERT_PIN
+		    else
+			SHOW_INV=$INVERT_PIN
+		    fi
+		else
+		    INV=0
+		    SHOW_INV="--"
+		fi
+
+		if [ ${X11_PIN} -ne 0 ]; then
+		    X11=$(gpio -g read $X11_PIN)
+		    if [ ${#X11_PIN} -ne 2 ]; then
+			SHOW_X11="0"$X11_PIN
+		    else
+			SHOW_X11=$X11_PIN
+		    fi
+		else
+		    X11=0
+		    SHOW_X11="--"
+		fi
+
+		if [ ${ANDROID_PIN} -ne 0 ]; then
+		    ANDROID=$(gpio -g read $ANDROID_PIN)
+		    if [ ${#ANDROID_PIN} -ne 2 ]; then
+			SHOW_ANDROID="0"$ANDROID_PIN
+		    else
+			SHOW_ANDROID=$ANDROID_PIN
+		    fi
+		else
+		    ANDROID=0
+		    SHOW_ANDROID="--"
+		fi
+
+		if [ ${IGNITION_PIN} -ne 0 ]; then
+		    IGNITION=$(gpio -g read $IGNITION_PIN)
+		    if [ ${#IGNITION_PIN} -ne 2 ]; then
+			SHOW_IGNITION="0"$IGNITION_PIN
+		    else
+			SHOW_IGNITION=$IGNITION_PIN
+		    fi
+		else
+		    IGNITION=0
+		    SHOW_IGNITION="--"
+		fi
+
+		if [ ${DAYNIGHT_PIN} -ne 0 ]; then
+		    DAYNIGHT=$(gpio -g read $DAYNIGHT_PIN)
+		    if [ ${#DAYNIGHT_PIN} -ne 2 ]; then
+			SHOW_DAYNIGHT="0"$DAYNIGHT_PIN
+		    else
+			SHOW_DAYNIGHT=$DAYNIGHT_PIN
+		    fi
+		else
+		    DAYNIGHT=0
+		    SHOW_DAYNIGHT="--"
+		fi
+
+		cs_echo "${YELLOW}${BOLD}Dev Mode${RESET}"
+		cs_echo "---------------------------------------------------------------"
+		if [ "$SHOW_DEV" == "--" ]; then
+		    STATETEXT="${BLUE}${BOLD}disabled${RESET}"
+		else
+		    if [ $DEV -eq 1 ]; then
+			STATETEXT="${GREEN}${BOLD}Untriggered${RESET}"
+		    else
+			STATETEXT="${RED}${BOLD}Triggered${RESET}"
+		    fi
+		fi
+		cs_echo "GPIO: $SHOW_DEV - State: $STATETEXT"
+
+		cs_echo ""
+		cs_echo "${YELLOW}${BOLD}Invert Mode${RESET}"
+		cs_echo "---------------------------------------------------------------"
+		if [ "$SHOW_INV" == "--" ]; then
+		    STATETEXT="${BLUE}${BOLD}disabled${RESET}"
+		else
+		    if [ $INV -eq 1 ]; then
+			STATETEXT="${GREEN}${BOLD}Untriggered${RESET}"
+		    else
+			STATETEXT="${RED}${BOLD}Triggered${RESET}"
+		    fi
+		fi
+		cs_echo "GPIO: $SHOW_INV - State: $STATETEXT"
+
+		cs_echo ""
+		cs_echo "${YELLOW}${BOLD}X11 Mode${RESET}"
+		cs_echo "---------------------------------------------------------------"
+		if [ "$SHOW_X11" == "--" ]; then
+		    STATETEXT="${BLUE}${BOLD}disabled${RESET}"
+		else
+		    if [ $X11 -eq 1 ]; then
+			STATETEXT="${GREEN}${BOLD}Untriggered${RESET}"
+		    else
+			STATETEXT="${RED}${BOLD}Triggered${RESET}"
+		    fi
+		fi
+		cs_echo "GPIO: $SHOW_X11 - State: $STATETEXT"
+
+		cs_echo ""
+		cs_echo "${YELLOW}${BOLD}Android Connected${RESET}"
+		cs_echo "---------------------------------------------------------------"
+		if [ "$SHOW_ANDROID" == "--" ]; then
+		    STATETEXT="${BLUE}${BOLD}disabled${RESET}"
+		else
+		    if [ $ANDROID -eq 1 ]; then
+			STATETEXT="${RED}${BOLD}Triggered${RESET}"
+		    else
+			STATETEXT="${GREEN}${BOLD}Untriggered${RESET}"
+		    fi
+		fi
+		cs_echo "GPIO: $SHOW_ANDROID - State: $STATETEXT"
+
+		cs_echo ""
+		cs_echo "${YELLOW}${BOLD}Ignition State${RESET}"
+		cs_echo "---------------------------------------------------------------"
+		if [ "$SHOW_IGNITION" == "--" ]; then
+		    STATETEXT="${BLUE}${BOLD}disabled${RESET}"
+		else
+		    if [ $IGNITION -eq 1 ]; then
+			STATETEXT="${GREEN}${BOLD}Untriggered${RESET}"
+		    else
+			STATETEXT="${RED}${BOLD}Triggered${RESET}"
+		    fi
+		fi
+		cs_echo "GPIO: $SHOW_IGNITION - State: $STATETEXT"
+
+		cs_echo ""
+		cs_echo "${YELLOW}${BOLD}Daynight State${RESET}"
+		cs_echo "---------------------------------------------------------------"
+		if [ "$SHOW_DAYNIGHT" == "--" ]; then
+		    STATETEXT="${BLUE}${BOLD}disabled${RESET}"
+		else
+		    if [ $DAYNIGHT -eq 1 ]; then
+			STATETEXT="${GREEN}${BOLD}Untriggered${RESET}"
+		    else
+			STATETEXT="${RED}${BOLD}Triggered${RESET}"
+		    fi
+		fi
+		cs_echo "GPIO: $SHOW_DAYNIGHT - State: $STATETEXT"
+		;;
+	    all)
+		ARRAY=( 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 )
+		cs_echo ""
+		cs_echo "${YELLOW}${BOLD}Overview GPIO State${RESET}"
+		cs_echo "-----------------------------------"
+		for PIN in ${ARRAY[*]}; do
+		    STATE=$(gpio -g read $PIN)
+		    if [ ${#PIN} -ne 2 ]; then
+			SHOW="0"$PIN
+		    else
+			SHOW=$PIN
+		    fi
+		    if [ $STATE -eq 1 ]; then
+			STATETEXT="${GREEN}${BOLD}Untriggered${RESET}"
+		    else
+			STATETEXT="${RED}${BOLD}Triggered${RESET}"
+		    fi
+		    cs_echo "GPIO: $SHOW - State: $STATETEXT"
+		done
+		;;
+	    help)
+		pinout
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft gpio status|help${RESET}"
+		;;
+	esac
+    fi
+
+    #resize partition and fs
+    if [ $1 == "resize" ]; then
+	cs_systemrw
+	currentsize=$(sudo parted /dev/mmcblk0p2 print | tail -n2 | head -n1 | awk {'print $4'})
+	cs_echo "Current partition size: $currentsize"
+        echo "[${CYAN}${BOLD} INFO ${RESET}] " >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] *******************************************************" >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] Current partition size: $currentsize" >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] *******************************************************" >/dev/tty3
+	cs_echo ""
+	sleep 2
+	sudo parted /dev/mmcblk0 resizepart 2 100% >/dev/null 2>&1
+	newsize=$(sudo parted /dev/mmcblk0p2 print | tail -n2 | head -n1 | awk {'print $4'})
+	cs_echo "New partition size: $newsize"
+        echo "[${CYAN}${BOLD} INFO ${RESET}] " >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] *******************************************************" >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] New partition size: $newsize" >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] *******************************************************" >/dev/tty3
+	cs_echo ""
+	sleep 2
+	cs_echo "Start filesystem resize:"
+	cs_echo ""
+        echo "[${CYAN}${BOLD} INFO ${RESET}] " >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] *******************************************************" >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] Resizing filesystem..." >/dev/tty3
+        echo "[${CYAN}${BOLD} INFO ${RESET}] *******************************************************" >/dev/tty3
+	sudo resize2fs /dev/mmcblk0p2 >/dev/null 2>&1
+        sudo touch /etc/cs_resize_done
+	cs_systemro
+    fi
+
+    #temp
+    if [ $1 == "temp" ]; then
+	# cpu freq
+	typeset -i freq
+	freq=$(sudo cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq)/1000
+	echo "$freq MHz"
+	echo ""
+	# cpu temp
+	echo $(/opt/vc/bin/vcgencmd measure_temp | cut -d= -f2)
+    fi
+
+    #plymouth splashscreen
+    if [ $1 == "splash" ]; then
+	case $2 in
+	    animation)
+		cs_systemrw
+		sudo plymouth-set-default-theme csnganimation
+		cs_systemro
+		;;
+	    classic)
+		cs_systemrw
+		sudo plymouth-set-default-theme crankshaft
+		cs_systemro
+		;;
+	    custom)
+		cs_systemrw
+		sudo plymouth-set-default-theme custom
+		cs_systemro
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft splash animation|classic|custom${RESET}"
+		;;
+	esac
+    fi
+
+    #lightsensor
+    if [ $1 == "lightsensor" ]; then
+	case $2 in
+	    enable)
+		cs_systemrw
+		sudo touch /etc/cs_lightsensor
+		cs_bootrw
+		cs_check_i2c
+		cs_bootro
+		cs_systemro
+		;;
+	    disable)
+		cs_systemrw
+		sudo rm /etc/cs_lightsensor
+		cs_bootrw
+		cs_check_i2c
+		cs_bootro
+		cs_systemro
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft lightsensor enable|disable${RESET}"
+		;;
+	esac
+    fi
+
+    #screenshot
+    if [ $1 == "screenshot" ]; then
+	x11check=$(ps -ax | grep xorg | grep -v grep | tail -n1)
+	if [ "$x11check" != "" ]; then
+	    if [ "$2" == "jpg" ]; then
+		cs_echo "Taking screenshot... (/tmp/screenshot.jpg)"
+		sudo xwd -root -display :0 -silent | convert xwd:- jpg:- >/tmp/screenshot.jpg
+	    else
+		cs_echo "Taking screenshot... (/tmp/screenshot.png)"
+		sudo xwd -root -display :0 -silent | convert xwd:- png:- >/tmp/screenshot.png
+	    fi
+	else
+	    cs_echo "Openauto not running in X11 mode!"
+	fi
+    fi
+
+    #debuglog
+    if [ $1 == "debuglog" ]; then
+        touch /tmp/debug_in_progress
+	cs_bootrw
+	cs_echo "Creating logs - Please wait..."
+	sudo rm -rf /tmp/debuglogs >/dev/null 2>&1
+	sudo mkdir /tmp/debuglogs
+	sudo chmod 777 /tmp/debuglogs
+	sudo cp -f /boot/config.txt /tmp/debuglogs/
+	sudo cp -f /boot/cmdline.txt /tmp/debuglogs/
+	sudo cp -f /boot/crankshaft/crankshaft_env.sh /tmp/debuglogs/
+	sudo cp -f /tmp/wpa_supplicant.conf /tmp/debuglogs/
+	sudo cp -f /etc/hostapd/hostapd.conf /tmp/debuglogs/
+	sudo cp -f /tmp/temp_recent_list /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cp -f /tmp/hotspot_active /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cp -f /home/pi/openauto.ini /tmp/debuglogs/
+	sudo cp -f /tmp/openauto.log /tmp/debuglogs/
+	sudo cp -f /home/pi/openauto_wifi_recent.ini /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cp -f /home/pi/.xinitrc /tmp/debuglogs/
+	cat /etc/crankshaft.build > /tmp/debuglogs/cs-version
+	cat /etc/crankshaft.date >> /tmp/debuglogs/cs-version
+	sudo cp -f /var/log/syslog /tmp/debuglogs/
+	sudo cp -f /var/log/messages /tmp/debuglogs/
+	sudo cp -f /var/log/kern.log /tmp/debuglogs/
+	sudo cp -f /var/log/Xorg.0.log /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cp -f /var/log/daemon.log /tmp/debuglogs/
+	sudo cp -f /var/log/user.log /tmp/debuglogs/
+	sudo cp -f /etc/asound.conf /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cp -f /home/pi/.asoundrc /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cat /proc/asound/cards > /tmp/debuglogs/alsa_soundcards_kernel
+	alsactl -f /tmp/alsactl.state store
+	amixer > /tmp/debuglogs/amixer.output
+	pactl list sinks > /tmp/debuglogs/pa_soundcards
+	pactl list sources > /tmp/debuglogs/pa_sources
+        sudo cp -f /tmp/pulseaudio-debug.log /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/get_default_input /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/get_default_output /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/get_inputs /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/get_outputs /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/set_mic /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/set_soundcard /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cp -f /tmp/alsactl.state /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/autoapp_helper_command /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /tmp/return_value /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /etc/timezone /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /etc/pulse/* /tmp/debuglogs/ >/dev/null 2>&1
+        sudo cp -f /boot/crankshaft/button_* /tmp/debuglogs/ >/dev/null 2>&1
+	sudo cp -f /tmp/dnsmasq.log /tmp/debuglogs/ >/dev/null 2>&1
+	sudo /usr/bin/systemd-analyze plot > /tmp/debuglogs/startsequence.svg
+
+	sudo lsusb | cut -d" " -f2,4 | sed 's/://g' |
+	while IFS= read -r line
+	do
+	    bus=$(echo $line | cut -d" " -f1)
+	    device=$(echo $line | cut -d" " -f2)
+	    FULLDESC=`sudo udevadm info -q all -n /dev/bus/usb/$bus/$device | grep -Ei '(ID_MODEL=|ID_MODEL_ID=|ID_VENDOR=|ID_VENDOR_ID=)' | sed 's/E: //g'`
+	    ID_MODEL=`echo $FULLDESC | cut -d" " -f1 | grep ID_MODEL= | cut -d= -f2`
+	    ID_MODEL_ID=`echo $FULLDESC | cut -d" " -f2 | grep ID_MODEL_ID= | cut -d= -f2`
+	    ID_MODEL_FROM_DATABASE=`sudo udevadm info -q all -n /dev/bus/usb/$bus/$device | grep -Ei '(ID_MODEL_FROM_DATABASE=)' | sed 's/E: //g' | cut -d= -f2`
+	    ID_VENDOR=`echo $FULLDESC | cut -d" " -f3 | grep ID_VENDOR= | cut -d= -f2`
+	    ID_VENDOR_ID=`echo $FULLDESC | cut -d" " -f4 | grep ID_VENDOR_ID= | cut -d= -f2`
+	    ID_VENDOR_FROM_DATABASE=`sudo udevadm info -q all -n /dev/bus/usb/$bus/$device | grep -Ei '(ID_VENDOR_FROM_DATABASE=)' | sed 's/E: //g' | cut -d= -f2`
+	    echo "Bus       : "$bus >> /tmp/debuglogs/usbdevices.log
+	    echo "Device    : "$device >> /tmp/debuglogs/usbdevices.log
+	    echo "Model ID  : "$ID_MODEL_ID >> /tmp/debuglogs/usbdevices.log
+	    echo "Vendor ID : "$ID_VENDOR_ID >> /tmp/debuglogs/usbdevices.log
+	    echo "Model     : "$ID_MODEL" ("$ID_MODEL_FROM_DATABASE")" >> /tmp/debuglogs/usbdevices.log
+	    echo "Vendor    : "$ID_VENDOR" ("$ID_VENDOR_FROM_DATABASE")" >> /tmp/debuglogs/usbdevices.log
+	    echo "-------------------------------------------------------------" >> /tmp/debuglogs/usbdevices.log
+	done
+
+	cs_echo ""
+	cs_echo "Blanking wifi passwords..."
+	cs_echo ""
+	sudo sed -i 's/WIFI_PSK=.*/WIFI_PSK=xxx cleared xxx/' /tmp/debuglogs/crankshaft_env.sh
+	sudo sed -i 's/WIFI2_PSK=.*/WIFI2_PSK=xxx cleared xxx/' /tmp/debuglogs/crankshaft_env.sh
+	sudo sed -i 's/HOTSPOT_PSK=.*/HOTSPOT_PSK=xxx cleared xxx/' /tmp/debuglogs/crankshaft_env.sh
+	sudo sed -i 's/wpa_passphrase=.*/wpa_passphrase=xxx cleared xxx/' /tmp/debuglogs/hostapd.conf
+	sudo sed -i 's/psk=.*/psk=xxx cleared xxx/' /tmp/debuglogs/wpa_supplicant.conf
+	if [ "${WIFI_PSK}" != "" ]; then
+	    if [ -f /tmp/debuglogs/autoapp_helper_command ]; then
+		sudo sed -i 's/'"$WIFI_PSK"'/xxx cleared xxx/' /tmp/debuglogs/autoapp_helper_command
+	    fi
+	    if [ -f /tmp/debuglogs/return_value ]; then
+		sudo sed -i 's/'"$WIFI_PSK"'/xxx cleared xxx/' /tmp/debuglogs/return_value
+	    fi
+	fi
+	if [ ! -z $HOTSPOT_PSK ]; then
+	    if [ -f /tmp/debuglogs/autoapp_helper_command ]; then
+		sudo sed -i 's/'$HOTSPOT_PSK'/xxx cleared xxx/' /tmp/debuglogs/autoapp_helper_command
+	    fi
+	    if [ -f /tmp/debuglogs/return_value ]; then
+		sudo sed -i 's/'$HOTSPOT_PSK'/xxx cleared xxx/' /tmp/debuglogs/return_value
+	    fi
+	fi
+	sudo systemctl daemon-reload
+	sudo systemctl list-units --type=service --no-pager --all | grep 'Crankshaft\|UNIT' | awk {'print $1'} | grep -e '.service' -e '.target' > /tmp/tmp.log
+	while read -r line; do
+	    sudo systemctl status $line >> /tmp/debuglogs/services-cs-status.log
+	    echo "----------------------------------------------------------------------------------------------------" >> /tmp/debuglogs/services-cs-status.log
+	    echo "####################################################################################################" >> /tmp/debuglogs/services-cs-status.log
+	    echo "----------------------------------------------------------------------------------------------------" >> /tmp/debuglogs/services-cs-status.log
+	done < /tmp/tmp.log
+	rm /tmp/tmp.log
+
+	sudo systemctl list-units --type=service --no-pager --all | grep -v 'Crankshaft\|UNIT' | awk {'print $1'} | grep -e '.service' -e '.target' > /tmp/tmp.log
+	while read -r line; do
+	    sudo systemctl status $line >> /tmp/debuglogs/services-non-cs-status.log
+	    echo "----------------------------------------------------------------------------------------------------" >> /tmp/debuglogs/services-non-cs-status.log
+	    echo "####################################################################################################" >> /tmp/debuglogs/services-non-cs-status.log
+	    echo "----------------------------------------------------------------------------------------------------" >> /tmp/debuglogs/services-non-cs-status.log
+	done < /tmp/tmp.log
+	rm /tmp/tmp.log
+
+	sudo systemctl list-units --state=failed --no-pager --all | grep -e '.service' -e '.target' | awk {'print $2'} > /tmp/tmp.log
+	while read -r line; do
+	    sudo systemctl status $line >> /tmp/debuglogs/services-failed-status.log
+	    echo "----------------------------------------------------------------------------------------------------" >> /tmp/debuglogs/services-failed-status.log
+	    echo "####################################################################################################" >> /tmp/debuglogs/services-failed-status.log
+	    echo "----------------------------------------------------------------------------------------------------" >> /tmp/debuglogs/services-failed-status.log
+	done < /tmp/tmp.log
+	rm /tmp/tmp.log
+
+	sudo cp -f /tmp/custombrightness /tmp/debuglogs/ >/dev/null 2>&1
+
+	# check pi display
+	if [ -f ${BRIGHTNESS_FILE} ]; then
+	    echo "display file present" > /tmp/debuglogs/display.log
+	    sudo ls -l -1 ${BRIGHTNESS_FILE} >> /tmp/debuglogs/display.log
+	    sudo stat ${BRIGHTNESS_FILE} >> /tmp/debuglogs/display.log
+	    echo "" >> /tmp/debuglogs/display.log
+	    echo "Current value: $(sudo sudo cat ${BRIGHTNESS_FILE})" >> /tmp/debuglogs/display.log
+	fi
+
+	# Modules
+	sudo cp -f /etc/modules /tmp/debuglogs/ >/dev/null 2>&1
+
+	# i2c devices
+	sudo i2cdetect -y 1 > /tmp/debuglogs/i2c-devices.log
+
+	# RPI Voltage
+	cs_pi_power> /tmp/debuglogs/pi-power.log
+
+	# Finish
+	sudo chmod 666 /tmp/debuglogs/*
+	sudo rm -rf /boot/debug.zip >/dev/null 2>&1
+	sudo zip -j /boot/debug.zip /tmp/debuglogs/* >/dev/null 2>&1
+	cs_bootro
+        sudo rm -rf /tmp/debug_in_progress
+        sudo rm -rf /tmp/debuglogs
+    fi
+
+    #initramfs
+    if [ $1 == "initramfs" ]; then
+	case $2 in
+	    clean)
+		cs_bootrw
+		cs_echo "Cleanup initramfs"
+                # cleanup
+		sudo rm /boot/initrd.img > /dev/null 2>&1
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+                sudo sed -i 's/^# Initramfs params for flashsystem//' /boot/config.txt
+                sudo sed -i 's/^initramfs initrd.img followkernel//' /boot/config.txt
+                sudo sed -i 's/^ramfsfile=initrd.img//' /boot/config.txt
+                sudo sed -i 's/^ramfsaddr=-1//' /boot/config.txt
+                sudo sed -i 's/rootdelay=10//' /boot/cmdline.txt
+                sudo sed -i 's/initrd=-1//' /boot/cmdline.txt
+                sudo sed -i 's/splash //' /boot/cmdline.txt
+                sudo sed -i 's/vt.global_cursor_default=0 //' /boot/cmdline.txt
+                sudo sed -i 's/plymouth.ignore-serial-consoles //' /boot/cmdline.txt
+		sudo sed -i 's/ *$//' /boot/cmdline.txt
+                sudo sed -i 's/$/ vt.global_cursor_default=0/' /boot/cmdline.txt
+                sudo sed -i 's/$/ plymouth.ignore-serial-consoles/' /boot/cmdline.txt
+                sudo sed -i 's/$/ splash/' /boot/cmdline.txt
+                sudo sed -i '/./,/^$/!d' /boot/config.txt
+		cs_bootro
+		;;
+	    create)
+		cs_bootrw
+		cs_echo "Creating initramfs"
+                # cleanup
+		sudo sed -i '/./,/^$/!d' /boot/config.txt
+                sudo sed -i 's/^# Initramfs params for flashsystem//' /boot/config.txt
+                sudo sed -i 's/^initramfs initrd.img followkernel//' /boot/config.txt
+                sudo sed -i 's/^ramfsfile=initrd.img//' /boot/config.txt
+                sudo sed -i 's/^ramfsaddr=-1//' /boot/config.txt
+                sudo sed -i 's/rootdelay=10//' /boot/cmdline.txt
+                sudo sed -i 's/initrd=-1//' /boot/cmdline.txt
+                sudo sed -i 's/splash //' /boot/cmdline.txt
+                sudo sed -i 's/vt.global_cursor_default=0 //' /boot/cmdline.txt
+                sudo sed -i 's/plymouth.ignore-serial-consoles //' /boot/cmdline.txt
+                sudo sed -i '/./,/^$/!d' /boot/config.txt
+		sudo rm /boot/initrd.img > /dev/null 2>&1
+                sudo mkinitramfs -o /boot/initrd.img > /dev/null 2>&1
+                # Set entries
+                sudo sh -c 'echo "" >> /boot/config.txt'
+                sudo sh -c 'echo "# Initramfs params for flashsystem" >> /boot/config.txt'
+                sudo sh -c 'echo "initramfs initrd.img followkernel" >> /boot/config.txt'
+                sudo sh -c 'echo "ramfsfile=initrd.img" >> /boot/config.txt'
+                sudo sh -c 'echo "ramfsaddr=-1" >> /boot/config.txt'
+                sudo sed -i 's/$/ rootdelay=10/' /boot/cmdline.txt
+                sudo sed -i 's/$/ initrd=-1/' /boot/cmdline.txt
+		cs_bootro
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft initramfs clean|create${RESET}"
+		;;
+	esac
+    fi
+
+    #i2c device check
+    if [ $1 == "i2ccheck" ]; then
+        device=$2
+        dline=$(echo $device | cut -c1)
+        drow=$(echo $device | cut -c2)
+        # replace hex char with correct array field
+        if [ "$drow" == "a" ]; then
+            drow=10
+        fi
+        if [ "$drow" == "b" ]; then
+            drow=11
+        fi
+        if [ "$drow" == "c" ]; then
+            drow=12
+        fi
+        if [ "$drow" == "d" ]; then
+            drow=13
+        fi
+        if [ "$drow" == "e" ]; then
+            drow=14
+        fi
+        if [ "$drow" == "f" ]; then
+            drow=15
+        fi
+        counter=0
+        i2cdetect -y 1 | tail -n8 | while read line; do
+            line=$(echo $line | cut -d: -f2)
+            # extend line 0 to fill array correct
+            if [ "$counter" == "0" ]; then
+                line="-- -- -- $line"
+            fi
+            IFS=' ' read -r -a array <<< "$line"
+            if [ "$dline" == "$counter" ]; then
+                if [ "${array[$drow]}" == "$device" ]; then
+                    cs_echo "Device 0x$device found."
+                    exit 0
+                elif [ "${array[$drow]}" == "UU" ]; then
+                    cs_echo "Device 0x$device found and in use by another process."
+                    exit 0
+                else
+                    cs_echo "No device found."
+                    exit 1
+                fi
+            fi
+            counter=$((counter+1))
+        done
+    fi
+
+    #network
+    if [ $1 == "network" ]; then
+	case $2 in
+	    0)
+		sudo wpa_cli -iwlan0 select_network 0
+		cs_echo "Network 0 selected"
+		;;
+	    1)
+		sudo wpa_cli -iwlan0 select_network 1
+		cs_echo "Network 1 selected"
+		;;
+	    auto)
+		sudo wpa_cli -iwlan0 enable_network 0
+		sudo wpa_cli -iwlan0 enable_network 1
+		cs_echo "Network 0 and 1 reenabled for auto select"
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft network 0|1|auto${RESET}"
+		;;
+	esac
+    fi
+
+    # samba
+    if [ $1 == "samba" ]; then
+	case $2 in
+	    start)
+		cs_echo "Starting samba..."
+		sudo systemctl start smbd
+		sudo systemctl start nmbd
+		SMBD=`systemctl status smbd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		NMBD=`systemctl status nmbd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		if [ "$SMBD" == "running" ] && [ "$NMBD" == "running" ]; then
+		    touch /tmp/samba_running
+		    cs_bootrw
+		else
+		    sudo rm -f /tmp/samba_running >/dev/null 2>&1
+		fi
+		cs_echo "SMBD: $SMBD"
+		cs_echo "NMBD: $NMBD"
+		;;
+	    stop)
+		cs_echo "Stopping samba..."
+		sudo systemctl stop nmbd
+		sudo systemctl stop smbd
+		SMBD=`systemctl status smbd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		NMBD=`systemctl status nmbd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		if [ "$SMBD" == "" ] && [ "$NMBD" == "" ]; then
+		    sudo rm -f /tmp/samba_running >/dev/null 2>&1
+		    cs_echo "SMBD: stopped"
+		    cs_echo "NMBD: stopped"
+		else
+		    cs_echo "SMBD: $SMBD"
+		    cs_echo "NMBD: $NMBD"
+		fi
+		cs_bootro
+		;;
+	    status)
+		SMBD=`systemctl status smbd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		NMBD=`systemctl status nmbd | grep running | awk {'print $3'} | cut -d'(' -f2 | cut -d')' -f1`
+		cs_echo "SMBD: $SMBD"
+		cs_echo "NMBD: $NMBD"
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft samba start|stop|status${RESET}"
+		;;
+	esac
+    fi
+
+    # background resize
+    if [ $1 == "resizebg" ]; then
+	width=`cat /sys/class/graphics/fb0/virtual_size | cut -d, -f1`
+	heigth=`cat /sys/class/graphics/fb0/virtual_size | cut -d, -f2`
+	cs_echo "Screen width: $width"
+	cs_echo "Screen heigth: $heigth"
+	cs_bootrw
+	cs_echo "Resizing background images..."
+	sudo convert /boot/crankshaft/wallpaper-night.png -resize ${width}x${heigth}! /boot/crankshaft/wallpaper-night.png
+	sudo convert /boot/crankshaft/wallpaper.png -resize ${width}x${heigth}! /boot/crankshaft/wallpaper.png
+	sudo convert /boot/crankshaft/wallpaper-classic-night.png -resize ${width}x${heigth}! /boot/crankshaft/wallpaper-classic-night.png
+	sudo convert /boot/crankshaft/wallpaper-classic.png -resize ${width}x${heigth}! /boot/crankshaft/wallpaper-classic.png
+	sudo convert /boot/crankshaft/wallpaper-eq.png -resize ${width}x${heigth}! /boot/crankshaft/wallpaper-eq.png
+	sudo convert /boot/crankshaft/wallpaper-christmas.png -resize ${width}x${heigth}! /boot/crankshaft/wallpaper-christmas.png
+	sudo convert /boot/crankshaft/wallpaper-firework.png -resize ${width}x${heigth}! /boot/crankshaft/wallpaper-firework.png
+	cs_bootro
+    fi
+
+    # cover
+    if [ $1 == "cover" ]; then
+	case $2 in
+	    extract)
+		if [ ! -d /media/MYMEDIA/.tmp ]; then
+		    sudo mkdir /media/MYMEDIA/.tmp
+		fi
+		if [ -d /media/USBDRIVES/CSSTORAGE ] && [ ! -d /media/USBDRIVES/CSSTORAGE/COVERCACHE ]; then
+		    sudo mkdir /media/USBDRIVES/CSSTORAGE/COVERCACHE
+		fi
+		sudo sh -c 'echo "" > /tmp/coverextractor.log'
+		sudo chmod 666 /tmp/coverextractor.log
+		for folder in /media/MYMEDIA/*; do
+		    if [ -d "$folder" ]; then
+			cd "$folder"
+			file=`ls | grep .mp3 | head -n1`
+			if [ -f "$file" ]; then
+			    cs_noecho "[${CYAN}${BOLD} INFO ${RESET}] Checking: $file"
+			    sudo eyeD3 "$file" --write-images /media/MYMEDIA/.tmp >/dev/null 2>&1
+			    cover=`ls /media/MYMEDIA/.tmp/ | grep -e .jpg -e .png | tail -n1`
+			    if [[ $cover == *"jpg"* ]]; then
+				cs_noecho "[${GREEN}${BOLD}  OK  ${RESET}] Match: JPG-Image found!"
+				cs_noecho "[${GREEN}${BOLD}  OK  ${RESET}] Destination: /media/USBDRIVES/CSSTORAGE/COVERCACHE/$(basename "$folder").jpg"
+				echo "JPG: /media/USBDRIVES/CSSTORAGE/COVERCACHE/$(basename "$folder").jpg" >> /tmp/coverextractor.log
+				sudo cp -f "/media/MYMEDIA/.tmp/$(basename $cover)" "/media/USBDRIVES/CSSTORAGE/COVERCACHE/$(basename "$folder").jpg"
+			    elif [[ $cover == *"png"* ]]; then
+				cs_noecho "[${GREEN}${BOLD}  OK  ${RESET}] Match: PNG-Image found!"
+				cs_noecho "[${GREEN}${BOLD}  OK  ${RESET}] Destination: /media/USBDRIVES/CSSTORAGE/COVERCACHE/$(basename "$folder").png"
+				echo "PNG: /media/USBDRIVES/CSSTORAGE/COVERCACHE/$(basename "$folder").png" >> /tmp/coverextractor.log
+				sudo cp -f "/media/MYMEDIA/.tmp/$(basename $cover)" "/media/USBDRIVES/CSSTORAGE/COVERCACHE/$(basename "$folder").png"
+			    else
+				cs_noecho "[${RED}${BOLD} INFO ${RESET}] No image found."
+				echo "No image in media ($folder/$file)" >> /tmp/coverextractor.log
+			    fi
+			    sudo rm -rf /media/MYMEDIA/.tmp/*
+			    cd ..
+			else
+			    echo "No matching media in folder found ($folder)" >> /tmp/coverextractor.log
+			fi
+		    fi
+		done
+		sudo rmdir /media/MYMEDIA/.tmp
+		;;
+	    clearall)
+		sudo rm -rf /media/USBDRIVES/CSSTORAGE/COVERCACHE/*
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft cover extract|clearall${RESET}"
+		;;
+	esac
+    fi
+
+    # rearcam
+    if [ $1 == "rearcam" ]; then
+	case $2 in
+	    show)
+		cs_echo "Show rearcam..."
+                if [ ! -f /tmp/rearcam_enabled ]; then
+                    touch /tmp/rearcam_enabled
+                    touch /tmp/blackscreen
+                    PARAMS=""
+                    if [ $USBCAM_USE -eq 1 ]; then
+                        if [ "$USBCAM_CUSTOM_PARAMS" != "" ]; then
+                            cd /opt/crankshaft/cam_overlay
+                            log_echo "cam_overlay.bin - Custom param set:"
+                            log_echo "cam_overlay.bin $USBCAM_CUSTOM_PARAMS &"
+                            ./cam_overlay.bin -s $USBCAM_CUSTOM_PARAMS &
+                        else
+                            if [ $USBCAM_HFLIP -eq 1 ]; then
+
+                                PARAMS="$PARAMS -h"
+                            fi
+                            if [ $USBCAM_VFLIP -eq 1 ]; then
+                                PARAMS="$PARAMS -v"
+                            fi
+                            if [ $USBCAM_ROTATION -eq 1 ]; then
+                                PARAMS="$PARAMS -R"
+                            fi
+                            cd /opt/crankshaft/cam_overlay
+                            log_echo "cam_overlay.bin $PARAMS &"
+                            ./cam_overlay.bin -s $PARAMS &
+                        fi
+                    else
+                        /opt/crankshaft/cameracontrol.py Rearcam &
+                    fi
+                fi
+		;;
+	    hide)
+		cs_echo "Hide rearcam..."
+                if [ -f /tmp/rearcam_enabled ]; then
+                    if [ $USBCAM_USE -eq 1 ]; then
+                        sudo killall cam_overlay.bin >/dev/null 2>&1
+                    else
+                        /opt/crankshaft/cameracontrol.py DashcamMode &
+                    fi
+                    rm /tmp/rearcam_enabled >/dev/null 2>&1
+                    sleep 0.5
+                    rm /tmp/blackscreen >/dev/null 2>&1
+                fi
+		;;
+	    *)
+		cs_echo "${YELLOW}${BOLD}Syntax: crankshaft rearcam show|hide${RESET}"
+		;;
+	esac
+    fi
+
+    #version
+    if [ $1 == "version" ]; then
+	echo "Crankshaft Management Tool v$version"
+    fi
+
+    if [[ ! $SHLVL -gt 2 ]] && [ -z $PPIDCHECK ]; then
+	cs_echo ""
+	cs_echo "Done."
+    fi
+
+else
+    echo ""
+    echo "crankshaft known commands:"
+    echo "----------------------------"
+    echo ""
+    echo "display                       Handle Display"
+    echo "      |- on                   - Enable Display"
+    echo "      |- off                  - Disable Display"
+    echo "      |- toggle               - Toggle between display on/off"
+    echo "      |- forcelcd             - Force Using Original RPi Display Via DSI"
+    echo "      |- forcehdmi            - Force Using HDMI Connected Display"
+    echo ""
+    echo "brightness                    Handle Display Backlight"
+    echo "         |- min               - Set Display Brightness To Min"
+    echo "         |- max               - Set Display Brightness To Max"
+    echo "         |- up                - Increase Brightness"
+    echo "         |- down              - Decrease Brightness"
+    echo "         |- save              - Save Brightness Level"
+    echo "         |- restore           - Restore Brightness Level"
+    echo "         |- set x             - Set Display Brightness to x"
+    echo "         |- get"
+    echo "              |- level        - Get Current Brightness Level"
+    echo "              |- location     - Get Device Brightness File Location"
+    echo ""
+    echo "filesystem                    Handle Filesystem"
+    echo "         |- boot"
+    echo "               |- lock        - Re-Mount /boot As Read Only"
+    echo "               |- unlock      - Re-Mount /boot As Read Write"
+    echo "               |- check       - Check And Repair Filesystem"
+    echo "         |- system"
+    echo "                 |- lock      - Re-Mount / As Read Only"
+    echo "                 |- unlock    - Re-Mount / As Read Write"
+    echo ""
+    echo "boot                          Handle Filesystem"
+    echo "   |- lock                    - Re-Mount /boot As Read Only"
+    echo "   |- unlock                  - Re-Mount /boot As Read Write"
+    echo "   |- check                   - Check And Repair Filesystem"
+    echo ""
+    echo "system                        Handle Filesystem"
+    echo "     |- lock                  - Re-Mount / As Read Only"
+    echo "     |- unlock                - Re-Mount / As Read Write"
+    echo ""
+    echo "timers                        Handle Timers"
+    echo "     |- status                - List Current Timers"
+    echo "     |- start                 - Start All Timers"
+    echo "     |- stop                  - Stop All Timers"
+    echo "     |- disconnect"
+    echo "                 |- start     - Start Timer Disconnect"
+    echo "                 |- stop      - Stop Timer Disconnect"
+    echo "                 |- set xx    - Set Disconnect Timeout"
+    echo "     |- shutdown"
+    echo "               |- start       - Start Timer Shutdown"
+    echo "               |- stop        - Stop Timer Shutdown"
+    echo "               |- set xx      - Set Shutdown Timeout"
+    echo "     |- daynight xx xx        - Start hour for day and start hour for night (used to switch gui to day/night)"
+    echo ""
+    echo "state                          Handle Day/Night (will be overwritten by rtc if enabled)"
+    echo "    |- day                    - Set System To Day"
+    echo "    |- night                  - Set System To Night"
+    echo ""
+    echo "audio                         Handle Audio Output"
+    echo "    |- rpi                    - Enable default rpi audio"
+    echo "    |- hifiberry"
+    echo "               |- dac         - Hifiberry DAC RPi 1 / DAC+ Light / DAC Zero / MiniAmp"
+    echo "               |- dacplus     - Hifiberry DAC+ Standard / Pro / Plus"
+    echo "               |- digi        - Hifiberry DIGI / DIGI+"
+    echo "               |- amp         - Hifiberry AMP+ (Not AMP2!)"
+    echo "    |- audioinjector"
+    echo "                   |- zero    - AudioInjector DAC Zero"
+    echo "                   |- stereo  - AudioInjector DAC Stereo"
+    echo "                   |- octo    - AudioInjector DAC Octo"
+    echo "    |- allo"
+    echo "          |- boss             - Allo Boss DAC"
+    echo "          |- piano            - Allo Piano DAC"
+    echo "    |- iqaudio"
+    echo "           |- dacplus         - IQaudIO Pi-DAC+"
+    echo "           |- daczero         - IQaudIO Pi-DACZero"
+    echo "           |- dacpro          - IQaudIO Pi-DAC PRO"
+    echo "           |- digiampplus     - IQaudIO Pi-DigiAMP+"
+    echo "           |- digiampplusauto - IQaudIO Pi-DigiAMP+ (Automute)"
+    echo "           |- digiplus        - IQaudIO Pi-Digi+"
+    echo "    |- clean                  - Remove known configured boards including rpi audio"
+    echo "    |- volume"
+    echo "            |- set x          - Set audio volume to x % (0-100)"
+    echo "            |- get            - Get current audio volume in %"
+    echo "            |- up             - Increase audio volume by 5%"
+    echo "            |- down           - Decrease audio volume by 5%"
+    echo "            |- save           - Save current audio volumes"
+    echo "            |- restore        - Restore saved audio volumes"
+    echo "    |- alsastate"
+    echo "               |- save        - Save current alsa state"
+    echo "               |- restore     - Restore saved alsa state"
+    echo "    |- test                   - Record 5 seconds with mic and playpack it"
+    echo ""
+    echo "settings                      Handle Openauto Settings"
+    echo "       |- save                - Save Openauto.ini"
+    echo "       |- retore              - Restore Openauto.ini"
+    echo ""
+    echo "services                      Handle Systemd Services"
+    echo "       |- reset               - Re-Init Default Boot State Of Services"
+    echo "       |- status              - List State Of Crankshaft Services"
+    echo "       |- failed              - List failed services"
+    echo ""
+    echo "rtc                           Handle Real Time Clock"
+    echo "  |- abx80x"
+    echo "  |- ds1307"
+    echo "  |- ds1339"
+    echo "  |- mcp7940x"
+    echo "  |- mcp7941x"
+    echo "  |- ds3231                   - Type of RTC" 
+    echo "  |- pcf2127"
+    echo "  |- pcf8523"
+    echo "  |- pcf8563"
+    echo "  |- sync                     - Sync timeserver to system time to rtc"
+    echo "  |- status                   - Show current status of clock's"
+    echo "  |- disable"
+    echo ""
+    echo "timezone xx                   Set timezone (xx=Europe/London for example)"
+    echo ""
+    echo "reset                         Handle Resets"
+    echo "    |- config.txt             - Reset config.txt to defaults - Danger!!!"
+    echo "                                Custom settings will be dropped but script tries"
+    echo "                                to safe custom display and power settings:"
+    echo "                                - hdmi_group="
+    echo "                                - hdmi_mode="
+    echo "                                - hdmi_cvt="
+    echo "                                - hdmi_drive="
+    echo "                                - hdmi_force_hotplug="
+    echo "                                - config_hdmi_boost="
+    echo "                                - current_limit_override="
+    echo "                                - max_usb_current="
+    echo "                                - avoid_warnings="
+    echo ""
+    echo "rpicam                        Handle Updates"
+    echo "     |- enable                - Enable rpi camera module"
+    echo "     |- disable               - Disable rpi camera module"
+    echo ""
+    echo "resize                        Resize root partition and filesystem on sdcard"
+    echo ""
+    echo "usb                           Handle USB drives"
+    echo "  |- list                     - List available usb mass storage drives"
+    echo "  |- mount x                  - Mount partition from given usb device (sda(x),sdb(x),sdc(x),...)"
+    echo "  |- umount x                 - Unmount mounted usb partition (sda(x),sdb(x),sdc(x),...)"
+    echo "  |- identify                 - Give us id's, manufacturer & model of connected usb devices"
+    echo ""
+    echo "gpio                          GPIO relted stuff"
+    echo "  |- status                   - List current state of cs related gpio pins"
+    echo "  |- all                      - List current state of all gpio pins"
+    echo "  |- help                     - Show infos about the system / pin layout"
+    echo ""
+    echo "hotspot                       Hotspot related stuff"
+    echo "  |- status                   - List connected clients"
+    echo ""
+    echo "buttons                       Custom Button stuff"
+    echo "      |- create x             - Create the default config file for button (1-8)"
+    echo "sdcard                        SDCard stuff"
+    echo "     |- ocenable              - Enable overclocking for sdcard reader - this can cause demanged sdcards!"
+    echo "     |- ocdisable             - Disable overclocking for sdcard reader"
+    echo ""
+    echo "bluetooth                     Bluetooth realted stuff"
+    echo "        |- save               - Save paired bluetooth devices"
+    echo "        |- restore            - Restore paired bluetooth devices"
+    echo "        |- status             - Show status of paired devices"
+    echo "        |- unpair             - Unpair all paired devices"
+    echo "        |- pairable           - Set controller to pairable state for 120 seconds"
+    echo "        |- builtin            - Enable builtin bluetooth support"
+    echo "        |- external           - Disable builtin bluetooth support to use external adapter"
+    echo "        |- disable            - Disable builtin bluetooth support to use external adapter"
+    echo ""
+    echo "screenshot                    Take a screenshot from openauto (only useable in x11 mode)"
+    echo "         |- jpg               - Take screenshot as jpg (by default png is used if not specified)"
+    echo ""
+    echo "syslog                        Show os syslog"
+    echo ""
+    echo "oalog                         Show openauto log"
+    echo ""
+    echo "lightsensor                   Brightness control and day/night controlled by lightsensor"
+    echo "     |- enable                - Enable support for tsl2561 i2c light sensor"
+    echo "     |- disable               - Disable support for tsl2561 i2c light sensor"
+    echo ""
+    echo "splash                        Set plymouth boot splash theme"
+    echo "     |- animation             - Enable animated plymouth boot splash"
+    echo "     |- classic               - Enable classic plymouth boot splash"
+    echo "     |- custom                - Enable custom plymouth boot splash"
+    echo ""
+    echo "mode                          Set system mode"
+    echo "   |- default                 - Enable default system mode"
+    echo "   |- dev                     - Enable dev system mode"
+    echo "   |- devapp                  - Enable dev system mode with app"
+    echo "   |- debug                   - Enable debug system mode"
+    echo ""
+    echo "update                        Handle Updates"
+    echo "     |- udev                  - Check And Update udev Rules For Device Detection"
+    echo "     |- csmt                  - Check And Update Crankshaft Management Tool"
+    echo "     |- openauto              - Check And Update openauto/helper - Warning: only use if requested by support!"
+    echo "     |- check                 - Check for new versions"
+    echo "     |- cancel                - Cancel in progress image download"
+    echo ""
+    echo "debuglog                      Create debug log for support requests"
+    echo ""
+    echo "initramfs                     Handle initramfs"
+    echo "    |- clean                  - Remove initramfs entries"
+    echo "    |- create                 - Create initramfs and setup"
+    echo ""
+    echo "temp                          Show current system temp"
+    echo ""
+    echo "i2ccheck xx                   Check if i2c device is present"
+    echo "                              xx = address (0x68 = 68 for xx)"
+    echo ""
+    echo "network x                     Force using wifi config 0|1|auto for wpa_supplicant"
+    echo ""
+    echo "samba                         Control Samba Server"
+    echo "    |- start                  - Start Samba Server (boot will switch to rw if not in dev mode)"
+    echo "    |- stop                   - Stop Samba Server"
+    echo ""
+    echo "rearcam                       Control rearcam"
+    echo "    |- show                   - Show rearcam"
+    echo "    |- hide                   - Hide rearcam"
+    echo ""
+    echo "resizebg                      Convert background images to screen matching size"
+    echo ""
+    echo "cover                         Cover management"
+    echo "    |- extract                - Extract album covers from linked media to cache folder"
+    echo ""
+    echo "systemcheck                   Check general system setup params (currently work in progress)"
+    echo ""
+    echo "version                       Show Vesion Of CSMT"
+fi
+
+exit 0
