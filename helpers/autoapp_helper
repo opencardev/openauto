@@ -1,0 +1,750 @@
+#!/bin/bash
+# * Project: OpenAuto
+# * This file is part of openauto project.
+# * Copyright (C) 2025 OpenCarDev Team
+# *
+# *  openauto is free software: you can redistribute it and/or modify
+# *  it under the terms of the GNU General Public License as published by
+# *  the Free Software Foundation; either version 3 of the License, or
+# *  (at your option) any later version.
+# *
+# *  openauto is distributed in the hope that it will be useful,
+# *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# *  GNU General Public License for more details.
+# *
+# *  You should have received a copy of the GNU General Public License
+# *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
+
+source /opt/crankshaft/crankshaft_default_env.sh
+source /opt/crankshaft/crankshaft_system_env.sh
+
+if [ -f /boot/crankshaft/crankshaft_env.sh ];then
+    source /boot/crankshaft/crankshaft_env.sh
+fi
+
+# force exit as script not updated for bookworm/trixie
+exit 0
+
+sudo chmod 666 /tmp/autoapp_helper_command
+echo "$@" >> /tmp/autoapp_helper_command
+
+if [ -z $1 ]; then
+    echo "got no params" >> /tmp/autoapp_helper_command
+    exit 0
+fi
+
+IFS="#" read -r -a array <<< "$@"
+
+# set params to system
+if [ "${array[0]}" == "setparams" ]; then
+
+    # Start
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+    echo "configure start" >> /tmp/autoapp_helper_command
+    sudo touch /tmp/config_in_progress
+    sudo touch /tmp/keeprw
+
+    # set disconnect timeout
+    echo "Disconnect timeout:${array[3]}" >> /tmp/autoapp_helper_command
+    if [ "$DISCONNECTION_SCREEN_POWEROFF_SECS" != "${array[3]}" ]; then
+        crankshaft timers disconnect set ${array[3]}
+    else
+        echo "Ignoring change - same value" >> /tmp/autoapp_helper_command
+    fi
+    # set shutdown timeout
+    echo "Shutdown timeout:${array[4]}" >> /tmp/autoapp_helper_command
+    if [ "$DISCONNECTION_POWEROFF_MINS" != "${array[4]}" ]; then
+        crankshaft timers shutdown set ${array[4]}
+    else
+        echo "Ignoring change - same value" >> /tmp/autoapp_helper_command
+    fi
+
+    # set day / night
+    echo "Start day:${array[5]}" >> /tmp/autoapp_helper_command
+    echo "Start night:${array[6]}" >> /tmp/autoapp_helper_command
+    if [ "$RTC_DAY_START" != "${array[5]}" ] || [ "$RTC_NIGHT_START" != "${array[6]}" ]; then
+        crankshaft timers daynight ${array[5]} ${array[6]}
+    else
+        echo "Ignoring change - same value" >> /tmp/autoapp_helper_command
+    fi
+
+    # set general gpio usage # dev mode gpio # invert gpio # x11 gpio # rearcam gpio # android gpio # enable x11 mode # enable flip mode
+    echo "GPIO enable:${array[7]}" >> /tmp/autoapp_helper_command
+    echo "Dev pin:${array[8]}" >> /tmp/autoapp_helper_command
+    echo "Invert pin:${array[9]}" >> /tmp/autoapp_helper_command
+    echo "X11 pin:${array[10]}" >> /tmp/autoapp_helper_command
+    echo "Rearcam pin:${array[11]}" >> /tmp/autoapp_helper_command
+    echo "Android pin:${array[12]}" >> /tmp/autoapp_helper_command
+    echo "Start x11:${array[13]}" >> /tmp/autoapp_helper_command
+    echo "Flip screen:${array[14]}" >> /tmp/autoapp_helper_command
+
+    # open filesystems
+    crankshaft filesystem boot unlock
+    crankshaft filesystem system unlock
+    sudo sed -i 's/^ENABLE_GPIO=.*/ENABLE_GPIO='$(echo ${array[7]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^DEV_PIN=.*/DEV_PIN='$(echo ${array[8]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^INVERT_PIN=.*/INVERT_PIN='$(echo ${array[9]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^X11_PIN=.*/X11_PIN='$(echo ${array[10]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^REARCAM_PIN=.*/REARCAM_PIN='$(echo ${array[11]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^ANDROID_PIN=.*/ANDROID_PIN='$(echo ${array[12]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^START_X11=.*/START_X11='$(echo ${array[13]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^FLIP_SCREEN=.*/FLIP_SCREEN='$(echo ${array[14]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^DAYNIGHT_PIN=.*/DAYNIGHT_PIN='$(echo ${array[32]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+
+    # brightness values
+    sudo sed -i 's/^BR_DAY=.*/BR_DAY='$(echo ${array[33]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^BR_NIGHT=.*/BR_NIGHT='$(echo ${array[34]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # tsl2561 values
+    sudo sed -i 's/^LUX_LEVEL_1=.*/LUX_LEVEL_1='$(echo ${array[35]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^DISP_BRIGHTNESS_1=.*/DISP_BRIGHTNESS_1='$(echo ${array[36]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^LUX_LEVEL_2=.*/LUX_LEVEL_2='$(echo ${array[37]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^DISP_BRIGHTNESS_2=.*/DISP_BRIGHTNESS_2='$(echo ${array[38]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^LUX_LEVEL_3=.*/LUX_LEVEL_3='$(echo ${array[39]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^DISP_BRIGHTNESS_3=.*/DISP_BRIGHTNESS_3='$(echo ${array[40]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^LUX_LEVEL_4=.*/LUX_LEVEL_4='$(echo ${array[41]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^DISP_BRIGHTNESS_4=.*/DISP_BRIGHTNESS_4='$(echo ${array[42]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^LUX_LEVEL_5=.*/LUX_LEVEL_5='$(echo ${array[43]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^DISP_BRIGHTNESS_5=.*/DISP_BRIGHTNESS_5='$(echo ${array[44]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^TSL2561_CHECK_INTERVAL=.*/TSL2561_CHECK_INTERVAL='$(echo ${array[45]})'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^TSL2561_DAYNIGHT_ON_STEP=.*/TSL2561_DAYNIGHT_ON_STEP='$(echo ${array[46]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # set debug mode
+    echo "Debug mode:${array[22]}" >> /tmp/autoapp_helper_command
+    sudo sed -i 's/^DEBUG_MODE=.*/DEBUG_MODE='$(echo ${array[22]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # ignition values
+    echo "Ignition pin:${array[23]}" >> /tmp/autoapp_helper_command
+    echo "Ignition delay:${array[24]}" >> /tmp/autoapp_helper_command
+    sudo sed -i 's/^IGNITION_PIN=.*/IGNITION_PIN='$(echo ${array[23]} | sed 's/- - -/0/')'/' /boot/crankshaft/crankshaft_env.sh
+    sudo sed -i 's/^IGNITION_DELAY=.*/IGNITION_DELAY='$(echo ${array[24]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # enable hotspot
+    echo "${array[25]}" >> /tmp/autoapp_helper_command
+    sudo sed -i 's/^ENABLE_HOTSPOT=.*/ENABLE_HOTSPOT='$(echo ${array[25]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # enable bluetooth
+    echo "${array[27]}" >> /tmp/autoapp_helper_command
+    sudo sed -i 's/^ENABLE_PAIRABLE=.*/ENABLE_PAIRABLE='$(echo ${array[27]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # init check
+    pulsechanged=0
+
+    # set audio output device
+    echo "Autdio output:${array[15]}" >> /tmp/autoapp_helper_command
+    # only change client.conf if device is not dummy output
+    if [ "${array[15]}" != "No audio output hardware detected!" ]; then
+        current_pulsedevice=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+        pulsedevice=$(echo "${array[15]}" | cut -d"|" -f2- | sed 's/^ //' | sed 's/ *$//')
+        desc=$(echo "${array[15]}" | cut -d"|" -f1 | sed 's/^ //' | sed 's/ *$//')
+        echo "Pulsedevice: >$pulsedevice<" > /tmp/set_soundcard
+        echo "Desc: >$desc<" >> /tmp/set_soundcard
+        samplerate=$(pactl list sinks short | grep $pulsedevice | tail -n1 | awk {'print $6'} | sed 's/Hz//' | sed 's/^ //' | sed 's/ *$//')
+        sampleformat=$(pactl list sinks short | grep $pulsedevice | tail -n1 | awk {'print $4'} | sed 's/^ //' | sed 's/ *$//')
+        echo "Sample rate: >$samplerate<" >> /tmp/set_soundcard
+        echo "Sample format: >$sampleformat<" >> /tmp/set_soundcard
+        if [ ! -z $pulsedevice ]; then
+            # output device
+            sudo sed -i 's/.*default-sink.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# Crankshaft selected output device.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# no output selected -> default.*//' /etc/pulse/client.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/client.conf
+            sudo sh -c 'echo "" >>  /etc/pulse/daemon.conf'
+            sudo sh -c 'echo "# Crankshaft selected output device" >> /etc/pulse/client.conf'
+            sudo sh -c 'echo "default-sink = '$(echo $pulsedevice)'" >> /etc/pulse/client.conf'
+            # sample rate
+            sudo sed -i 's/^# Crankshaft detected sample rate.*//' /etc/pulse/daemon.conf
+            sudo sed -i 's/.*default-sample-rate =.*//' /etc/pulse/daemon.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/daemon.conf
+            sudo sh -c 'echo "" >>  /etc/pulse/daemon.conf'
+            sudo sh -c 'echo "# Crankshaft detected sample rate" >>  /etc/pulse/daemon.conf'
+            sudo sh -c 'echo "default-sample-rate = '$(echo $samplerate)'" >>  /etc/pulse/daemon.conf'
+            # sample format
+            sudo sed -i 's/^# Crankshaft detected sample format.*//' /etc/pulse/daemon.conf
+            sudo sed -i 's/.*default-sample-format =.*//' /etc/pulse/daemon.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/daemon.conf
+            sudo sh -c 'echo "" >>  /etc/pulse/daemon.conf'
+            sudo sh -c 'echo "# Crankshaft detected sample format" >>  /etc/pulse/daemon.conf'
+            sudo sh -c 'echo "default-sample-format = '$(echo $sampleformat)'" >>  /etc/pulse/daemon.conf'
+        else
+            sudo sh -c 'echo "" >> /etc/pulse/client.conf'
+            sudo sed -i 's/.*default-sink.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# Crankshaft selected output device.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# no output selected -> default.*//' /etc/pulse/client.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/client.conf
+            sudo sh -c 'echo "" >> /etc/pulse/client.conf'
+            sudo sh -c 'echo "# Crankshaft selected output device" >> /etc/pulse/client.conf'
+            sudo sh -c 'echo "# no output selected -> default" >> /etc/pulse/client.conf'
+
+            sudo sed -i 's/^# Crankshaft detected sample rate.*//' /etc/pulse/daemon.conf
+            sudo sed -i 's/.*default-sample-rate =.*//' /etc/pulse/daemon.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/daemon.conf
+            sudo sed -i 's/^# Crankshaft detected sample format.*//' /etc/pulse/daemon.conf
+            sudo sed -i 's/.*default-sample-format =.*//' /etc/pulse/daemon.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/daemon.conf
+        fi
+        if [ "$current_pulsedevice" != "$pulsedevice" ]; then
+            pulsechanged=1
+        fi
+    fi
+
+    # set audio input device
+    echo "Audio input:${array[16]}" >> /tmp/autoapp_helper_command
+    # only change client.conf if device is not dummy output
+    if [ "${array[16]}" != "No audio input hardware detected!" ]; then
+        current_pulsedevice=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+        pulsedevice=$(echo "${array[16]}" | cut -d"|" -f2- | sed 's/^ //' | sed 's/ *$//')
+        desc=$(echo "${array[16]}" | cut -d"|" -f1 | sed 's/^ //' | sed 's/ *$//')
+        echo "Pulsedevice: >$pulsedevice<" > /tmp/set_mic
+        echo "Desc: >$desc<" >> /tmp/set_mic
+        if [ ! -z $pulsedevice ]; then
+            # input device
+            sudo sed -i 's/.*default-source.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# Crankshaft selected input device.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# no input selected -> default.*//' /etc/pulse/client.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/client.conf
+            sudo sh -c 'echo "" >> /etc/pulse/client.conf'
+            sudo sh -c 'echo "# Crankshaft selected input device" >> /etc/pulse/client.conf'
+            sudo sh -c 'echo "default-source = '$(echo $pulsedevice)'" >> /etc/pulse/client.conf'
+        else
+            sudo sed -i 's/.*default-source.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# Crankshaft selected input device.*//' /etc/pulse/client.conf
+            sudo sed -i 's/^# no input selected -> default.*//' /etc/pulse/client.conf
+            sudo sed -i '/./,/^$/!d' /etc/pulse/client.conf
+            sudo sh -c 'echo "" >> /etc/pulse/client.conf'
+            sudo sh -c 'echo "# Crankshaft selected input device" >> /etc/pulse/client.conf'
+            sudo sh -c 'echo "# no input selected -> default" >> /etc/pulse/client.conf'
+        fi
+        if [ "$current_pulsedevice" != "$pulsedevice" ]; then
+            pulsechanged=1
+        fi
+    fi
+
+    # restart pulse service after hardware change
+    if [ $pulsechanged == 1 ];then
+        echo "Pulseaudio device has changed -> restart pulseaudio service" >> /tmp/autoapp_helper_command
+        if [ -f /tmp/usb_debug_mode ]; then
+            sudo systemctl restart pulseaudio-debug
+        else
+            sudo systemctl restart pulseaudio
+        fi
+    else
+        echo "Ignoring change - audio devices not changed" >> /tmp/autoapp_helper_command
+    fi
+
+    # set playback volume
+    echo "Playback volume:${array[1]}" >> /tmp/autoapp_helper_command
+    pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    # unmute
+    pactl set-sink-mute $pulsedeviceplay 0
+    # set volume
+    if [[ ${array[1]} = *[[:digit:]]* ]]; then
+        # check min volume
+        if [ ${array[1]} -lt ${STARTUP_VOL_MIN} ];then
+            pactl set-sink-volume $pulsedeviceplay 50%
+        else
+            pactl set-sink-volume $pulsedeviceplay ${array[1]}%
+        fi
+    else
+        pactl set-sink-volume $pulsedeviceplay 50%
+    fi
+
+    # set capture volume
+    echo "Capture volume:${array[2]}" >> /tmp/autoapp_helper_command
+    pulsedevicecap=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    # unmute
+    pactl set-source-mute $pulsedevicecap 0
+    # set volume
+    if [[ ${array[2]} = *[[:digit:]]* ]]; then
+        # check min volume
+        if [ ${array[2]} -lt ${STARTUP_VOL_MIN} ];then
+            pactl set-source-volume $pulsedevicecap 50%
+        else
+            pactl set-source-volume $pulsedevicecap ${array[2]}%
+        fi
+    else
+        pactl set-source-volume $pulsedevicecap 50%
+    fi
+
+    # writee volumes to boot
+    sudo sh -c 'echo "'${array[1]}'" > /boot/crankshaft/volume'
+    sudo sh -c 'echo "'${array[2]}'" > /boot/crankshaft/capvolume'
+
+    # hardware save
+    echo "Hardware save:${array[29]}" >> /tmp/autoapp_helper_command
+
+    # rtc day/night
+    sudo sed -i 's/^RTC_DAYNIGHT=.*/RTC_DAYNIGHT='$(echo ${array[47]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # rtc setup
+    if [ ${array[29]} == "1" ]; then
+        echo "Rtc:${array[17]}" >> /tmp/autoapp_helper_command
+        echo "Timezone:${array[18]}" >> /tmp/autoapp_helper_command
+        if [ "${array[17]}" == "none" ]; then
+            /usr/local/bin/crankshaft rtc disable ${array[18]}
+        else
+            /usr/local/bin/crankshaft rtc ${array[17]} ${array[18]}
+        fi
+    else
+        if [ "${array[18]}" != "" ]; then
+            /usr/local/bin/crankshaft timezone ${array[18]}
+        fi
+    fi
+
+    # dac setup
+    if [ ${array[29]} == "1" ]; then
+        echo "Dac:${array[19]}" >> /tmp/autoapp_helper_command
+        if [ "${array[19]}" == "Custom" ]; then
+            /usr/local/bin/crankshaft audio clean
+        fi
+        if [ "${array[19]}" == "Allo - Boss" ]; then
+            /usr/local/bin/crankshaft audio allo boss
+        fi
+        if [ "${array[19]}" == "Allo - Piano" ]; then
+            /usr/local/bin/crankshaft audio allo piano
+        fi
+        if [ "${array[19]}" == "Audioinjector - Zero/Stereo" ]; then
+            /usr/local/bin/crankshaft audio audioinjector stereo
+        fi
+        if [ "${array[19]}" == "Hifiberry - DAC" ]; then
+            /usr/local/bin/crankshaft audio hifiberry dac
+        fi
+        if [ "${array[19]}" == "Hifiberry - DAC Plus" ]; then
+            /usr/local/bin/crankshaft audio hifiberry dacplus
+        fi
+        if [ "${array[19]}" == "Hifiberry - Digi" ]; then
+            /usr/local/bin/crankshaft audio hifiberry digi
+        fi
+        if [ "${array[19]}" == "Hifiberry - Digi Pro" ]; then
+            /usr/local/bin/crankshaft audio hifiberry digipro
+        fi
+        if [ "${array[19]}" == "Hifiberry - DAC Amp" ]; then
+            /usr/local/bin/crankshaft audio hifiberry amp
+        fi
+        if [ "${array[19]}" == "IQaudIO - Pi-DAC Plus/Pro/Zero" ]; then
+            /usr/local/bin/crankshaft audio iqaudio dacplus
+        fi
+        if [ "${array[19]}" == "IQaudIO - Pi-Digi Amp Plus" ]; then
+            /usr/local/bin/crankshaft audio iqaudio digiampplus
+        fi
+        if [ "${array[19]}" == "IQaudIO - Pi-Digi Amp Plus - Automute" ]; then
+            /usr/local/bin/crankshaft audio iqaudio digiampplusauto
+        fi
+        if [ "${array[19]}" == "IQaudIO - Pi-Digi Plus" ]; then
+            /usr/local/bin/crankshaft audio iqaudio digiplus
+        fi
+        if [ "${array[19]}" == "Raspberry Pi - Onboard" ]; then
+            /usr/local/bin/crankshaft audio rpi
+        fi
+    fi
+
+    # rpi cam
+    if [ ${array[29]} == "1" ]; then
+        echo "Cam:${array[26]}" >> /tmp/autoapp_helper_command
+        if [ "${array[26]}" == "enabled" ]; then
+            crankshaft rpicam enable
+        else
+            crankshaft rpicam disable
+        fi
+        sudo sed -i 's/^RPICAM_HFLIP=.*/RPICAM_HFLIP='$(echo ${array[51]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_VFLIP=.*/RPICAM_VFLIP='$(echo ${array[52]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_ROTATION=.*/RPICAM_ROTATION='$(echo ${array[53]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_RESOLUTION=.*/RPICAM_RESOLUTION='$(echo ${array[54]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_FPS=.*/RPICAM_FPS='$(echo ${array[55]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_AWB=.*/RPICAM_AWB='$(echo ${array[56]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_EXP=.*/RPICAM_EXP='$(echo ${array[57]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_LOOPTIME=.*/RPICAM_LOOPTIME='$(echo ${array[58]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_LOOPCOUNT=.*/RPICAM_LOOPCOUNT='$(echo ${array[59]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^RPICAM_AUTORECORDING=.*/RPICAM_AUTORECORDING='$(echo ${array[60]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^USBCAM_HFLIP=.*/USBCAM_HFLIP='$(echo ${array[61]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^USBCAM_VFLIP=.*/USBCAM_VFLIP='$(echo ${array[62]})'/' /boot/crankshaft/crankshaft_env.sh
+        sudo sed -i 's/^USBCAM_ROTATION=.*/USBCAM_ROTATION='$(echo ${array[63]})'/' /boot/crankshaft/crankshaft_env.sh
+
+        if [ -f /tmp/zoomlevel ]; then
+            sudo sed -i 's/^RPICAM_ZOOM=.*/RPICAM_ZOOM='$(cat /tmp/zoomlevel)'/' /boot/crankshaft/crankshaft_env.sh
+            sudo rm /tmp/zoomlevel >/dev/null 2>&1
+        fi
+        if [ -f /tmp/ycorrection ]; then
+            sudo sed -i 's/^RPICAM_YCORRECTION=.*/RPICAM_YCORRECTION='$(cat /tmp/ycorrection)'/' /boot/crankshaft/crankshaft_env.sh
+            sudo rm /tmp/ycorrection >/dev/null 2>&1
+        fi
+        if [ "$(systemctl is-active rpicamserver)" == "active" ]; then
+            sudo systemctl restart rpicamserver
+        fi
+    fi
+
+    # bluetooth
+    if [ ${array[29]} == "1" ]; then
+        echo "Bluetooth:${array[28]}" >> /tmp/autoapp_helper_command
+        if [ "${array[28]}" == "none" ]; then
+            crankshaft bluetooth disable
+        elif [ "${array[28]}" == "builtin" ]; then
+            crankshaft bluetooth builtin
+        elif [ "${array[28]}" == "external" ]; then
+            crankshaft bluetooth external
+        fi
+    fi
+
+    # Enable/Disable Timers
+    echo "Timer shutdown disable:${array[20]}" >> /tmp/autoapp_helper_command
+    if [ "$DISCONNECTION_POWEROFF_DISABLE" != "${array[20]}" ]; then
+        if [ "${array[20]}" == "1" ]; then
+            crankshaft timers shutdown disable
+        else
+            crankshaft timers shutdown enable
+            if [ ! -f /tmp/dev_mode_enabled ]; then
+                crankshaft timers shutdown start
+            else
+                crankshaft timers shutdown stop
+            fi
+        fi
+    else
+        echo "Ignoring change - same value" >> /tmp/autoapp_helper_command
+    fi
+
+    echo "Timer disconnect disable:${array[21]}" >> /tmp/autoapp_helper_command
+    if [ "$DISCONNECTION_SCREEN_POWEROFF_DISABLE" != "${array[21]}" ]; then
+        if [ "${array[21]}" == "1" ]; then
+            crankshaft timers disconnect disable
+        else
+            crankshaft timers disconnect enable
+            if [ ! -f /tmp/dev_mode_enabled ]; then
+                crankshaft timers disconnect start
+            else
+                crankshaft timers disconnect stop
+            fi
+        fi
+    else
+        echo "Ignoring change - same value" >> /tmp/autoapp_helper_command
+    fi
+
+    # use usb cam
+    echo "${array[30]}" >> /tmp/autoapp_helper_command
+    if [ "${array[30]}" == "enabled" ]; then
+        sudo sed -i 's/^USBCAM_USE=.*/USBCAM_USE=1/' /boot/crankshaft/crankshaft_env.sh
+    else
+        sudo sed -i 's/^USBCAM_USE=.*/USBCAM_USE=0/' /boot/crankshaft/crankshaft_env.sh
+    fi
+
+    # splash
+    echo "${array[48]}" >> /tmp/autoapp_helper_command
+    if [ "${array[48]}" == "0" ]; then
+        crankshaft splash animation
+    elif [ "${array[48]}" == "1" ]; then
+        crankshaft splash classic
+    elif [ "${array[48]}" == "2" ]; then
+        crankshaft splash custom
+    fi
+
+    # lightsensor
+    echo "${array[31]}" >> /tmp/autoapp_helper_command
+    if [ "${array[31]}" == "enabled" ]; then
+        crankshaft lightsensor enable
+    else
+        crankshaft lightsensor disable
+    fi
+
+    # wifi country
+    echo "${array[49]}" >> /tmp/autoapp_helper_command
+    sudo sed -i 's/^WIFI_COUNTRY=.*/WIFI_COUNTRY='$(echo ${array[49]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # blank screen instead off
+    echo "${array[50]}" >> /tmp/autoapp_helper_command
+    sudo sed -i 's/^SCREEN_POWEROFF_OVERRIDE=.*/SCREEN_POWEROFF_OVERRIDE='$(echo ${array[50]})'/' /boot/crankshaft/crankshaft_env.sh
+
+    # clean buffers
+    sync
+
+    sudo rm /tmp/keeprw
+
+    # close filesystems
+    crankshaft filesystem boot lock
+    crankshaft filesystem system lock
+
+    # restart gpiotrigger
+    sudo systemctl restart gpiotrigger
+
+    # restore brightness if not controlled by lightsensor
+    if [ ! -f /etc/cs_lightsensor ]; then
+        crankshaft brightness restore
+    fi
+
+    # Done
+    echo "configure done" >> /tmp/autoapp_helper_command
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+    sudo rm /tmp/config_in_progress
+fi
+
+# get params from system
+
+if [ "$1" == "getparams" ]; then
+
+    # Start
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+    echo "get system values start" >> /tmp/autoapp_helper_command
+
+    # get master volume
+    pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    levelplay=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+
+    # get capture volume
+    pulsedevicecap=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    if [ ! -z "$pulsedevicecap" ]; then
+        levelcap=0
+    else
+        levelcap=$(pactl list sources | grep -A8 $pulsedevicecap | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+    fi
+
+    # get disconnect timeout
+    remainingdisconnect=$(systemctl list-timers disconnect.timer | grep left | cut -dl -f1  | awk {'print $5 $6'})
+    textdisconnect="Stopped"
+    if [ ! -z $remainingdisconnect ]; then
+        textdisconnect="$remainingdisconnect left"
+    fi
+
+    # get shutdown timeout
+    remainingshutdown=$(systemctl list-timers shutdown.timer | grep left | cut -dl -f1  | awk {'print $5 $6'})
+    textshutdown="Stopped"
+    if [ ! -z $remainingshutdown ]; then
+        textshutdown="$remainingshutdown left"
+    fi
+
+    # create tz listing
+    cat /usr/share/zoneinfo/zone1970.tab | grep / | awk {'print $3'} | sort > /tmp/timezone_listing
+
+    # get current dac
+    dac=$(cat /boot/config.txt | grep -e 'dtoverlay=allo' -e 'dtoverlay=hifiberry' -e 'dtoverlay=audioinjector' -e 'dtoverlay=iqaudio' | cut -d= -f2 | sed 's/dtoverlay=//')
+
+    # check for onboard if no dac
+    if [ -z $dac ]; then
+        dac=$(cat /boot/config.txt | grep -e 'dtparam=audio=on' | cut -d= -f2 | sed 's/dtoverlay=//')
+    fi
+
+    # create return value string
+    sudo rm /tmp/return_value > /dev/null 2>&1
+    echo "${levelplay}#${levelcap}#${textshutdown}#${textdisconnect}#${dac}#" > /tmp/return_value
+    echo "get system values done" >> /tmp/autoapp_helper_command
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+fi
+
+if [ "$1" == "getoutputs" ]; then
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+    echo "get outputs start" >> /tmp/autoapp_helper_command
+    # get outputs
+    sudo rm /tmp/get_outputs > /dev/null 2>&1
+    # check for pulseaudio dummy output
+    nodevice=$(pactl list sinks | grep 'Description: Dummy Output' | sed 's/"//g' | sed 's/\t//g' | sed 's/ //g' | sed 's/://g' | tail -n1)
+    if [ -z $nodevice ]; then
+        pactl list sinks | grep Name: | grep -v .monitor | grep -v bluez | sed 's/\t//g' | sed 's/Name: //' | while read -r padevice; do
+            desc=$(pactl list sinks | grep -A30 'Name: '$padevice | grep alsa.id | sed 's/\t//g' | cut -d= -f2 | sed 's/"//g' | sed 's/^ //' | sed 's/ *$//')
+            echo "[$desc] | $padevice"  >> /tmp/get_outputs
+        done
+        # default output
+        sudo rm /tmp/get_default_output > /dev/null 2>&1
+        pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+        if [ ! -z $pulsedeviceplay ]; then
+            defaultplay="$(cat /tmp/get_outputs | grep "$pulsedeviceplay")"
+            if [ "$defaultplay" != "" ]; then
+                echo "$defaultplay" > /tmp/get_default_output
+            else
+                echo "not selected" > /tmp/get_default_output
+                echo "not selected" >> /tmp/get_outputs
+            fi
+        fi
+    else
+        echo "No audio output hardware detected!" > /tmp/get_outputs
+        echo "No audio output hardware detected!" > /tmp/get_default_output
+    fi
+    echo "get outputs done" >> /tmp/autoapp_helper_command
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+fi
+
+if [ "$1" == "getinputs" ]; then
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+    echo "get outputs start" >> /tmp/autoapp_helper_command
+    # get inputs
+    sudo rm /tmp/get_inputs > /dev/null 2>&1
+    # check in put device available
+    nodevice=$(arecord -l | sed 's/"//g' | sed 's/\t//g' | sed 's/ //g' | sed 's/://g' | tail -n1)
+    if [ ! -z $nodevice ]; then
+        pactl list sources | grep Name: | grep -v .monitor | grep -v bluez | sed 's/\t//g' | sed 's/Name: //' | while read -r padevice; do
+            desc=$(pactl list sources | grep -A30 'Name: '$padevice | grep alsa.id | sed 's/\t//g' | cut -d= -f2 | sed 's/"//g' | sed 's/^ //' | sed 's/ *$//')
+            echo "[$desc] | $padevice" >> /tmp/get_inputs
+        done
+        # default input
+        sudo rm /tmp/get_default_input > /dev/null 2>&1
+        pulsedevicecap=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+        if [ ! -z $pulsedevicecap ]; then
+            defaultcap="$(cat /tmp/get_inputs | grep "$pulsedevicecap")"
+            if [ "$defaultcap" != "" ]; then
+                echo "$defaultcap" > /tmp/get_default_input
+            else
+                echo "not selected" > /tmp/get_default_input
+                echo "not selected" >> /tmp/get_inputs
+            fi
+        fi
+    else
+        echo "No audio input hardware detected!" > /tmp/get_inputs
+        echo "No audio input hardware detected!" > /tmp/get_default_input
+    fi
+    echo "get inputs done" >> /tmp/autoapp_helper_command
+    echo "-------------------------------------" >> /tmp/autoapp_helper_command
+fi
+
+if [ "$1" == "restorevolumes" ]; then
+    # set playback volume
+    pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    if [ ! -z $pulsedeviceplay ]; then
+        # unmute
+        pactl set-sink-mute $pulsedeviceplay 0
+        # set volume
+        if [ -f /boot/crankshaft/volume ]; then
+            volume=$(cat /boot/crankshaft/volume)
+            # check min volume
+            if [ $volume -lt ${STARTUP_VOL_MIN} ];then
+                volume=${STARTUP_VOL_MIN}
+            fi
+            # check max volume
+            if [ $volume -gt ${STARTUP_VOL_MAX} ];then
+                volume=${STARTUP_VOL_MAX}
+            fi
+            pactl set-sink-volume $pulsedeviceplay $volume%
+            echo "$volume" > /tmp/play_volume
+        else
+            pactl set-sink-volume $pulsedeviceplay 50%
+            echo "50" > /tmp/play_volume
+        fi
+    fi
+
+    # set capture volume
+    pulsedevicecap=$(cat /etc/pulse/client.conf | grep '^default-source =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    if [ ! -z $pulsedevicecap ]; then
+        # unmute
+        pactl set-source-mute $pulsedevicecap 0
+        # set volume
+        if [ -f /boot/crankshaft/capvolume ]; then
+            capvolume=$(cat /boot/crankshaft/capvolume)
+            # check min volume
+            if [ $capvolume -lt ${STARTUP_VOL_MIN} ];then
+                capvolume=${STARTUP_VOL_MIN}
+            fi
+            # check max volume
+            if [ $capvolume -gt ${STARTUP_VOL_MAX} ];then
+                capvolume=${STARTUP_VOL_MAX}
+            fi
+            pactl set-source-volume $pulsedevicecap $capvolume%
+        else
+            pactl set-source-volume $pulsedevicecap 50%
+        fi
+    fi
+fi
+
+if [ "$1" == "getbrightnessvalues" ]; then
+    if [ ! -z $CUSTOM_BRIGHTNESS_COMMAND ]; then
+        CUSTOM=1
+    else
+        CUSTOM=0
+    fi
+    sudo rm /tmp/br_values > /dev/null 2>&1
+    echo "$BR_MIN#$BR_MAX#$BR_STEP#$BR_DAY#$BR_NIGHT#$CUSTOM#" > /tmp/br_values
+    sudo rm /tmp/tsl2561_values > /dev/null 2>&1
+    echo "$LUX_LEVEL_1#$DISP_BRIGHTNESS_1#$LUX_LEVEL_2#$DISP_BRIGHTNESS_2#$LUX_LEVEL_3#$DISP_BRIGHTNESS_3#$LUX_LEVEL_4#$DISP_BRIGHTNESS_4#$LUX_LEVEL_5#$DISP_BRIGHTNESS_5#$TSL2561_CHECK_INTERVAL#$TSL2561_DAYNIGHT_ON_STEP#" > /tmp/tsl2561_values
+fi
+
+if [ "$1" == "getvolume" ]; then
+    # get soundcard volume
+    pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    levelplay=$(pactl list sinks | grep -A8 $pulsedeviceplay | grep Volume | cut -d/ -f2 | sed 's/%//' | sed 's/ //g')
+    echo "$levelplay" > /tmp/get_volume_device
+fi
+
+if [ "$1" == "setvolume" ]; then
+    # set soundcard volume
+    pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    pactl set-sink-volume $pulsedeviceplay $2%
+fi
+
+if [ "$1" == "setmute" ]; then
+    # mute soundcard
+    pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    pactl set-sink-mute $pulsedeviceplay 1
+fi
+
+if [ "$1" == "setunmute" ]; then
+    # unmute soundcard
+    pulsedeviceplay=$(cat /etc/pulse/client.conf | grep '^default-sink =' | cut -d= -f2 | sed 's/\t//g' | sed 's/^ //' | sed 's/ *$//')
+    pactl set-sink-mute $pulsedeviceplay 0
+fi
+
+if [ "${array[0]}" == "settime" ]; then
+    hour="${array[1]}"
+    minute="${array[2]}"
+    if [ ${#hour} -lt 2 ]; then
+        hour="0$hour"
+    fi
+    if [ ${#minute} -lt 2 ]; then
+        minute="0$minute"
+    fi
+    echo "$hour $minute" >> /tmp/autoapp_helper_command
+    crankshaft filesystem system unlock
+    sudo timedatectl set-ntp 0 # disable sync to allow manual setting
+    sudo timedatectl set-time "$hour:$minute:00" >> /tmp/autoapp_helper_command
+    sudo hwclock --systohc
+    sudo timedatectl set-ntp 1 # reenable sync
+    crankshaft filesystem system lock
+fi
+
+if [ "$1" == "updaterecent" ] && [ -f /tmp/dnsmasq.leases ]; then
+    num=0
+    sudo sh -c 'echo "[Recent]" > /tmp/openauto_wifi_recent.ini'
+    sudo sh -c 'echo "EntiresCount=0" >> /tmp/openauto_wifi_recent.ini'
+    sudo sh -c 'echo "" > /tmp/temp_recent_list'
+    cat /tmp/dnsmasq.leases | awk {'print $3'} | while read -r wificlient; do
+        sudo sh -c 'echo "Entry_$num='$wificlient'" >> /tmp/openauto_wifi_recent.ini'
+        if [ "$wificlient" != "" ]; then
+            log_echo "IP added to recent list: $wificlient"
+            sudo sh -c 'echo "'$wificlient'" >> /tmp/temp_recent_list'
+        fi
+        num=$((num+1))
+    done
+    entries=$(cat /tmp/openauto_wifi_recent.ini | grep Entry_ | wc -l)
+    sed -i 's|^EntiresCount=.*|EntiresCount='"$entries"'|' /tmp/openauto_wifi_recent.ini
+    sudo chmod 666 /tmp/openauto_wifi_recent.ini
+fi
+
+if [ "$1" == "cleansymlinks" ]; then
+    log_echo "LINK: Check for dead links caused by removed device"
+    find /media/MYMEDIA/. -type l -exec sh -c 'readlink -f "{}" 1>/dev/null || sudo rm "{}"' -- "{}" \;
+fi
+
+if [ "$1" == "addsymlinks" ] && [ "$2" != "" ]; then
+    log_echo "LINK: Check for media folder on $2"
+    # grab music folder name ignoring case sensitive
+    MEDIAFOLDER=$(basename $(ls /media/USBDRIVES/$2 | grep -i '^music$'))
+    if [ "$MEDIAFOLDER" != "" ]; then
+        log_echo "LINK: Found media folder: $MEDIAFOLDER"
+        ln -s /media/USBDRIVES/$2/$MEDIAFOLDER/*/ /media/MYMEDIA/
+        find /media/MYMEDIA/. -type l -exec sh -c 'readlink -f "{}" 1>/dev/null || sudo rm "{}"' -- "{}" \;
+        log_echo "LINK: media folder linked"
+    fi
+fi
+
+if [ "$1" == "usbreset" ] && [ -f /tmp/android_device ]; then
+    sudo usbreset $(cat /tmp/android_device | head -n1) > /dev/null 2>&1
+    sleep 2
+    # check if device still in aa mode
+    log_echo "USBRESET: Check if usb reset was successfull..."
+    CHECK=`lsusb | grep 'Google' | grep 'accessory mode' | awk {'print $2"/"$4'} | cut -d: -f1`
+    if [ "$CHECK" != "" ]; then
+        log_echo "USBRESET: Reset failed (/dev/bus/usb/$CHECK)!"
+        sudo usbreset /dev/bus/usb/$CHECK
+        log_echo "USBRESET: Retried!"
+        sleep 1
+        sudo udevadm control --reload-rules && sudo udevadm trigger
+    else
+        log_echo "USBRESET: ok."
+    fi
+fi
+
+exit 0

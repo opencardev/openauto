@@ -230,7 +230,8 @@ install(FILES
 
 # Install crankshaft launcher to /usr/local/bin
 install(FILES
-    packaging/usr/local/bin/crankshaft
+    helpers/crankshaft
+    helpers/autoapp_helper
     DESTINATION /usr/local/bin
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
@@ -278,9 +279,9 @@ set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/opencardev/openauto")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
-# Explicit dependencies for GStreamer video codec support
-# These are required for H.264/H.265 video decoding from Android Auto
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "gstreamer1.0-libav, gstreamer1.0-plugins-bad, gstreamer1.0-plugins-ugly")
+# Explicit dependencies for GStreamer video codec support and Qt Multimedia backend
+# These are required for H.264/H.265 video decoding from Android Auto via QtVideoOutput
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5multimedia5, libqt5multimedia5-plugins, gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, gstreamer1.0-libav, gstreamer1.0-plugins-bad, gstreamer1.0-plugins-ugly")
 
 # Debian package control scripts
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
