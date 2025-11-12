@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <boost/asio.hpp>
 #include <aasdk/Transport/ITransport.hpp>
 #include <aasdk/Channel/Control/IControlServiceChannel.hpp>
@@ -86,6 +87,8 @@ private:
     ServiceList serviceList_;
     IPinger::Pointer pinger_;
     IAndroidAutoEntityEventHandler* eventHandler_;
+    // Guard to avoid re-entrant quit handling and spurious error-triggered quits during shutdown
+    std::atomic<bool> stopping_{false};
 };
 
 }

@@ -57,6 +57,12 @@ namespace f1x::openauto::autoapp::service::sensor {
     this->stopPolling = true;
 
     strand_.dispatch([this, self = this->shared_from_this()]() {
+      // Cancel any pending timers to stop scheduling further polling callbacks immediately
+      boost::system::error_code ec;
+      this->timer_.cancel(ec);
+      if (ec) {
+        OPENAUTO_LOG(warning) << "[SensorService] timer cancel error: " << ec.message();
+      }
       if (this->gpsEnabled_) {
         gps_stream(&this->gpsData_, WATCH_DISABLE, NULL);
         gps_close(&this->gpsData_);
