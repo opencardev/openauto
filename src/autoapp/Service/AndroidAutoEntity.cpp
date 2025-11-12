@@ -61,6 +61,8 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::stop() {
+          // Mark stopping early to suppress error-triggered quits during teardown
+          stopping_.store(true, std::memory_order_relaxed);
           strand_.dispatch([this, self = this->shared_from_this()]() {
             OPENAUTO_LOG(info) << "[AndroidAutoEntity] stop()";
 
@@ -315,6 +317,10 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onChannelError(const aasdk::error::Error &e) {
+          if (stopping_.load(std::memory_order_relaxed)) {
+            OPENAUTO_LOG(info) << "[AndroidAutoEntity] onChannelError() during stopping, ignoring: " << e.what();
+            return;
+          }
           OPENAUTO_LOG(fatal) << "[AndroidAutoEntity] onChannelError(): " << e.what();
           this->triggerQuit();
         }
