@@ -54,7 +54,8 @@ namespace f1x::openauto::autoapp::service::sensor {
   }
 
   void SensorService::stop() {
-    this->stopPolling = true;
+    // Set atomic flag first to prevent new timer callbacks from being scheduled
+    this->stopPolling.store(true, std::memory_order_release);
 
     strand_.dispatch([this, self = this->shared_from_this()]() {
       // Cancel any pending timers to stop scheduling further polling callbacks immediately
@@ -221,10 +222,10 @@ namespace f1x::openauto::autoapp::service::sensor {
 
   void SensorService::sensorPolling() {
     OPENAUTO_LOG(info) << "[SensorService] sensorPolling()";
-    if (!this->stopPolling) {
+    if (!this->stopPolling.load(std::memory_order_acquire)) {
       strand_.dispatch([this, self = this->shared_from_this()]() {
         // Check stopPolling again inside the dispatched handler to catch late stop() calls
-        if (this->stopPolling) {
+        if (this->stopPolling.load(std::memory_order_acquire)) {
           OPENAUTO_LOG(info) << "[SensorService] sensorPolling() aborted due to stop.";
           return;
         }
@@ -255,9 +256,11 @@ namespace f1x::openauto::autoapp::service::sensor {
         }
 
         // Final check before rescheduling to prevent race with stop()
-        if (!this->stopPolling) {
+        if (!this->stopPolling.load(std::memory_order_acquire)) {
           timer_.expires_from_now(boost::posix_time::milliseconds(250));
           timer_.async_wait(strand_.wrap(std::bind(&SensorService::sensorPolling, this->shared_from_this())));
+        } else {
+          OPENAUTO_LOG(info) << "[SensorService] sensorPolling() stopped, timer not rescheduled.";
         }
       });
     }
@@ -275,6 +278,12 @@ namespace f1x::openauto::autoapp::service::sensor {
       OPENAUTO_LOG(debug) << "[SensorService] onChannelError(): " << e.what() << " (expected during stop)";
     } else {
       OPENAUTO_LOG(error) << "[SensorService] onChannelError(): " << e.what();
+    }
+    
+    // Stop polling on any channel error to prevent hanging on exit
+    if (!this->stopPolling.load(std::memory_order_acquire)) {
+      OPENAUTO_LOG(info) << "[SensorService] onChannelError(): stopping sensor polling due to channel error";
+      this->stop();
     }
   }
 }
