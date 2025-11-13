@@ -38,9 +38,17 @@ QtVideoOutput::QtVideoOutput(configuration::IConfiguration::Pointer configuratio
 {
     this->moveToThread(QApplication::instance()->thread());
     connect(this, &QtVideoOutput::startPlayback, this, &QtVideoOutput::onStartPlayback, Qt::BlockingQueuedConnection);
-    // Use QueuedConnection (non-blocking) for stop to avoid deadlocks if Qt event loop is blocked
-    connect(this, &QtVideoOutput::stopPlayback, this, &QtVideoOutput::onStopPlayback, Qt::QueuedConnection);
+    connect(this, &QtVideoOutput::stopPlayback, this, &QtVideoOutput::onStopPlayback, Qt::BlockingQueuedConnection);
     QMetaObject::invokeMethod(this, "createVideoOutput", Qt::BlockingQueuedConnection);
+}
+
+QtVideoOutput::~QtVideoOutput()
+{
+    OPENAUTO_LOG(info) << "[QtVideoOutput] Destructor called, ensuring cleanup";
+    // Force synchronous cleanup if not already stopped
+    if (playerReady_ || mediaPlayer_) {
+        cleanupPlayer();
+    }
 }
 
 void QtVideoOutput::createVideoOutput()
@@ -122,6 +130,22 @@ void QtVideoOutput::onStartPlayback()
     OPENAUTO_LOG(debug) << "[QtVideoOutput] Player error state -> " << mediaPlayer_->errorString().toStdString();
 }
 
+void QtVideoOutput::cleanupPlayer()
+{
+    // Stop the player with timeout protection
+    if (mediaPlayer_) {
+        OPENAUTO_LOG(debug) << "[QtVideoOutput] Stopping media player";
+        mediaPlayer_->stop();
+        mediaPlayer_->setMedia(QMediaContent());
+    }
+    
+    // Hide video widget
+    if (videoWidget_) {
+        videoWidget_->hide();
+        videoWidget_->clearFocus();
+    }
+}
+
 void QtVideoOutput::onStopPlayback()
 {
     OPENAUTO_LOG(info) << "[QtVideoOutput] onStopPlayback()";
@@ -131,17 +155,7 @@ void QtVideoOutput::onStopPlayback()
     initialBufferingDone_ = false;
     bytesWritten_ = 0;
     
-    // Stop the player first (this can block briefly but should complete quickly)
-    if (mediaPlayer_) {
-        mediaPlayer_->stop();
-        mediaPlayer_->setMedia(QMediaContent());
-    }
-    
-    // Hide video widget without blocking
-    if (videoWidget_) {
-        videoWidget_->hide();
-        videoWidget_->clearFocus();
-    }
+    cleanupPlayer();
     
     OPENAUTO_LOG(info) << "[QtVideoOutput] onStopPlayback() complete";
 }

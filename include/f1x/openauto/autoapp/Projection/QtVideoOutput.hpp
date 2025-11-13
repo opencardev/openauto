@@ -40,6 +40,7 @@ class QtVideoOutput: public QObject, public VideoOutput, boost::noncopyable
 
 public:
     QtVideoOutput(configuration::IConfiguration::Pointer configuration);
+    ~QtVideoOutput() override;
     bool open() override;
     bool init() override;
     void write(uint64_t timestamp, const aasdk::common::DataConstBuffer& buffer) override;
@@ -58,6 +59,7 @@ protected slots:
     void onError(QMediaPlayer::Error error);
 
 private:
+    void cleanupPlayer();
     SequentialBuffer videoBuffer_;
     std::unique_ptr<QVideoWidget> videoWidget_;
     std::unique_ptr<QMediaPlayer> mediaPlayer_;
