@@ -38,6 +38,7 @@ QtVideoOutput::QtVideoOutput(configuration::IConfiguration::Pointer configuratio
 {
     this->moveToThread(QApplication::instance()->thread());
     connect(this, &QtVideoOutput::startPlayback, this, &QtVideoOutput::onStartPlayback, Qt::BlockingQueuedConnection);
+    // Use QueuedConnection (non-blocking) for stop to avoid deadlocks if Qt event loop is blocked
     connect(this, &QtVideoOutput::stopPlayback, this, &QtVideoOutput::onStopPlayback, Qt::QueuedConnection);
     QMetaObject::invokeMethod(this, "createVideoOutput", Qt::BlockingQueuedConnection);
 }
@@ -69,6 +70,11 @@ void QtVideoOutput::stop()
 void QtVideoOutput::write(uint64_t, const aasdk::common::DataConstBuffer& buffer)
 {
     std::lock_guard<std::mutex> lock(writeMutex_);
+    
+    // Skip writes if player is not ready or was stopped
+    if (!playerReady_) {
+        return;
+    }
     
     // Write data to buffer - the SequentialBuffer will handle the buffering
     videoBuffer_.write(reinterpret_cast<const char*>(buffer.cdata), buffer.size);
@@ -125,10 +131,19 @@ void QtVideoOutput::onStopPlayback()
     initialBufferingDone_ = false;
     bytesWritten_ = 0;
     
-    videoWidget_->hide();
-    videoWidget_->clearFocus();
-    mediaPlayer_->stop();
-    mediaPlayer_->setMedia(QMediaContent());
+    // Stop the player first (this can block briefly but should complete quickly)
+    if (mediaPlayer_) {
+        mediaPlayer_->stop();
+        mediaPlayer_->setMedia(QMediaContent());
+    }
+    
+    // Hide video widget without blocking
+    if (videoWidget_) {
+        videoWidget_->hide();
+        videoWidget_->clearFocus();
+    }
+    
+    OPENAUTO_LOG(info) << "[QtVideoOutput] onStopPlayback() complete";
 }
 
 void QtVideoOutput::onMediaStatusChanged(QMediaPlayer::MediaStatus status)

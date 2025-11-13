@@ -193,8 +193,15 @@ namespace f1x {
           }
 
           void VideoMediaSinkService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[VideoMediaSinkService] onChannelError(): " << e.what()
-                                << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId());
+            // OPERATION_ABORTED is expected during shutdown when messenger stops
+            if (e.getCode() == aasdk::error::ErrorCode::OPERATION_ABORTED) {
+              OPENAUTO_LOG(debug) << "[VideoMediaSinkService] onChannelError(): " << e.what()
+                                  << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId())
+                                  << " (expected during stop)";
+            } else {
+              OPENAUTO_LOG(error) << "[VideoMediaSinkService] onChannelError(): " << e.what()
+                                  << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId());
+            }
           }
 
           void VideoMediaSinkService::onVideoFocusRequest(
