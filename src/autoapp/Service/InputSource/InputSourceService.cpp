@@ -170,7 +170,10 @@ namespace f1x {
           }
 
           void InputSourceService::onTouchEvent(const projection::TouchEvent &event) {
-            OPENAUTO_LOG(error) << "[InputSourceService] onTouchEvent()";
+            OPENAUTO_LOG(debug) << "[InputSourceService] onTouchEvent: action=" << event.type 
+                                << " pointerCount=" << event.pointers.size() 
+                                << " actionIndex=" << event.actionIndex;
+            
             auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now().time_since_epoch());
 
@@ -181,10 +184,16 @@ namespace f1x {
 
                   auto touchEvent = inputReport.mutable_touch_event();
                   touchEvent->set_action(event.type);
-                  auto touchLocation = touchEvent->add_pointer_data();
-                  touchLocation->set_x(event.x);
-                  touchLocation->set_y(event.y);
-                  touchLocation->set_pointer_id(0);
+                  touchEvent->set_action_index(event.actionIndex);
+                  
+                  // Add all touch points
+                  for(const auto& pointer : event.pointers)
+                  {
+                      auto touchLocation = touchEvent->add_pointer_data();
+                      touchLocation->set_x(pointer.x);
+                      touchLocation->set_y(pointer.y);
+                      touchLocation->set_pointer_id(pointer.pointerId);
+                  }
 
                   auto promise = aasdk::channel::SendPromise::defer(strand_);
                   promise->then([]() {}, std::bind(&InputSourceService::onChannelError, this->shared_from_this(),

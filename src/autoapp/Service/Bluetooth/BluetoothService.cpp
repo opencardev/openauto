@@ -156,7 +156,12 @@ namespace f1x::openauto::autoapp::service::bluetooth {
   }
 
   void BluetoothService::onChannelError(const aasdk::error::Error &e) {
-    OPENAUTO_LOG(error) << "[BluetoothService] onChannelError(): " << e.what();
+    // OPERATION_ABORTED is expected during shutdown when messenger stops
+    if (e.getCode() == aasdk::error::ErrorCode::OPERATION_ABORTED) {
+      OPENAUTO_LOG(debug) << "[BluetoothService] onChannelError(): " << e.what() << " (expected during stop)";
+    } else {
+      OPENAUTO_LOG(error) << "[BluetoothService] onChannelError(): " << e.what();
+    }
   }
 }
 
