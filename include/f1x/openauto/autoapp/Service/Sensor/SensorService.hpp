@@ -19,6 +19,7 @@
 #pragma once
 
 #include <gps.h>
+#include <atomic>
 #include <aap_protobuf/service/sensorsource/message/DrivingStatus.pb.h>
 #include <aap_protobuf/service/sensorsource/message/SensorType.pb.h>
 #include <aasdk/Channel/SensorSource/SensorSourceService.hpp>
@@ -38,7 +39,7 @@ namespace f1x::openauto::autoapp::service::sensor {
 
     bool isNight = false;
     bool previous = false;
-    bool stopPolling = false;
+    std::atomic<bool> stopPolling{false};
 
     void start() override;
 
