@@ -17,6 +17,8 @@
 */
 
 #include <QApplication>
+#include <QGuiApplication>
+#include <QScreen>
 #include <mutex>
 #include <f1x/openauto/autoapp/Projection/QtVideoOutput.hpp>
 #include <f1x/openauto/Common/Log.hpp>
@@ -103,11 +105,25 @@ void QtVideoOutput::onStartPlayback()
     videoWidget_->setAttribute(Qt::WA_OpaquePaintEvent, true);
     videoWidget_->setAttribute(Qt::WA_NoSystemBackground, true);
     videoWidget_->setAspectRatioMode(Qt::IgnoreAspectRatio);
-    videoWidget_->setFocus();
     videoWidget_->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    
+    // Get the physical screen geometry and set widget to exactly match it
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (screen != nullptr) {
+        QRect screenGeometry = screen->geometry();
+        videoWidget_->setGeometry(screenGeometry);
+        OPENAUTO_LOG(info) << "[QtVideoOutput] Set video widget geometry to: " 
+                           << screenGeometry.width() << "x" << screenGeometry.height()
+                           << " at (" << screenGeometry.x() << "," << screenGeometry.y() << ")";
+    } else {
+        // Fallback to fullscreen if screen detection fails
+        videoWidget_->setFullScreen(true);
+        OPENAUTO_LOG(warning) << "[QtVideoOutput] Could not detect screen, using setFullScreen()";
+    }
+    
     videoWidget_->raise();
-    videoWidget_->setFullScreen(true);
     videoWidget_->show();
+    videoWidget_->setFocus();
     videoWidget_->activateWindow();
 
     // Connect state change signals to track when player is ready
