@@ -317,10 +317,18 @@ namespace f1x {
         }
 
         void AndroidAutoEntity::onChannelError(const aasdk::error::Error &e) {
+          // OPERATION_ABORTED is expected during shutdown when messenger stops
+          if (e.getCode() == aasdk::error::ErrorCode::OPERATION_ABORTED) {
+            OPENAUTO_LOG(debug) << "[AndroidAutoEntity] onChannelError(): " << e.what() << " (expected during stop)";
+            return;
+          }
+          
+          // Ignore other errors if we're already stopping to prevent re-entrant quit
           if (stopping_.load(std::memory_order_relaxed)) {
             OPENAUTO_LOG(info) << "[AndroidAutoEntity] onChannelError() during stopping, ignoring: " << e.what();
             return;
           }
+          
           OPENAUTO_LOG(fatal) << "[AndroidAutoEntity] onChannelError(): " << e.what();
           this->triggerQuit();
         }
