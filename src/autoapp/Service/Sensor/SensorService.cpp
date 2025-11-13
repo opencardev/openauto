@@ -223,6 +223,12 @@ namespace f1x::openauto::autoapp::service::sensor {
     OPENAUTO_LOG(info) << "[SensorService] sensorPolling()";
     if (!this->stopPolling) {
       strand_.dispatch([this, self = this->shared_from_this()]() {
+        // Check stopPolling again inside the dispatched handler to catch late stop() calls
+        if (this->stopPolling) {
+          OPENAUTO_LOG(info) << "[SensorService] sensorPolling() aborted due to stop.";
+          return;
+        }
+        
         this->isNight = is_file_exist("/tmp/night_mode_enabled");
         if (this->previous != this->isNight && !this->firstRun) {
           this->previous = this->isNight;
@@ -248,8 +254,11 @@ namespace f1x::openauto::autoapp::service::sensor {
           this->sendGPSLocationData();
         }
 
-        timer_.expires_from_now(boost::posix_time::milliseconds(250));
-        timer_.async_wait(strand_.wrap(std::bind(&SensorService::sensorPolling, this->shared_from_this())));
+        // Final check before rescheduling to prevent race with stop()
+        if (!this->stopPolling) {
+          timer_.expires_from_now(boost::posix_time::milliseconds(250));
+          timer_.async_wait(strand_.wrap(std::bind(&SensorService::sensorPolling, this->shared_from_this())));
+        }
       });
     }
   }
@@ -261,7 +270,12 @@ namespace f1x::openauto::autoapp::service::sensor {
   }
 
   void SensorService::onChannelError(const aasdk::error::Error &e) {
-    OPENAUTO_LOG(error) << "[SensorService] onChannelError(): " << e.what();
+    // OPERATION_ABORTED is expected during shutdown when messenger stops
+    if (e.getCode() == aasdk::error::ErrorCode::OPERATION_ABORTED) {
+      OPENAUTO_LOG(debug) << "[SensorService] onChannelError(): " << e.what() << " (expected during stop)";
+    } else {
+      OPENAUTO_LOG(error) << "[SensorService] onChannelError(): " << e.what();
+    }
   }
 }
 
