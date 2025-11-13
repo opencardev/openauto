@@ -38,7 +38,8 @@ InputDevice::InputDevice(QObject& parent, configuration::IConfiguration::Pointer
     , nextTouchPointId_(0)
 {
     this->moveToThread(parent.thread());
-    parent_.setAttribute(Qt::WA_AcceptTouchEvents, true);
+    // Note: Touch events are accepted automatically when we install the event filter
+    // No need to set WA_AcceptTouchEvents on QApplication parent
 }
 
 void InputDevice::start(IInputDeviceEventHandler& eventHandler)
@@ -331,7 +332,8 @@ bool InputDevice::handleMultiTouchEvent(QTouchEvent* touchEvent)
     }
     else if(touchEvent->type() == QEvent::TouchCancel)
     {
-        event.type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_CANCEL;
+        // Android Auto protocol doesn't support ACTION_CANCEL, treat as ACTION_UP (all fingers lifted)
+        event.type = aap_protobuf::service::inputsource::message::PointerAction::ACTION_UP;
         event.actionIndex = 0;
         touchPointIdMap_.clear();
         nextTouchPointId_ = 0;
