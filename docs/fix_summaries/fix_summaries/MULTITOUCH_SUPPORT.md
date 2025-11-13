@@ -1,8 +1,6 @@
-# OpenAuto Multitouch Support
+# DEPRECATED – moved to `../multitouch_support.md`
 
-## Overview
-
-OpenAuto now supports **full multitouch gestures** for Android Auto, enabling advanced interactions like pinch-to-zoom in Google Maps, two-finger scrolling, and rotation gestures. This feature leverages Qt's native touch event system and the Android Auto protocol's built-in multitouch capabilities.
+Original multitouch documentation relocated. Please consult parent directory file.
 
 ## Features
 

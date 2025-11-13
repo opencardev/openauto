@@ -1,13 +1,6 @@
-# OpenAuto/AASDK Shutdown Freeze Fix
+# DEPRECATED – moved to `../shutdown_fix_summary.md`
 
-## Problem Summary
-
-OpenAuto would freeze when Android Auto exited, with symptoms including:
-- UI clock stops updating
-- Application unresponsive to input
-- Logs show continuous `sensorPolling()` after `stop()` 
-- Flood of `AASDK Error: 30` channel errors during shutdown
-- Cannot reconnect to Android Auto without restart
+Original shutdown fix summary relocated. See parent directory file.
 
 ## Root Causes Identified
 

@@ -1,13 +1,6 @@
-# OpenAuto Touch Coordinate Misalignment Fix
+# DEPRECATED – moved to `../touch_fix_summary.md`
 
-## Problem Summary
-
-On the Raspberry Pi 7" touchscreen (800x480), when Android Auto is running:
-- The AA video window only occupies approximately 75% of the screen width
-- Touch input is misaligned - buttons that appear at 75% horizontal position are only clickable when touching the far bottom corner
-- The video output does not fill the entire physical screen
-
-## Root Cause
+Original touch fix summary relocated. See parent directory file.
 
 The issue was in `QtVideoOutput::onStartPlayback()` where the video widget was configured using:
 

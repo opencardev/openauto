@@ -1,4 +1,5 @@
-# OpenAuto Fix & Feature Summaries (Combined)
+<!-- Deprecated: This uppercase README retained only for case-insensitive systems. Use lowercase `readme.md` in this folder. -->
+# DEPRECATED – see `readme.md`
 
 <!--
  * Project: OpenAuto
@@ -19,11 +20,7 @@
  * along with openauto. If not, see <http://www.gnu.org/licenses/>.
 -->
 
-Date: 2025-11-13
-Branches: `develop` (active), `main` (target for PR #40)
-Status: All fixes implemented; multitouch awaiting full ARM matrix validation.
-
-This document aggregates recent platform stability and input handling fixes.
+This file is superseded. Refer to `readme.md` for current combined fix summaries.
 
 ## Index
 
