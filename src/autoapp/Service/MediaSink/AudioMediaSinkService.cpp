@@ -149,8 +149,15 @@ namespace f1x {
           }
 
           void AudioMediaSinkService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[AudioMediaSinkService] onChannelError(): " << e.what()
-                                << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId());
+            // OPERATION_ABORTED is expected during shutdown when messenger stops
+            if (e.getCode() == aasdk::error::ErrorCode::OPERATION_ABORTED) {
+              OPENAUTO_LOG(debug) << "[AudioMediaSinkService] onChannelError(): " << e.what()
+                                  << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId())
+                                  << " (expected during stop)";
+            } else {
+              OPENAUTO_LOG(error) << "[AudioMediaSinkService] onChannelError(): " << e.what()
+                                  << ", channel: " << aasdk::messenger::channelIdToString(channel_->getId());
+            }
           }
 
           /*

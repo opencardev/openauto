@@ -132,7 +132,12 @@ namespace f1x {
           }
 
           void InputSourceService::onChannelError(const aasdk::error::Error &e) {
-            OPENAUTO_LOG(error) << "[InputSourceService] onChannelError(): " << e.what();
+            // OPERATION_ABORTED is expected during shutdown when messenger stops
+            if (e.getCode() == aasdk::error::ErrorCode::OPERATION_ABORTED) {
+              OPENAUTO_LOG(debug) << "[InputSourceService] onChannelError(): " << e.what() << " (expected during stop)";
+            } else {
+              OPENAUTO_LOG(error) << "[InputSourceService] onChannelError(): " << e.what();
+            }
           }
 
           void InputSourceService::onButtonEvent(const projection::ButtonEvent &event) {
