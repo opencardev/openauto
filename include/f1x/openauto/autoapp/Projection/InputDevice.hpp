@@ -20,6 +20,8 @@
 
 #include <QObject>
 #include <QKeyEvent>
+#include <QTouchEvent>
+#include <map>
 #include <f1x/openauto/autoapp/Projection/IInputDevice.hpp>
 #include <f1x/openauto/autoapp/Configuration/IConfiguration.hpp>
 
@@ -51,6 +53,8 @@ private:
     bool handleKeyEvent(QEvent* event, QKeyEvent* key);
     void dispatchKeyEvent(ButtonEvent event);
     bool handleTouchEvent(QEvent* event);
+    bool handleMultiTouchEvent(QTouchEvent* touchEvent);
+    void translateTouchPoint(const QTouchEvent::TouchPoint& qtPoint, TouchPoint& ourPoint);
 
     QObject& parent_;
     configuration::IConfiguration::Pointer configuration_;
@@ -58,6 +62,8 @@ private:
     QRect displayGeometry_;
     IInputDeviceEventHandler* eventHandler_;
     std::mutex mutex_;
+    std::map<int, uint32_t> touchPointIdMap_; // Maps Qt touch IDs to our sequential IDs
+    uint32_t nextTouchPointId_;
 };
 
 }

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <vector>
 #include <aap_protobuf/service/media/sink/message/KeyCode.pb.h>
 #include <aap_protobuf/service/inputsource/message/PointerAction.pb.h>
 #include <aasdk/IO/Promise.hpp>
@@ -52,12 +53,18 @@ struct ButtonEvent
     aap_protobuf::service::media::sink::message::KeyCode code;
 };
 
-struct TouchEvent
+struct TouchPoint
 {
-    aap_protobuf::service::inputsource::message::PointerAction type;
     uint32_t x;
     uint32_t y;
     uint32_t pointerId;
+};
+
+struct TouchEvent
+{
+    aap_protobuf::service::inputsource::message::PointerAction type;
+    std::vector<TouchPoint> pointers;
+    uint32_t actionIndex; // Index of the pointer that changed state
 };
 
 }
