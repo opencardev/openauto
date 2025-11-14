@@ -89,10 +89,10 @@ jobs:
             ARCHES="$ARCH_INPUT"
           fi
 
-          # On develop branch, limit to amd64 for faster feedback
-          if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+          # On develop branch, limit to amd64 for faster feedback (only for automatic pushes, not manual workflow_dispatch)
+          if [ "${{ github.ref }}" = "refs/heads/develop" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             ARCHES="amd64"
-            echo "Building only amd64 for develop branch"
+            echo "Building only amd64 for develop branch (automatic push)"
           fi
 
           # Expand distributions list
@@ -208,6 +208,15 @@ jobs:
         run: |
           echo "Building OpenAuto for ${{ matrix.arch }} architecture"
 
+          # Determine build type based on branch
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            BUILD_TYPE="release"
+            echo "Building release packages for main branch"
+          else
+            BUILD_TYPE="debug"
+            echo "Building debug packages for ${{ github.ref_name }} branch"
+          fi
+
           # Create output directory
           mkdir -p ./build-output
 
@@ -216,6 +225,7 @@ jobs:
             --platform ${{ matrix.platform }} \
             --build-arg TARGET_ARCH=${{ matrix.arch }} \
             --build-arg DEBIAN_VERSION=${{ matrix.distro }} \
+            --build-arg BUILD_TYPE=${BUILD_TYPE} \
             --tag openauto-build:${{ matrix.arch }} \
             --load \
             .
