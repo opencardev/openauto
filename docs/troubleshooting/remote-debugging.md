@@ -136,8 +136,7 @@ The application will wait for the debugger to connect before starting.
 Download from: https://www.msys2.org/
 
 ```powershell
-# Using MSYS2
-pacman -S mingw-w64-x86_64-gdb
+winget install -e --id Codeblocks.Codeblocks
 ```
 
 Or use WSL:
@@ -217,7 +216,7 @@ Keep this terminal open while debugging.
 ### 1. Set Breakpoints
 
 In VS Code, set breakpoints in key locations:
-
+ 
 - `src/autoapp/Service/Sensor/SensorService.cpp`:
   - Line in `stop()` method
   - Line in `sensorPolling()` method

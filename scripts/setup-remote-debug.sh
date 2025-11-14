@@ -7,9 +7,19 @@ set -e
 echo "=== OpenAuto Remote Debugging Setup ==="
 echo ""
 
+# Detect if running as sudo and get the real user
+if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    REAL_USER="$SUDO_USER"
+    REAL_HOME=$(eval echo "~$SUDO_USER")
+    echo "⚠️  Running as sudo. Using $REAL_USER's home directory: $REAL_HOME"
+else
+    REAL_USER="$USER"
+    REAL_HOME="$HOME"
+fi
+
 # Check if this is a fresh setup
 FRESH_SETUP=false
-if [ ! -d "$HOME/src/openauto" ]; then
+if [ ! -d "$REAL_HOME/src/openauto" ]; then
     FRESH_SETUP=true
 fi
 
@@ -25,14 +35,14 @@ fi
 # If fresh setup, offer to clone and build openauto
 if [ "$FRESH_SETUP" = true ]; then
     echo ""
-    echo "OpenAuto source not found in ~/src/openauto"
+    echo "OpenAuto source not found in $REAL_HOME/src/openauto"
     read -p "Do you want to clone and build OpenAuto with debug symbols? [Y/n]: " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
         echo ""
         echo "Cloning OpenAuto repository..."
-        mkdir -p ~/src
-        cd ~/src
+        mkdir -p "$REAL_HOME/src"
+        cd "$REAL_HOME/src"
         git clone https://github.com/opencardev/openauto.git
         cd openauto
         git checkout develop
@@ -71,7 +81,7 @@ if [ "$FRESH_SETUP" = true ]; then
             sudo apt-get install -y libaasdk-dev
         else
             echo "Building aasdk from source..."
-            cd ~/src
+            cd "$REAL_HOME/src"
             git clone https://github.com/opencardev/aasdk.git
             cd aasdk
             mkdir -p build-release
@@ -84,13 +94,13 @@ if [ "$FRESH_SETUP" = true ]; then
         
         echo ""
         echo "Building OpenAuto with debug symbols..."
-        cd ~/src/openauto
+        cd "$REAL_HOME/src/openauto"
         chmod +x build.sh
-        ./build.sh debug
+        sudo -u "$REAL_USER" ./build.sh debug
         
         echo ""
         echo "✓ OpenAuto built successfully with debug symbols"
-        echo "  Binary location: ~/src/openauto/build-debug/autoapp"
+        echo "  Binary location: $REAL_HOME/src/openauto/build-debug/autoapp"
     fi
 fi
 
@@ -105,8 +115,8 @@ if [ ! -f "$AUTOAPP_PATH" ]; then
     echo "autoapp not found at $AUTOAPP_PATH"
     
     # Try the build directory
-    if [ -f "$HOME/src/openauto/build-debug/autoapp" ]; then
-        AUTOAPP_PATH="$HOME/src/openauto/build-debug/autoapp"
+    if [ -f "$REAL_HOME/src/openauto/build-debug/autoapp" ]; then
+        AUTOAPP_PATH="$REAL_HOME/src/openauto/build-debug/autoapp"
         echo "✓ Using debug build: $AUTOAPP_PATH"
     else
         echo "Searching for autoapp..."
@@ -115,7 +125,7 @@ if [ ! -f "$AUTOAPP_PATH" ]; then
             echo "Error: Could not find autoapp binary"
             echo ""
             echo "Please ensure OpenAuto is built with debug symbols:"
-            echo "  cd ~/src/openauto"
+            echo "  cd $REAL_HOME/src/openauto"
             echo "  ./build.sh debug"
             exit 1
         fi

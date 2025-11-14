@@ -264,7 +264,14 @@ else()
 endif()
 
 set(CPACK_GENERATOR "DEB")
-set(CPACK_PACKAGE_NAME "openauto")
+
+# Add debug suffix to package name for debug builds
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CPACK_PACKAGE_NAME "openauto-dbg")
+else()
+    set(CPACK_PACKAGE_NAME "openauto")
+endif()
+
 set(CPACK_PACKAGE_VENDOR "OpenCarDev")
 set(CPACK_PACKAGE_CONTACT "OpenCarDev Team <opencardevuk@gmail.com>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenAuto head unit application using libaasdk")

@@ -22,13 +22,20 @@ set -e
 # Usage: ./build.sh [release|debug] [--clean] [--package] [--output-dir DIR]
 
 # Default values
-BUILD_TYPE="release"
 NOPI_FLAG="-DNOPI=ON"
 CLEAN_BUILD=false
 PACKAGE=false
 OUTPUT_DIR="/output"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="${SCRIPT_DIR}"
+
+# Auto-detect build type based on git branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+    BUILD_TYPE="release"
+else
+    BUILD_TYPE="debug"
+fi
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do

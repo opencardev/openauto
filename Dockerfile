@@ -24,6 +24,7 @@ FROM debian:${DEBIAN_VERSION}-slim
 
 # Build arguments
 ARG TARGET_ARCH=amd64
+ARG BUILD_TYPE=release
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Set locale to avoid encoding issues
@@ -109,7 +110,7 @@ RUN mkdir -p /output
 RUN chmod +x /src/build.sh
 
 # Build OpenAuto using unified build script
-RUN /src/build.sh release --package --output-dir /output
+RUN /src/build.sh ${BUILD_TYPE} --package --output-dir /output
 
 # Default command
 CMD ["bash", "-c", "echo 'OpenAuto build container ready. Packages are in /output/'"]

@@ -57,10 +57,15 @@ OpenAuto provides a unified build script (`build.sh`) that works consistently ac
 
 ```bash
 # Build release version (recommended for production)
+# Note: main/master branches default to release, other branches default to debug
 ./build.sh release --package
 
 # Build debug version with symbols (for development/debugging)
-./build.sh debug
+# Debug builds create packages with -dbg suffix (openauto-dbg)
+./build.sh debug --package
+
+# Auto-detect build type based on git branch
+./build.sh --package
 
 # Clean build
 ./build.sh release --clean --package
