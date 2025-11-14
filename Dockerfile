@@ -105,40 +105,11 @@ RUN echo "Contents of /src:" && ls -la
 # Create output directory for packages
 RUN mkdir -p /output
 
-# Build OpenAuto
-RUN export TARGET_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH) && \
-        echo "Building OpenAuto for architecture: $TARGET_ARCH (native compilation)" && \
-        # Determine if this is a non-Pi architecture
-        CMAKE_NOPI_FLAG="" && \
-        case "$TARGET_ARCH" in \
-            amd64|arm64) CMAKE_NOPI_FLAG="-DNOPI=ON" ;; \
-            armhf) CMAKE_NOPI_FLAG="-DNOPI=ON" ;; \
-            *) CMAKE_NOPI_FLAG="-DNOPI=ON" ;; \
-        esac && \
-        echo "Using CMAKE_NOPI_FLAG: $CMAKE_NOPI_FLAG" && \
-        # Compute distro-specific release suffix to avoid cross-suite overwrite
-        DISTRO_DEB_RELEASE=$(bash /src/scripts/distro_release.sh) && \
-        CPACK_DEB_RELEASE="$DISTRO_DEB_RELEASE" && \
-        echo "Using CPACK_DEBIAN_PACKAGE_RELEASE: $CPACK_DEB_RELEASE" && \
-        # Configure
-        env DISTRO_DEB_RELEASE="$CPACK_DEB_RELEASE" \
-            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${CMAKE_NOPI_FLAG} -DCPACK_DEBIAN_PACKAGE_RELEASE="$CPACK_DEB_RELEASE" -DCPACK_PROJECT_CONFIG_FILE=/src/cmake_modules/CPackProjectConfig.cmake && \
-    # Build
-    cmake --build build -j$(nproc) && \
-    # Package
-    cd build && \
-    cpack -G DEB && \
-    cd .. && \
-    # Copy packages to output
-    if [ -d "build" ]; then \
-        find build -name "*.deb" -exec cp {} /output/ \; 2>/dev/null || true && \
-        echo "Packages built:" && \
-        ls -la /output/; \
-    else \
-        echo "No build directory found"; \
-        exit 1; \
-    fi && \
-    echo "Build completed"
+# Make build script executable
+RUN chmod +x /src/build.sh
+
+# Build OpenAuto using unified build script
+RUN /src/build.sh release --package --output-dir /output
 
 # Default command
 CMD ["bash", "-c", "echo 'OpenAuto build container ready. Packages are in /output/'"]

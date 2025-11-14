@@ -50,23 +50,71 @@ Copyrights (c) 2018 f1x.studio (Michal Szwaj)
  - OpenMAX IL API
 
 ### Building
-#### Amd64
-Install the packages specified in the [prebuilts](https://github.com/opencardev/prebuilts) repository. Qt5 is required, versions packaged in modern Ubuntu and Debian
-seem to work fine.
 
-You will also likely need to install the udev rules from `prebuilts`
+OpenAuto provides a unified build script (`build.sh`) that works consistently across local and Docker environments.
 
-You need to point some CMAKE variables at your `aasdk` files.
-```text
--DAASDK_INCLUDE_DIRS=<path_to_aasdk_repo>/include
--DAASDK_LIBRARIES=<path_to_aasdk_repo>/lib/libaasdk.so
- DAASDK_PROTO_INCLUDE_DIRS=<path_to_aasdk_build>
--DAASDK_PROTO_LIBRARIES=<path_to_aasdk_repo>/lib/libaasdk_proto.so
+#### Quick Start
+
+```bash
+# Build release version (recommended for production)
+./build.sh release --package
+
+# Build debug version with symbols (for development/debugging)
+./build.sh debug
+
+# Clean build
+./build.sh release --clean --package
 ```
 
-#### Raspberry Pi
-Just run the scripts in the `prebuilts` repository for `aasdk` and `openauto`. It is possible to cross compile if your raspberry pi is too slow to compile the code itself.
-However, its easiest to just develop on a more capable `amd64` device.
+#### Build Script Options
+
+```bash
+Usage: ./build.sh [release|debug] [OPTIONS]
+
+Build types:
+  release        Build release version (default)
+  debug          Build debug version with symbols
+
+Options:
+  --clean        Clean build directory before building
+  --package      Create DEB packages after building
+  --output-dir   Directory to copy packages (default: /output)
+  --help         Show help message
+
+Note: Builds are always done with NOPI=ON (no Pi-specific hardware)
+```
+
+#### Manual Building (Legacy)
+
+If you need to build manually:
+
+**AMD64/x86_64:**
+1. Install dependencies from [prebuilts](https://github.com/opencardev/prebuilts) repository
+2. Install Qt5 and development packages
+3. Build with CMake:
+   ```bash
+   mkdir -p build-release
+   cd build-release
+   cmake -DCMAKE_BUILD_TYPE=Release ..
+   make -j$(nproc)
+   ```
+
+   Note: The build script automatically enables NOPI=ON
+
+**Raspberry Pi:**
+1. Use the scripts in the `prebuilts` repository for `aasdk` and `openauto`
+2. Or use the unified `build.sh` script:
+   ```bash
+   ./build.sh release --package
+   ```
+
+#### Docker Building
+
+The Dockerfile uses the same `build.sh` script:
+
+```bash
+docker build -t openauto --build-arg DEBIAN_VERSION=trixie .
+```
 
 ### Remarks
 **This software is not certified by Google Inc. It is created for R&D purposes and may not work as expected by the original authors. Do not use while driving. You use this software at your own risk.**
