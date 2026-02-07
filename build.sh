@@ -103,7 +103,8 @@ if [ "$WITH_AASDK" = true ]; then
     git clone --branch newdev https://github.com/opencardev/aasdk.git aasdk-build
     cd aasdk-build
     echo "Building and installing AASDK..."
-    sudo ./build.sh install
+    chmod +x build.sh
+    ./build.sh install
     cd "${SOURCE_DIR}"
     echo "AASDK build and install completed."
 fi
