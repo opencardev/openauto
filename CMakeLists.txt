@@ -99,7 +99,7 @@ endif ()
 find_package(aap_protobuf)
 find_package(aasdk)
 
-if(NOT aap_protobuf_FOUND OR NOT aasdk_FOUND)
+if(NOT AAP_PROTOBUF_FOUND OR NOT AASDK_FOUND)
 message(FATAL_ERROR "aap_protobuf or aasdk not found. Please build and install AASDK first.")
 endif()
 
