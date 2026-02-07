@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       build_run_id:
-        description: 'Build run ID to publish to APT repo'
+        description: "Build run ID to publish to APT repo"
         required: true
         type: string
       distribution:
-        description: 'Distribution to publish to'
+        description: "Distribution to publish to"
         required: false
-        default: 'trixie'
+        default: "trixie"
         type: choice
         options:
           - trixie
@@ -22,21 +22,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch to packages repo
+        env:
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+          REPOSITORY: ${{ github.repository }}
+          DISTRIBUTION: ${{ inputs.distribution }}
+          PACKAGES_REPO_TOKEN: ${{ secrets.PACKAGES_REPO_TOKEN }}
         run: |
-          echo "Triggering APT repository update for build run ${{ inputs.build_run_id }}"
+          echo "Triggering APT repository update for build run \"$BUILD_RUN_ID\""
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.PACKAGES_REPO_TOKEN }}" \
+            -H "Authorization: token $PACKAGES_REPO_TOKEN" \
             https://api.github.com/repos/opencardev/packages/dispatches \
             -d '{
               "event_type": "publish-apt-packages",
               "client_payload": {
-                "source_repo": "${{ github.repository }}",
-                "build_run_id": "${{ inputs.build_run_id }}",
+                "source_repo": "'$REPOSITORY'",
+                "build_run_id": "'$BUILD_RUN_ID'",
                 "apt_import": true,
-                "distribution": "${{ inputs.distribution }}"
+                "distribution": "'$DISTRIBUTION'"
               }
             }'
-
           echo "✅ APT repository update triggered successfully!"
           echo "Check: https://github.com/opencardev/packages/actions"

@@ -4,32 +4,32 @@ on:
   workflow_dispatch:
     inputs:
       build_run_id:
-        description: 'Build run ID to create release from'
+        description: "Build run ID to create release from"
         required: true
         type: string
       version:
-        description: 'Release version (leave empty for auto-generated)'
+        description: "Release version (leave empty for auto-generated)"
         required: false
-        default: ''
+        default: ""
         type: string
       create_draft:
-        description: 'Create as draft release'
+        description: "Create as draft release"
         required: false
         default: false
         type: boolean
   workflow_call:
     inputs:
       build_run_id:
-        description: 'Build run ID to create release from'
+        description: "Build run ID to create release from"
         required: true
         type: string
       version:
-        description: 'Release version (leave empty for auto-generated)'
+        description: "Release version (leave empty for auto-generated)"
         required: false
-        default: ''
+        default: ""
         type: string
       create_draft:
-        description: 'Create as draft release'
+        description: "Create as draft release"
         required: false
         default: false
         type: boolean
@@ -78,11 +78,14 @@ jobs:
           echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
 
       - name: Download artifacts from build run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
         run: |
-          echo "Downloading artifacts from run ID: ${{ inputs.build_run_id }}"
+          echo "Downloading artifacts from run ID: $BUILD_RUN_ID"
 
           mkdir -p ./release-artifacts
-          gh run download ${{ inputs.build_run_id }} --dir ./downloaded-artifacts
+          gh run download "$BUILD_RUN_ID" --dir ./downloaded-artifacts
 
           # Collect common build outputs
           if [ -d "./downloaded-artifacts" ]; then
@@ -94,8 +97,6 @@ jobs:
 
           echo "Downloaded artifacts:"
           ls -la ./release-artifacts/ || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

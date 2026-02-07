@@ -26,6 +26,7 @@ NOPI_FLAG="-DNOPI=ON"
 CLEAN_BUILD=false
 PACKAGE=false
 OUTPUT_DIR="/output"
+WITH_AASDK=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="${SCRIPT_DIR}"
 
@@ -60,6 +61,10 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_DIR="$2"
             shift 2
             ;;
+        --with-aasdk)
+            WITH_AASDK=true
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [release|debug] [OPTIONS]"
             echo ""
@@ -71,6 +76,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --clean        Clean build directory before building"
             echo "  --package      Create DEB packages after building"
             echo "  --output-dir   Directory to copy packages (default: /output)"
+            echo "  --with-aasdk   Clone AASDK newdev branch and build/install it"
             echo "  --help         Show this help message"
             echo ""
             echo "Examples:"
@@ -86,6 +92,21 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Handle AASDK cloning and building if requested
+if [ "$WITH_AASDK" = true ]; then
+    echo ""
+    echo "Cloning AASDK newdev branch..."
+    if [ -d "aasdk-build" ]; then
+        rm -rf "aasdk-build"
+    fi
+    git clone --branch newdev https://github.com/opencardev/aasdk.git aasdk-build
+    cd aasdk-build
+    echo "Building and installing AASDK..."
+    ./build.sh install
+    cd "${SOURCE_DIR}"
+    echo "AASDK build and install completed."
+fi
 
 # Determine build directory and CMake build type
 if [ "$BUILD_TYPE" = "debug" ]; then

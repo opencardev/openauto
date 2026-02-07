@@ -96,8 +96,13 @@ else ()
     find_package(Protobuf REQUIRED)
 endif ()
 
-find_package(aap_protobuf REQUIRED)
-find_package(aasdk REQUIRED)
+find_package(aap_protobuf)
+find_package(aasdk)
+
+if(NOT aap_protobuf_FOUND OR NOT aasdk_FOUND)
+message(FATAL_ERROR "aap_protobuf or aasdk not found. Please build and install AASDK first.")
+endif()
+
 find_package(Boost REQUIRED COMPONENTS system log_setup log OPTIONAL_COMPONENTS unit_test_framework)
 find_package(libusb-1.0 REQUIRED)
 find_package(Qt5 COMPONENTS DBus Multimedia MultimediaWidgets Bluetooth Network)
