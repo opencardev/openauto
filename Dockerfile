@@ -68,21 +68,6 @@ RUN apt-get update && apt-get install -y \
 # Add OpenCarDev APT repository for libaasdk
 ARG DEBIAN_VERSION
 
-COPY scripts/install_opencardev_repo.sh .
-RUN ./install_opencardev_repo.sh
-
-# Install libaasdk from APT repository (attempt selected distro, fall back to trixie if not yet published)
-RUN set -eux; \
-    if apt-cache show libaasdk >/dev/null 2>&1 && apt-cache show libaasdk-dev >/dev/null 2>&1; then \
-        echo "Installing libaasdk and libaasdk-dev together"; \
-        apt-get install -y --no-install-recommends libaasdk libaasdk-dev; \
-    else \
-        echo "ERROR: No libaasdk or libaasdk-dev package found"; \
-        apt-cache search libaasdk || true; \
-        exit 1; \
-    fi && \
-    apt-get clean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
-
 # Set working directory
 WORKDIR /src
 
@@ -99,7 +84,7 @@ RUN mkdir -p /output
 RUN chmod +x /src/build.sh
 
 # Build OpenAuto using unified build script
-RUN /src/build.sh ${BUILD_TYPE} --package --output-dir /output
+RUN /src/build.sh ${BUILD_TYPE} --with-aasdk --package --output-dir /output
 
 # Default command
 CMD ["bash", "-c", "echo 'OpenAuto build container ready. Packages are in /output/'"]
