@@ -67,15 +67,9 @@ RUN apt-get update && apt-get install -y \
 
 # Add OpenCarDev APT repository for libaasdk
 ARG DEBIAN_VERSION
-RUN install -d -m 0755 /etc/apt/keyrings && \
-        curl -fsSL https://opencardev.github.io/packages/opencardev.gpg.key -o /etc/apt/keyrings/opencardev.gpg && \
-        chmod 0644 /etc/apt/keyrings/opencardev.gpg && \
-        echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages ${DEBIAN_VERSION} main" > /etc/apt/sources.list.d/opencardev.list && \
-        # Temporary safety: if requested distro is not yet published in APT repo, fall back to trixie
-        if ! curl -fsSL "https://opencardev.github.io/packages/dists/${DEBIAN_VERSION}/Release" >/dev/null; then \
-            echo "WARNING: OpenCarDev APT repo does not have '${DEBIAN_VERSION}'. Falling back to 'trixie' for libaasdk."; \
-            echo "deb [signed-by=/etc/apt/keyrings/opencardev.gpg] https://opencardev.github.io/packages trixie main" > /etc/apt/sources.list.d/opencardev.list; \
-        fi
+
+COPY scripts/install_opencardev_repo.sh .
+RUN ./install_opencardev_repo.sh
 
 # Install libaasdk from APT repository (attempt selected distro, fall back to trixie if not yet published)
 RUN set -eux; \
