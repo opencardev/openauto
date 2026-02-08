@@ -23,7 +23,7 @@ ARG DEBIAN_VERSION=trixie
 FROM debian:${DEBIAN_VERSION}-slim
 
 # Build arguments
-ARG TARGET_ARCH=amd64
+ARG TARGET_ARCH=$(dpkg --print-architecture)
 ARG BUILD_TYPE=release
 ARG DEBIAN_FRONTEND=noninteractive
 
