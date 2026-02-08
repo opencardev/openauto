@@ -104,6 +104,8 @@ else ()
         message(FATAL_ERROR "Protobuf not found. Please install libprotobuf-dev and protobuf-compiler")
     endif()
     set(Protobuf_FOUND TRUE)
+    set(PROTOBUF_LIBRARIES ${Protobuf_LIBRARY})
+    set(PROTOBUF_INCLUDE_DIR ${Protobuf_INCLUDE_DIR})
 endif ()
 
 find_package(aap_protobuf)
