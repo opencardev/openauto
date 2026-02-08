@@ -148,17 +148,22 @@ find_cross_compiler() {
     local compiler=""
     
     # First try the base name (might be a symlink to latest)
-    if command -v "${prefix}gcc" &> /dev/null; then
+    if command -v "${prefix}gcc" &> /dev/null && [ -x "$(command -v "${prefix}gcc")" ]; then
         compiler="$(command -v "${prefix}gcc")"
     else
-        # Find all versioned compilers and pick the latest
-        local candidates=($(ls /usr/bin/${prefix}gcc-* 2>/dev/null | sort -V))
+        # Find all versioned compilers and pick the latest that actually exists and is executable
+        local candidates=()
+        for candidate in $(ls /usr/bin/${prefix}gcc-* 2>/dev/null | sort -V); do
+            if [ -x "$candidate" ]; then
+                candidates+=("$candidate")
+            fi
+        done
         if [ ${#candidates[@]} -gt 0 ]; then
             compiler="${candidates[-1]}"
         fi
     fi
     
-    if [ -n "$compiler" ]; then
+    if [ -n "$compiler" ] && [ -x "$compiler" ]; then
         echo "$compiler"
         return 0
     else
