@@ -26,6 +26,7 @@ NOPI_FLAG="-DNOPI=ON"
 CLEAN_BUILD=false
 PACKAGE=false
 OUTPUT_DIR="/output"
+WITH_AASDK=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="${SCRIPT_DIR}"
 
@@ -60,6 +61,10 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_DIR="$2"
             shift 2
             ;;
+        --with-aasdk)
+            WITH_AASDK=true
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [release|debug] [OPTIONS]"
             echo ""
@@ -71,6 +76,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --clean        Clean build directory before building"
             echo "  --package      Create DEB packages after building"
             echo "  --output-dir   Directory to copy packages (default: /output)"
+            echo "  --with-aasdk   Clone AASDK newdev branch and build/install it"
             echo "  --help         Show this help message"
             echo ""
             echo "Examples:"
@@ -86,6 +92,23 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Handle AASDK cloning and building if requested
+if [ "$WITH_AASDK" = true ]; then
+    echo ""
+    echo "Cloning AASDK newdev branch..."
+    if [ -d "aasdk-build" ]; then
+        rm -rf "aasdk-build"
+    fi
+    git clone --branch newdev https://github.com/opencardev/aasdk.git aasdk-build
+    cd aasdk-build
+    echo "Building and installing AASDK..."
+    chmod +x build.sh
+    export TARGET_ARCH="$TARGET_ARCH"
+    ./build.sh $BUILD_TYPE install
+    cd "${SOURCE_DIR}"
+    echo "AASDK build and install completed."
+fi
 
 # Determine build directory and CMake build type
 if [ "$BUILD_TYPE" = "debug" ]; then
@@ -119,6 +142,59 @@ mkdir -p "${BUILD_DIR}"
 # Detect architecture
 TARGET_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH 2>/dev/null || echo "amd64")
 echo "Target architecture: ${TARGET_ARCH}"
+
+find_cross_compiler() {
+    local prefix="$1"
+    local compiler=""
+    
+    # First try the base name (might be a symlink to latest)
+    if command -v "${prefix}gcc" &> /dev/null && [ -x "$(command -v "${prefix}gcc")" ]; then
+        compiler="$(command -v "${prefix}gcc")"
+    else
+        # Find all versioned compilers and pick the latest that actually exists and is executable
+        local candidates=()
+        for candidate in $(ls /usr/bin/${prefix}gcc-* 2>/dev/null | sort -V); do
+            if [ -x "$candidate" ]; then
+                candidates+=("$candidate")
+            fi
+        done
+        if [ ${#candidates[@]} -gt 0 ]; then
+            compiler="${candidates[-1]}"
+        fi
+    fi
+    
+    if [ -n "$compiler" ] && [ -x "$compiler" ]; then
+        echo "$compiler"
+        return 0
+    else
+        return 1
+    fi
+}
+
+setup_cross_compilation() {
+    if [ "$TARGET_ARCH" != "amd64" ]; then
+        echo "Setting up cross-compilation for ${TARGET_ARCH}..."
+        
+        case $TARGET_ARCH in
+            arm64)
+                local c_compiler=$(find_cross_compiler "aarch64-linux-gnu-")
+                if [ $? -eq 0 ]; then
+                    CMAKE_ARGS+=(-DCMAKE_C_COMPILER="$c_compiler")
+                    CMAKE_ARGS+=(-DCMAKE_CXX_COMPILER="${c_compiler/gcc/g++}")
+                fi
+                ;;
+            armhf)
+                local c_compiler=$(find_cross_compiler "arm-linux-gnueabihf-")
+                if [ $? -eq 0 ]; then
+                    CMAKE_ARGS+=(-DCMAKE_C_COMPILER="$c_compiler")
+                    CMAKE_ARGS+=(-DCMAKE_CXX_COMPILER="${c_compiler/gcc/g++}")
+                fi
+                ;;
+        esac
+    fi
+}
+
+setup_cross_compilation
 
 # Compute distro-specific release suffix
 if [ -f "${SOURCE_DIR}/scripts/distro_release.sh" ]; then

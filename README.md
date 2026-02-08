@@ -3,7 +3,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 
 ### Support project
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=R4HXE5ESDR4U4)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=YAA3LW393L46S)
 
 For support of other platforms please contact me at f1xstudiopl@gmail.com
 
@@ -58,7 +58,7 @@ OpenAuto provides a unified build script (`build.sh`) that works consistently ac
 ```bash
 # Build release version (recommended for production)
 # Note: main/master branches default to release, other branches default to debug
-./build.sh release --package
+./build.sh release --package --with-aasdk
 
 # Build debug version with symbols (for development/debugging)
 # Debug builds create packages with -dbg suffix (openauto-dbg)

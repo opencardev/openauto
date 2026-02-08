@@ -156,25 +156,23 @@ jobs:
 
       - name: Generate build info
         id: build_info
+        env:
+          VERSION_INPUT: ${{ github.event.inputs.version }}
+          CREATE_RELEASE_INPUT: ${{ github.event.inputs.create_release }}
+          EVENT_NAME: ${{ github.event_name }}
+          MATRIX_ARCH: ${{ matrix.arch }}
         run: |
-          # Use manual version if provided, otherwise generate using same scheme as CMake
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+          if [ -n "$VERSION_INPUT" ]; then
+            VERSION="$VERSION_INPUT"
           else
-            # Match CMakeLists.txt date-based versioning: YYYY.MM.DD
             BUILD_YEAR=$(date -u +"%Y")
             BUILD_MONTH=$(date -u +"%m")
             BUILD_DAY=$(date -u +"%d")
             VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
-            
-            # Add git commit info if available (match CMake logic)
             COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
             if [ "$COMMIT_SHA" != "unknown" ]; then
               VERSION="${VERSION}+git.${COMMIT_SHA}"
-              
-              # Check if repository is dirty (has uncommitted changes)
-              # In CI, we'll skip dirty check as the workspace should be clean
-              if [ "${{ github.event_name }}" = "workflow_dispatch" ] && ! git diff --quiet 2>/dev/null; then
+              if [ "$EVENT_NAME" = "workflow_dispatch" ] && ! git diff --quiet 2>/dev/null; then
                 VERSION="${VERSION}.dirty"
               fi
             fi
@@ -183,11 +181,9 @@ jobs:
           COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
           BUILD_DATE=$(date -u +"%Y%m%d_%H%M%S")
 
-          # For releases, ensure we have a clean version without build date suffix
-          RELEASE_VERSION="${VERSION}"
-          if [ "${{ github.event.inputs.create_release }}" = "true" ] || [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            # For releases, use a cleaner version format
-            if [ -z "${{ github.event.inputs.version }}" ]; then
+          RELEASE_VERSION="$VERSION"
+          if [ "$CREATE_RELEASE_INPUT" = "true" ] || [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            if [ -z "$VERSION_INPUT" ]; then
               RELEASE_VERSION="${BUILD_YEAR}.${BUILD_MONTH}.${BUILD_DAY}"
               if [ "$COMMIT_SHA" != "unknown" ]; then
                 RELEASE_VERSION="${RELEASE_VERSION}+git.${COMMIT_SHA}"
@@ -195,15 +191,14 @@ jobs:
             fi
           fi
 
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
-          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
-          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-          echo "package_name=openauto-${{ matrix.arch }}-${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "package_name=openauto-$MATRIX_ARCH-$VERSION" >> $GITHUB_OUTPUT
 
-          echo "Generated version: ${VERSION}"
-          echo "Release version: ${RELEASE_VERSION}"
-
+          echo "Generated version: $VERSION"
+          echo "Release version: $RELEASE_VERSION"
       - name: Build for ${{ matrix.arch }} on ${{ matrix.distro }}
         run: |
           echo "Building OpenAuto for ${{ matrix.arch }} architecture"
