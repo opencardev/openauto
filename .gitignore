@@ -7,3 +7,5 @@ openauto.ini
 CMakeLists.txt.user
 /cmake-build-*/
 .idea/
+build-debug/
+build-release/
