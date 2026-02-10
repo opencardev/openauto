@@ -27,6 +27,7 @@ CLEAN_BUILD=false
 PACKAGE=false
 OUTPUT_DIR="/output"
 WITH_AASDK=false
+AASDK_BRANCH="newdev"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="${SCRIPT_DIR}"
 
@@ -65,6 +66,10 @@ while [[ $# -gt 0 ]]; do
             WITH_AASDK=true
             shift
             ;;
+        --aasdk-branch)
+            AASDK_BRANCH="$2"
+            shift 2
+            ;;
         --help|-h)
             echo "Usage: $0 [release|debug] [OPTIONS]"
             echo ""
@@ -76,13 +81,15 @@ while [[ $# -gt 0 ]]; do
             echo "  --clean        Clean build directory before building"
             echo "  --package      Create DEB packages after building"
             echo "  --output-dir   Directory to copy packages (default: /output)"
-            echo "  --with-aasdk   Clone AASDK newdev branch and build/install it"
+            echo "  --with-aasdk   Clone AASDK branch and build/install it"
+            echo "  --aasdk-branch Branch to use for AASDK (default: newdev)"
             echo "  --help         Show this help message"
             echo ""
             echo "Examples:"
             echo "  $0 release --package"
             echo "  $0 debug --clean"
             echo "  $0 release --package --output-dir ./packages"
+            echo "  $0 debug --with-aasdk --aasdk-branch main"
             exit 0
             ;;
         *)
@@ -96,16 +103,16 @@ done
 # Handle AASDK cloning and building if requested
 if [ "$WITH_AASDK" = true ]; then
     echo ""
-    echo "Cloning AASDK newdev branch..."
+    echo "Cloning AASDK ${AASDK_BRANCH} branch..."
     if [ -d "aasdk-build" ]; then
         rm -rf "aasdk-build"
     fi
-    git clone --branch newdev https://github.com/opencardev/aasdk.git aasdk-build
+    git clone --branch "${AASDK_BRANCH}" https://github.com/opencardev/aasdk.git aasdk-build
     cd aasdk-build
     echo "Building and installing AASDK..."
     chmod +x build.sh
     export TARGET_ARCH="$TARGET_ARCH"
-    ./build.sh $BUILD_TYPE install
+    ./build.sh $BUILD_TYPE install --skip-protobuf --skip-absl
     cd "${SOURCE_DIR}"
     echo "AASDK build and install completed."
 fi
